@@ -1,6 +1,6 @@
 using LinearAlgebra
 using ITensors, ITensorMPS
-include("entropies.jl")
+include("entanglement_entropies.jl")
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype=ComplexF64)
     d = prod(dim.(s))
@@ -55,6 +55,8 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
     sites = siteinds(psi) 
     Ls = length(sites)
     entropies = Float64[]
+    ini_entropy = Renyi_entropy(psi0, b, which_ent; cutoff=ent_cutoff)
+    push!(entropies, ini_entropy)
     for t in 1:ttotal
         start = isodd(t) ? 1 : 2
         for j in start:2:Ls-1
@@ -76,7 +78,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
     end
     return psi, entropies
 end
-
+#=
 let 
     L = 8
     T = 2L
@@ -87,3 +89,4 @@ let
     psi, entropies = entropy_evolve(psi0, T, p, eta, b, 1)
     println(entropies)
 end
+=#
