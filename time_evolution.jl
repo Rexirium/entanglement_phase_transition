@@ -1,4 +1,3 @@
-using LinearAlgebra
 using ITensors, ITensorMPS
 include("entanglement_entropies.jl")
 

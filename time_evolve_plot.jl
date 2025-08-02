@@ -1,4 +1,4 @@
-using Plots, LinearAlgebra
+using Plots
 include("time_evolution.jl")
 
 let 
@@ -11,8 +11,8 @@ let
     ss = siteinds("S=1/2", L)
     psi0 = MPS(ss, "Up")
 
-    ent_evolves = []
-    ent_distris = []
+    prob_evolves = []
+    prob_distris = []
 
     for p in ps
         evolvesamp = []
@@ -27,15 +27,55 @@ let
         meanevolve = sum(evolvesamp)/numsamp
         meandistri = sum(distrisamp)/numsamp
 
-        push!(ent_evolves, meanevolve)
-        push!(ent_distris, meandistri)
+        push!(prob_evolves, meanevolve)
+        push!(prob_distris, meandistri)
     end
-    ent_evolves = hcat(ent_evolves...)
-    ent_distris = hcat(ent_distris...)
+    prob_evolves = hcat(prob_evolves...)
+    prob_distris = hcat(prob_distris...)
 
-    plot(0:T, ent_evolves, 
-         xlabel="Time", ylabel="Entanglement Entropy", 
-         title="Entanglement Entropy Evolution for Varying p",
+    eta_evolves = []
+    eta_distris = []
+
+    for η in ηs
+        evolvesamp = []
+        distrisamp = []
+        for _ in 1:numsamp
+            psi, evolve = entropy_evolve(psi0, T, 0.5, η, b, 1)
+            distri = [Renyi_entropy(psi, x, 1) for x in 0:L]
+            push!(evolvesamp, evolve)
+            push!(distrisamp, distri)
+        end
+
+        meanevolve = sum(evolvesamp)/numsamp
+        meandistri = sum(distrisamp)/numsamp
+
+        push!(eta_evolves, meanevolve)
+        push!(eta_distris, meandistri)
+    end
+    eta_evolves = hcat(eta_evolves...)
+    eta_distris = hcat(eta_distris...) 
+
+    pt = plot(0:T, prob_evolves, lw = 2,
+         xlabel="time", ylabel="entanglement entropy", 
+         title="entanglement entropy evolution for varying p",
          label=string.(collect(ps)'), legend=:topright, framestyle=:box)
+    
+    px = plot(0:L, prob_distris, lw=2,
+         xlabel="bipartition", ylabel="entanglement entropy", 
+         title="entanglement entropy distribution for varying p",
+         label=string.(collect(ps)'), legend=:topright, framestyle=:box)
+
+    et = plot(0:T, eta_evolves, lw=2,
+         xlabel="time", ylabel="entanglement entropy",
+         title="entanglement entropy evolution for varying η",
+         label=string.(collect(ηs)'), legend=:topright, framestyle=:box)
+
+    ex = plot(0:L, eta_distris, lw=2,
+         xlabel="bipartition", ylabel="entanglement entropy",
+         title="entanglement entropy distribution for varying η",
+         label=string.(collect(ηs)'), legend=:topright, framestyle=:box)
+
+    plot(pt, px, et, ex, layout=(2,2), size=(1200, 800))
+
 end
 
