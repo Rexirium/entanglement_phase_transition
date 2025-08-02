@@ -28,15 +28,15 @@ end
 function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=1e-14)
     psi = copy(psi0)
     sites = siteinds(psi)
-    Ls= length(sites)
+    Lsize = length(sites)
     for t in 1:ttotal
         start = isodd(t) ? 1 : 2
-        for j in start:2:Ls-1
+        for j in start:2:Lsize-1
             s1, s2 = sites[j], sites[j+1]
             U = op("RdU", s1, s2)
             psi = apply(U, psi; cutoff)
         end
-        for j in 1:Ls
+        for j in 1:Lsize
             p = rand()
             if p < prob
                 s = sites[j]
@@ -53,18 +53,18 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
      cutoff::Real=1e-14, ent_cutoff::Real=1e-12)
     psi = copy(psi0)
     sites = siteinds(psi) 
-    Ls = length(sites)
+    Lsize = length(sites)
     entropies = Float64[]
     ini_entropy = Renyi_entropy(psi0, b, which_ent; cutoff=ent_cutoff)
     push!(entropies, ini_entropy)
     for t in 1:ttotal
         start = isodd(t) ? 1 : 2
-        for j in start:2:Ls-1
+        for j in start:2:Lsize-1
             s1, s2 = sites[j], sites[j+1]
             U = op("RdU", s1, s2)
             psi = apply(U, psi; cutoff)
         end
-        for j in 1:Ls
+        for j in 1:Lsize
             samp = rand()
             if samp < prob
                 s = sites[j]
@@ -78,15 +78,15 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
     end
     return psi, entropies
 end
-#=
+
 let 
     L = 8
     T = 2L
     b = L÷2
     p, eta = 0.5, 0.5
     ss = siteinds("S=1/2", L)
-    psi0 = MPS(ss, "Up")
-    psi, entropies = entropy_evolve(psi0, T, p, eta, b, 1)
-    println(entropies)
+    psi0 = random_mps(ss; linkdims = 4)
+    [Renyi_entropy(psi0, x, 1) for x in 0:L ]
 end
-=#
+
+

@@ -12,16 +12,25 @@ let
     psi0 = MPS(ss, "Up")
 
     ent_evolves = []
+    ent_distr = []
     for p in ps
-        samples = []
+        evolve_samp = []
+        distr_samp = []
         for _ in 1:num_samp
-            _, entropies = entropy_evolve(psi0, T, p, 0.5, b, 1)
-            push!(samples, entropies)
+            psi, entropies = entropy_evolve(psi0, T, p, 0.5, b, 1)
+            distr = [Renyi_entropy(psi, x, 1) for x in 0:L]
+            push!(evolve_samp, entropies)
+            push!(distr_samp, distr)
         end
-        mean_entropies = sum(samples)/num_samp
+        mean_evolves = sum(evolve_samp)/num_samp
+        mean_distr = sum(distr_samp)/num_samp
+        
         push!(ent_evolves, mean_entropies)
+        push!(ent_distr, mean_distr)
     end
     ent_evolves = hcat(ent_evolves...)
+    ent_distr = hcat(ent_distr...)
+
     plot(0:T, ent_evolves, 
          xlabel="Time", ylabel="Entanglement Entropy", 
          title="Entanglement Entropy Evolution for Varying p",

@@ -2,7 +2,7 @@ function von_Neumann_entropy(psi::MPS, b::Int; cutoff=1e-12)
     """
     Calculate the von Neumann entropy of the MPS `psi` bipartited before site `b`.
     """
-    b <= 0 && return 0.0
+    (b <= 0 || b >= length(psi)) && return 0.0
     psi_tmp = orthogonalize(psi,b)
     llink = linkinds(psi_tmp,b-1)
     lsite = siteinds(psi_tmp,b)
@@ -19,7 +19,7 @@ function zeroth_entropy(psi::MPS, b::Int; cutoff=1e-12)
     """
     Calculate the zeroth order Renyi entropy of the MPS `psi` bipartited before site `b`.
     """
-    b <= 0 && return 0.0
+    (b <= 0 || b >= length(psi)) && return 0.0
     psi_tmp = orthogonalize(psi,b)
     llink = linkinds(psi_tmp,b-1)
     lsite = siteinds(psi_tmp,b)
@@ -32,7 +32,7 @@ function Renyi_entropy(psi::MPS, b::Int, n::Real; cutoff=1e-12)
     """
     Calculate the n-th order Renyi entropy of the MPS `psi` bipartited before site `b`.
     """
-    b <= 0 && return 0.0
+    (b <= 0 || b >= length(psi)) && return 0.0
     n == 0 && return zeroth_entropy(psi, b; cutoff=cutoff)
     n == 1 && return von_Neumann_entropy(psi, b; cutoff=cutoff)
     psi_tmp = orthogonalize(psi,b)
