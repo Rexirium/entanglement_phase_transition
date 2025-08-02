@@ -6,32 +6,32 @@ let
     T, b = 4L, L ÷ 2
     ps = 0.0:0.2:1.0
     ηs = 0.0:0.5:2.0
-    num_samp = 10
+    numsamp = 10
 
     ss = siteinds("S=1/2", L)
     psi0 = MPS(ss, "Up")
 
     ent_evolves = []
-    ent_distr = []
-    
+    ent_distris = []
+
     for p in ps
-        evolve_samp = []
-        distr_samp = []
-        for _ in 1:num_samp
-            psi, entropies = entropy_evolve(psi0, T, p, 0.5, b, 1)
-            distr = [Renyi_entropy(psi, x, 1) for x in 0:L]
-            push!(evolve_samp, entropies)
-            push!(distr_samp, distr)
+        evolvesamp = []
+        distrisamp = []
+        for _ in 1:numsamp
+            psi, evolve = entropy_evolve(psi0, T, p, 0.5, b, 1)
+            distri = [Renyi_entropy(psi, x, 1) for x in 0:L]
+            push!(evolvesamp, evolve)
+            push!(distrisamp, distri)
         end
 
-        mean_evolves = sum(evolve_samp)/num_samp
-        mean_distr = sum(distr_samp)/num_samp
+        meanevolve = sum(evolvesamp)/numsamp
+        meandistri = sum(distrisamp)/numsamp
 
-        push!(ent_evolves, mean_entropies)
-        push!(ent_distr, mean_distr)
+        push!(ent_evolves, meanevolve)
+        push!(ent_distris, meandistri)
     end
     ent_evolves = hcat(ent_evolves...)
-    ent_distr = hcat(ent_distr...)
+    ent_distris = hcat(ent_distris...)
 
     plot(0:T, ent_evolves, 
          xlabel="Time", ylabel="Entanglement Entropy", 

@@ -28,7 +28,7 @@ function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index, x::Real, λ::Rea
     return op(M, s)
 end
 
-function weak_measure(psi::MPS, loc::Int, λ::Real=1.0, Δ::Real=1.0)
+function weak_measure!(psi::MPS, loc::Int, λ::Real=1.0, Δ::Real=1.0)
     """Perform a weak measurement on the MPS `psi` at site `loc` with parameters `λ` and `Δ`."""
     (loc <= 0 || loc > length(psi)) && return psi
     # Orthogonalize the MPS at site `loc`
