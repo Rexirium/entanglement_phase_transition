@@ -13,6 +13,7 @@ let
 
     ent_evolves = []
     ent_distr = []
+    
     for p in ps
         evolve_samp = []
         distr_samp = []
@@ -22,9 +23,10 @@ let
             push!(evolve_samp, entropies)
             push!(distr_samp, distr)
         end
+
         mean_evolves = sum(evolve_samp)/num_samp
         mean_distr = sum(distr_samp)/num_samp
-        
+
         push!(ent_evolves, mean_entropies)
         push!(ent_distr, mean_distr)
     end
