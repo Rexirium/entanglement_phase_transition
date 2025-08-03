@@ -3,10 +3,59 @@ include("time_evolution.jl")
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
     cutoff::Real=1e-14, ent_cutoff::Real=1e-12)
     """
-    Calculate the final entanglement entropy of the MPS after time evolution.
+    Calculate the final entanglement entropy of the MPS after time evolution. (non-Hermitian case)
     """
     ss = siteinds("S=1/2", lsize)
     psi0 = MPS(ss, "Up")
-    psi = time_evolve(psi0, ttotal, prob, eta, b, which_ent; cutoff=cutoff, ent_cutoff=ent_cutoff)
+    psi = mps_evolve(psi0, ttotal, prob, eta; cutoff=cutoff)
     return Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+end
+
+function entropy_sample(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int=lsize ÷ 2, which_ent::Real=1; 
+    cutoff::Real=1e-14, ent_cutoff::Real=1e-12)
+    """
+    Calculate the final entanglement entropy of the MPS after time evolution. (weak measurement case)
+    """
+    ss = siteinds("S=1/2", lsize)
+    psi0 = MPS(ss, "Up")
+    psi = mps_evolve(psi0, ttotal, prob, para; cutoff=cutoff)
+    return Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+end
+
+function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
+    numsamp::Int=10, cutoff::Real=1e-14, ent_cutoff::Real=1e-12)
+    """
+    Calculate the mean entanglement entropy over multiple samples.
+    """
+    ss = siteinds("S=1/2", lsize)
+    psi0 = MPS(ss, "Up")
+    entropies = Float64[]
+    for _ in 1:numsamp 
+        psi = mps_evolve(psi0, ttotal, prob, eta; cutoff=cutoff)
+        entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+        push!(entropies, entropy)
+    end
+    return sum(entropies) / numsamp
+end
+
+function entropy_mean(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int=lsize ÷ 2, which_ent::Real=1; 
+    numsamp::Int=10, cutoff::Real=1e-14, ent_cutoff::Real=1e-12)
+    """
+    Calculate the mean entanglement entropy over multiple samples. (weak measurement case)
+    """
+    ss = siteinds("S=1/2", lsize)
+    psi0 = MPS(ss, "Up")
+    entropies = Float64[]
+    for _ in 1:numsamp 
+        psi = mps_evolve(psi0, ttotal, prob, para; cutoff=cutoff)
+        entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+        push!(entropies, entropy)
+    end
+    return sum(entropies) / numsamp
+end
+
+let
+    L = 10
+    T, b = 4L, L ÷ 2
+    entropy_mean(L, T, 0.5, 0.5, b; numsamp=100)
 end
