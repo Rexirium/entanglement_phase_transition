@@ -64,18 +64,18 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
     """
     psi = copy(psi0)
     sites = siteinds(psi)
-    Lsize = length(sites)
+    lsize = length(sites)
 
     for t in 1:ttotal
         start = isodd(t) ? 1 : 2
         # Apply random unitary operators to pairs of sites
-        for j in start:2:Lsize-1
+        for j in start:2:lsize-1
             s1, s2 = sites[j], sites[j+1]
             U = op("RdU", s1, s2)
             psi = apply(U, psi; cutoff)
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
-        for j in 1:Lsize
+        for j in 1:lsize
             p = rand()
             if p < prob
                 s = sites[j]
@@ -96,7 +96,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
     """
     psi = copy(psi0)
     sites = siteinds(psi) 
-    Lsize = length(sites)
+    lsize = length(sites)
     # Initialize the entropy vector. 
     entropies = Float64[]
     ini_entropy = Renyi_entropy(psi0, b, which_ent; cutoff=ent_cutoff)
@@ -104,13 +104,13 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
 
     for t in 1:ttotal
         start = isodd(t) ? 1 : 2
-        for j in start:2:Lsize-1
+        for j in start:2:lsize-1
             s1, s2 = sites[j], sites[j+1]
             U = op("RdU", s1, s2)
             psi = apply(U, psi; cutoff)
         end
 
-        for j in 1:Lsize
+        for j in 1:lsize
             samp = rand()
             if samp < prob
                 s = sites[j]
