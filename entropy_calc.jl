@@ -1,3 +1,4 @@
+using HDF5
 include("time_evolution.jl")
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
@@ -55,7 +56,32 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Rea
 end
 
 let
-    L = 10
-    T, b = 4L, L ÷ 2
-    entropy_mean(L, T, 0.5, 0.5, b; numsamp=100)
+    Ls = 10:10:50
+    p0, η0 = 0.5, 0.5
+    ps = 0.0:0.05:1.0
+    ηs = 0.0:0.5:2.0
+
+    prob_scales = []
+    eta_scales = []
+
+    for l in Ls
+        tt = 4l
+        b = l ÷ 2
+        entropy_prob = [entropy_mean(l, tt, p, η0, b; numsamp=10) for p in ps]
+        push!(prob_scales, entropy_prob)
+
+        entropy_eta = [entropy_mean(l, tt, p0, η, b; numsamp=10) for η in ηs]
+        push!(eta_scales, entropy_eta)
+    end
+
+    prob_scales = hcat(prob_scales...)
+    eta_scales = hcat(eta_scales...)
+
+    h5open("entropy_scale_data.h5", "w") do file
+        write(file, "ps", collect(ps))
+        write(file, "ηs", collect(ηs))
+        write(file, "Ls", collect(Ls))
+        write(file, "prob_scales", prob_scales)
+        write(file, "eta_scales", eta_scales)
+    end
 end
