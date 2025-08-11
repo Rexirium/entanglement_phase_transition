@@ -61,21 +61,23 @@ let
     ps = 0.0:0.05:1.0
     ηs = 0.0:0.5:2.0
 
-    prob_scales = []
-    eta_scales = []
+    nL = length(Ls)
+    nprob = length(ps)
+    neta = length(ηs)
 
-    for l in Ls
+    prob_scales = zeros(nprob, nL)
+    eta_scales = zeros(neta, nL)
+
+    @threads for i = 1:nL
+        l = Ls[i]
         tt = 4l
         b = l ÷ 2
         entropy_prob = [entropy_mean(l, tt, p, η0, b; numsamp=10) for p in ps]
-        push!(prob_scales, entropy_prob)
+        prob_scales[:, i] = entropy_prob
 
         entropy_eta = [entropy_mean(l, tt, p0, η, b; numsamp=10) for η in ηs]
-        push!(eta_scales, entropy_eta)
+        eta_scales[:, i] = entropy_eta
     end
-
-    prob_scales = hcat(prob_scales...)
-    eta_scales = hcat(eta_scales...)
 
     h5open("entropy_scale_data.h5", "w") do file
         write(file, "ps", collect(ps))

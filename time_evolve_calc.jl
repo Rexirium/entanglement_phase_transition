@@ -1,20 +1,27 @@
 using HDF5
+using Base.Threads
 include("time_evolution.jl")
+nthreads() = 4
+BLAS.set_num_threads(nthreads())
 
 let 
     L = 10
     T, b = 4L, L ÷ 2
     ps = 0.0:0.2:1.0
     ηs = 0.0:0.5:2.0
+
     numsamp = 10
+    nprob = length(ps)
+    neta = length(ηs)
 
-    ss = siteinds("S=1/2", L)
-    psi0 = MPS(ss, "Up")
+    prob_evolves = zeros(T+1, nprob)
+    prob_distris = zeros(L+1, nprob)
 
-    prob_evolves = []
-    prob_distris = []
+    @threads for i = 1:nprob
+        p = ps[i]
+        ss = siteinds("S=1/2", L)
+        psi0 = MPS(ss, "Up")
 
-    for p in ps
         evolvesamp = []
         distrisamp = []
         for _ in 1:numsamp
@@ -27,16 +34,18 @@ let
         meanevolve = sum(evolvesamp)/numsamp
         meandistri = sum(distrisamp)/numsamp
 
-        push!(prob_evolves, meanevolve)
-        push!(prob_distris, meandistri)
+        prob_evolves[:, i] = meanevolve
+        prob_distris[:, i] = meandistri
     end
-    prob_evolves = hcat(prob_evolves...)
-    prob_distris = hcat(prob_distris...)
 
-    eta_evolves = []
-    eta_distris = []
+    eta_evolves = zeros(T+1, neta)
+    eta_distris = zeros(L+1, neta)
 
-    for η in ηs
+    @threads for i = 1:neta
+        η = ηs[i]
+        ss = siteinds("S=1/2", L)
+        psi0 = MPS(ss, "Up")
+
         evolvesamp = []
         distrisamp = []
         for _ in 1:numsamp
@@ -49,11 +58,9 @@ let
         meanevolve = sum(evolvesamp)/numsamp
         meandistri = sum(distrisamp)/numsamp
 
-        push!(eta_evolves, meanevolve)
-        push!(eta_distris, meandistri)
+        eta_evolves[:, i] = meanevolve
+        eta_distris[:, i] = meandistri
     end
-    eta_evolves = hcat(eta_evolves...)
-    eta_distris = hcat(eta_distris...) 
 
     h5open("time_evolve_data.h5", "w") do file
         write(file, "ps", collect(ps))
