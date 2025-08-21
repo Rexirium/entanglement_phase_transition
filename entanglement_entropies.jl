@@ -44,56 +44,79 @@ function Renyi_entropy(psi::MPS, b::Int, n::Real; cutoff=1e-12)
     return log2(trace)/(1-n)
 end
 
-function von_Neumann_entropy_single(psi::MPS, x::Int; cutoff = 1e-12)
+function von_Neumann_entropy_region(psi::MPS, xs; cutoff = 1e-12)
     """
     Calculate the von Neumann entropy of a single site `x` from other sites.
     """
-    (x < 0 && x > length(psi)) && error("The site does not exist!")
-    psi_tmp = orthogonalize(psi, x)
-    Ap = prime(psi_tmp[x], tags="Site")
-    Ac = conj(psi_tmp[x])
-    M = contract(Ap, Ac)
-    D, _ = eigen(M; ishermitian=true)
-    ps = diag(D)
-    ps = ps[ps .> cutoff]
-    return -sum(ps .* log2.(ps))
+    ps = reduced_density_eigen(psi, xs; cutoff=cutoff)
+    return - sum(ps .* log2.(ps))
 end
 
-function zeroth_entropy_single(psi::MPS, x::Int; cutoff = 1e-12)
+function zeroth_entropy_region(psi::MPS, xs; cutoff = 1e-12)
     """
-    Calculate the zeroth order Renyi entropy of a single site `x` from other sites.
+    Calculate the zeroth order Renyi entropy of a region of sites `x` from other sites.
     """
-    (x < 0 && x > length(psi)) && error("The site does not exist!")
-    psi_tmp = orthogonalize(psi, x)
-    Ap = prime(psi_tmp[x], tags="Site")
-    Ac = conj(psi_tmp[x])
-    M = contract(Ap, Ac)
-    D, _ = eigen(M; ishermitian=true)
-    ps = diag(D)
-    ps = ps[ps .> cutoff]
+    ps = reduced_density_eigen(psi, xs; cutoff=cutoff)
     return log2(length(ps))
 end
 
-function Renyi_entropy_single(psi::MPS, x::Int, n::Real; cutoff = 1e-12)
+function Renyi_entropy_region(psi::MPS, xs, n::Real; cutoff = 1e-12)
     """
-    Calculate the n-th order Renyi entropy of a single site `x` from other sites.
+    Calculate the n-th order Renyi entropy of a region of sites `x` from other sites.
     """
-    (x < 0 && x > length(psi)) && error("The site does not exist!")
-    n == 0 && return zeroth_entropy_single(psi, x; cutoff=cutoff)
-    n == 1 && return von_Neumann_entropy_single(psi, x; cutoff=cutoff)
-    psi_tmp = orthogonalize(psi, x)
-    Ap = prime(psi_tmp[x], tags="Site")
-    Ac = conj(psi_tmp[x])
-    M = contract(Ap, Ac)
-    D, _ = eigen(M; ishermitian=true)
-    ps = diag(D)
-    ps = ps[ps .> cutoff]
+    n == 0 && return zeroth_entropy_region(psi, xs; cutoff=cutoff)
+    n == 1 && return von_Neumann_entropy_region(psi, xs; cutoff=cutoff)
+    ps = reduced_density_eigen(psi, xs; cutoff=cutoff)
     trace = sum(ps .^ n)
     return log2(trace)/(1-n)
 end
 
-function mutual_information(psi::MPS, a::Int, b::Int, n::Real; cutoff=1e-12)
+function reduced_density_eigen(psi::MPS, x::Int; cutoff=1e-12)
     """
-    Calculate the mutual information of two separate spin at site `a` and `b`
+    Calculate the reduced density matrix eigen values of a region of sites `x` from other sites.
     """
+    (x < 0 && x > length(psi)) && error("The site does not exist!")
+    psi_tmp = orthogonalize(psi, x)
+    Ap = prime(dag(psi_tmp[x]), tags="Site")
+    rho = contract(Ap, psi_tmp[x])
+    D, _ = eigen(rho; ishermitian=true)
+    ps = diag(D)
+    return ps[ps .> cutoff]
+end
+
+function reduced_density_eigen(psi::MPS, xs::Vector{<:Int}; cutoff=1e-12)
+    """
+    Calculate the reduced density matrix eigen values of multiple sites `xs` from other sites.
+    """
+    length(xs) == 0 && error("No sites provided!")
+    length(xs) == 1 && return reduced_density_eigen(psi, xs[1]; cutoff=cutoff)
+
+    xs = sort(xs)
+    a, b = xs[1], xs[end]
+    (a < 0 || b > length(psi)) && error("The sites do not exist!")
+    ket = orthogonalize(psi, a)
+    bra = prime(dag(ket), linkinds(ket)..., siteinds(ket)[xs]...)
+    start = prime(ket[a], linkinds(ket, a-1))
+    rho = contract(start, bra[a])
+
+    for j in (a+1):(b-1)
+        rho *= ket[j]
+        rho *= bra[j]
+    end
+    rho *= prime(ket[b], linkinds(ket, b))
+    rho *= bra[b]
+
+    D, _ = eigen(rho; ishermitian=true)
+    ps = diag(D)
+    return ps[ps .> cutoff]
+end
+
+function mutual_information_region(psi::MPS, as, bs, n::Real; cutoff=1e-12)
+    """
+    Calculate the mutual information of two separate region of sites `as` and `bs`.
+    """
+    Sa = Renyi_entropy_region(psi, as, n; cutoff=cutoff)
+    Sb = Renyi_entropy_region(psi, bs, n; cutoff=cutoff)
+    Sab = Renyi_entropy_region(psi, union(as, bs), n; cutoff=cutoff)
+    return Sa + Sb - Sab
 end
