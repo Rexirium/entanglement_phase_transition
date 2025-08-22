@@ -7,12 +7,8 @@ function von_Neumann_entropy(psi::MPS, b::Int; cutoff=1e-12)
     llink = linkinds(psi_tmp, b-1)
     lsite = siteinds(psi_tmp, b)
     _ , S, _ = ITensors.svd(psi_tmp[b], (llink..., lsite...); cutoff=cutoff)
-    SvN = 0.0
-    for k = 1:dim(S,1)
-        p = S[k, k] * S[k, k]
-        SvN -= p * log2(p)
-    end
-    return SvN
+    ps = diag(S) .* diag(S)
+    return - sum(ps .* log2.(ps))
 end
 
 function zeroth_entropy(psi::MPS, b::Int; cutoff=1e-12)
@@ -39,8 +35,8 @@ function Renyi_entropy(psi::MPS, b::Int, n::Real; cutoff=1e-12)
     llink = linkinds(psi_tmp, b-1)
     lsite = siteinds(psi_tmp, b)
     _ , S, _ = ITensors.svd(psi_tmp[b], (llink..., lsite...); cutoff=cutoff)
-    svals = diag(S)
-    trace = sum((svals .* svals).^n)
+    ps = diag(S) .* diag(S)
+    trace = sum(ps .^ n)
     return log2(trace)/(1-n)
 end
 
@@ -73,22 +69,22 @@ end
 
 function reduced_density_eigen(psi::MPS, x::Int; cutoff=1e-12)
     """
-    Calculate the reduced density matrix eigen values of a region of sites `x` from other sites.
+    Calculate the reduced density matrix eigen values of a region of a single sites `x` from other sites.
     """
     (x < 0 && x > length(psi)) && error("The site does not exist!")
     psi_tmp = orthogonalize(psi, x)
     Ap = prime(dag(psi_tmp[x]), tags="Site")
     rho = contract(Ap, psi_tmp[x])
-    D, _ = eigen(rho; ishermitian=true)
+    D, _ = eigen(rho; ishermitian=true, cutoff=cutoff)
     ps = diag(D)
-    return ps[ps .> cutoff]
+    return ps
 end
 
 function reduced_density_eigen(psi::MPS, xs::Vector{<:Int}; cutoff=1e-12)
     """
     Calculate the reduced density matrix eigen values of multiple sites `xs` from other sites.
     """
-    length(xs) == 0 && error("No sites provided!")
+    length(xs) == 0 && return 0.0
     length(xs) == 1 && return reduced_density_eigen(psi, xs[1]; cutoff=cutoff)
 
     xs = sort(xs)
@@ -106,12 +102,12 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int}; cutoff=1e-12)
     rho *= prime(ket[b], linkinds(ket, b))
     rho *= bra[b]
 
-    D, _ = eigen(rho; ishermitian=true)
+    D, _ = eigen(rho; ishermitian=true, cutoff=cutoff)
     ps = diag(D)
-    return ps[ps .> cutoff]
+    return ps
 end
 
-function mutual_information_region(psi::MPS, as, bs, n::Real; cutoff=1e-12)
+function mutual_information_region(psi::MPS, as, bs, n::Real=1; cutoff=1e-12)
     """
     Calculate the mutual information of two separate region of sites `as` and `bs`.
     """
