@@ -176,16 +176,6 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
     return psi, entropies
 end
 
-let 
-    L = 8
-    T = 2L
-    b = L÷2
-    p, λ, Δ = 0.5, 1.0, 1.0
-    ss = siteinds("S=1/2", L)
-    psi0 = random_mps(ss; linkdims = 4)
-    psi, entropies = entropy_evolve(psi0, T, p, (λ, Δ), b, 1)
-    entropies
-end
 
 
 

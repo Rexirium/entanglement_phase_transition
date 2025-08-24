@@ -1,9 +1,8 @@
-using HDF5
 using Interpolations
 using Optim
 include("entropy_calc.jl")
 
-function object_function(pc::Real, nu::Real, eta::Real, data, Ls, ps; numsamp = 10)
+function object_function(pc::Real, nu::Real, eta::Real, data, Ls, ps; numsamp = 100)
     """
     Objective function for data collapse.
     """
@@ -29,7 +28,7 @@ function object_function(pc::Real, nu::Real, eta::Real, data, Ls, ps; numsamp = 
     return Rsq
 end
 
-function data_collapse(datas, Ls, ps, ηs, p0=0.5, nu0=1.0; numsamp=10)
+function data_collapse(datas, Ls, ps, ηs, p0=0.5, nu0=1.0; numsamp=100)
     """
     Perform data collapse to find the optimal critical point and critical exponent.
     """
