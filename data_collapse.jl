@@ -42,5 +42,5 @@ function data_collapse(datas, Ls, ps, ηs, p0=0.5, nu0=1.0; numsamp=10)
         res = optimize(obj, [p0, nu0], GradientDescent(), Optim.Options(g_tol=1e-6, iterations=1000))
         push!(critical_params, Optim.minimizer(res))
     end
-    return hcat(critical_params...)
+    return hcat(critical_params...)'
 end
