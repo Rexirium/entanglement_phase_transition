@@ -3,7 +3,7 @@ using Interpolations
 using Optim
 include("entropy_calc.jl")
 
-function object_function(data, Ls, ps, pc::Real, nu::Real, eta::Real; numsamp = 10)
+function object_function(pc::Real, nu::Real, eta::Real, data, Ls, ps; numsamp = 10)
     """
     Objective function for data collapse.
     """
@@ -27,4 +27,20 @@ function object_function(data, Ls, ps, pc::Real, nu::Real, eta::Real; numsamp = 
         Rsq += var(yis, corrected=false) * length(yis) 
     end
     return Rsq
+end
+
+function data_collapse(datas, Ls, ps, ηs, p0=0.5, nu0=1.0; numsamp=10)
+    """
+    Perform data collapse to find the optimal critical point and critical exponent.
+    """
+    neta = length(ηs)
+    critical_params = []
+    for j in 1:neta
+        data = datas[:,:,j]
+        η = ηs[j]
+        obj(pc_nu) = object_function(pc_nu[1], pc_nu[2], η, data, Ls, ps; numsamp=numsamp)
+        res = optimize(obj, [p0, nu0], BFGS(); autodiff=:forward)
+        push!(critical_params, Optim.minimizer(res))
+    end
+    return hcat(critical_params...)
 end
