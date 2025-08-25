@@ -18,15 +18,13 @@ let
         tt, b = 4l, l ÷ 2
 
         for i in 1:nprob
-            p = ps[i]
             prob_scales_mean[i,j], prob_scales_std[i,j] = 
-                entropy_mean(l, tt, p, η0, b; numsamp=10, retstd=true)
+                entropy_mean(l, tt, ps[i], η0, b; numsamp=10, retstd=true)
         end
 
         for i in 1:neta
-            η = ηs[i]
             eta_scales_mean[i,j], eta_scales_std[i,j] = 
-                entropy_mean(l, tt, p0, η, b; numsamp=10, retstd=true)
+                entropy_mean(l, tt, p0, ηs[i], b; numsamp=10, retstd=true)
         end
     end
 
