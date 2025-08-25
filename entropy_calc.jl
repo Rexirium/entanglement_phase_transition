@@ -71,8 +71,3 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Rea
     end
 end
 
-let
-    L = 30
-    T, b = 4L, L ÷ 2
-    entropy_mean(L, T, 0.7, 0.0, b; numsamp=10, cutoff=1e-12, ent_cutoff=1e-10, retstd=true)
-end
