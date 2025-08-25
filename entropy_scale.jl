@@ -2,10 +2,10 @@ using HDF5
 include("entropy_calc.jl")
 
 let
-    Ls = 10:10:50
+    Ls = 6:4:22
     p0, η0 = 0.5, 0.5
     ps = 0.0:0.05:1.0
-    ηs = 0.0:0.5:2.0
+    ηs = 0.0:0.1:2.0
     nprob, neta, nL = length(ps), length(ηs), length(Ls)
 
     prob_scales_mean = zeros(nprob, nL)

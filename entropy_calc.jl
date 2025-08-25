@@ -26,7 +26,7 @@ end
 function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
     numsamp::Int=10, cutoff::Real=1e-14, ent_cutoff::Real=1e-12, retstd::Bool=false)
     """
-    Calculate the mean entanglement entropy over multiple samples.
+    Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
     ss = siteinds("S=1/2", lsize)
     psi0 = MPS(ss, "Up")
@@ -69,4 +69,10 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Rea
         std_entropy = stdm(entropies, mean_entropy; corrected=false)
         return mean_entropy, std_entropy
     end
+end
+
+let
+    L = 30
+    T, b = 4L, L ÷ 2
+    entropy_mean(L, T, 0.7, 0.0, b; numsamp=10, cutoff=1e-12, ent_cutoff=1e-10, retstd=true)
 end
