@@ -2,7 +2,7 @@ using Statistics
 include("time_evolution.jl")
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
-    cutoff::Real=1e-14, ent_cutoff::Real=1e-12)
+    cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
     """
     Calculate the final entanglement entropy of the MPS after time evolution. (non-Hermitian case)
     """
@@ -13,7 +13,7 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=l
 end
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int=lsize ÷ 2, which_ent::Real=1; 
-    cutoff::Real=1e-14, ent_cutoff::Real=1e-12)
+    cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
     """
     Calculate the final entanglement entropy of the MPS after time evolution. (weak measurement case)
     """
@@ -24,7 +24,7 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, R
 end
 
 function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
-    numsamp::Int=10, cutoff::Real=1e-14, ent_cutoff::Real=1e-12, retstd::Bool=false)
+    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-10, retstd::Bool=false)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
@@ -48,7 +48,7 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsi
 end
 
 function entropy_mean(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int=lsize ÷ 2, which_ent::Real=1; 
-    numsamp::Int=10, cutoff::Real=1e-14, ent_cutoff::Real=1e-12, retstd::Bool=false)
+    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-10, retstd::Bool=false)
     """
     Calculate the mean entanglement entropy over multiple samples. (weak measurement case)
     """

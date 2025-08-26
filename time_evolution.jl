@@ -38,16 +38,16 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{Real, Real}=(1.0, 1.0))
     orthogonalize!(psi, loc)
     # Calculate the probability of measuring "Up"
     probUp = real(inner(prime(psi[loc], tags="Site"), proj, psi[loc]))
-    p = rand()
+    samp = rand()
     # generate a random variable from a Gaussian distribution
-    x = p < probUp ? λ + Δ*randn() : -λ + Δ*randn() 
+    x = samp < probUp ? λ + Δ*randn() : -λ + Δ*randn() 
     M = op("WM", s; x = x, λ = λ, Δ = Δ)
     # Apply the weak measurement operator
     psi = apply(M, psi; cutoff=1e-14)
     normalize!(psi)
 end
 
-function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=1e-14)
+function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=1e-12)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
@@ -66,8 +66,8 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
-            p = rand()
-            if p < prob
+            samp = rand()
+            if samp < prob
                 s = sites[j]
                 M = op("NH", s; eta=eta)
                 psi = apply(M, psi; cutoff)
@@ -79,7 +79,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
     return psi
 end
 
-function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}; cutoff::Real=1e-14)
+function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}; cutoff::Real=1e-12)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a weak measurement operator applied to each site with parameters `λ` and `Δ`.
@@ -98,8 +98,8 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real};
         end
         # Apply weak measurement operator to each site with parameters `λ` and `Δ`
         for j in 1:lsize
-            p = rand()
-            if p < prob
+            samp = rand()
+            if samp < prob
                 weak_measure!(psi, j, para)
             end
         end
@@ -108,7 +108,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real};
 end
 
 function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-14, ent_cutoff::Real=1e-12)
+     cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
     """
     Same with function `mps_evolve` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
@@ -144,7 +144,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
 end
 
 function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-14, ent_cutoff::Real=1e-12)
+     cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
     """
     Same with function `mps_evolve` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
