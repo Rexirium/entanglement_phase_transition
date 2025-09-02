@@ -17,39 +17,40 @@ let
     prob_distris = zeros(L+1, nprob)
 
     for i in 1:nprob
-        evolvesamp = []
-        distrisamp = []
+        evolvesamp = zeros(T+1, numsamp)
+        distrisamp = zeros(L+1, numsamp)
         # Run multiple samples and average the results.
-        for _ in 1:numsamp 
+        for j in 1:numsamp
             psi, evolve = entropy_evolve(psi0, T, ps[i], 0.5, b, 1)
             distri = [Renyi_entropy(psi, x, 1) for x in 0:L]
-            push!(evolvesamp, evolve)
-            push!(distrisamp, distri)
+            evolvesamp[:, j] .= evolve
+            distrisamp[:, j] .= distri
         end
 
-        meanevolve = sum(evolvesamp)/numsamp
-        meandistri = sum(distrisamp)/numsamp
+        meanevolve = sum(evolvesamp, dims=2)/numsamp
+        meandistri = sum(distrisamp, dims=2)/numsamp
 
         prob_evolves[:, i] .= meanevolve
         prob_distris[:, i] .= meandistri
     end
 
+
     eta_evolves = zeros(T+1, neta)
     eta_distris = zeros(L+1, neta)
 
     for i in 1:neta
-        evolvesamp = []
-        distrisamp = []
+        evolvesamp = zeros(T+1, numsamp)   
+        distrisamp = zeros(L+1, numsamp)
         # Run multiple samples and average the results.
-        for _ in 1:numsamp
+        for j in 1:numsamp
             psi, evolve = entropy_evolve(psi0, T, 0.5, ηs[i], b, 1)
             distri = [Renyi_entropy(psi, x, 1) for x in 0:L]
-            push!(evolvesamp, evolve)
-            push!(distrisamp, distri)
+            evolvesamp[:, j] .= evolve
+            distrisamp[:, j] .= distri
         end
 
-        meanevolve = sum(evolvesamp)/numsamp
-        meandistri = sum(distrisamp)/numsamp
+        meanevolve = sum(evolvesamp, dims=2)/numsamp
+        meandistri = sum(distrisamp, dims=2)/numsamp
 
         eta_evolves[:, i] .= meanevolve
         eta_distris[:, i] .= meandistri
