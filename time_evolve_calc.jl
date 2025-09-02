@@ -1,5 +1,8 @@
 using HDF5
+using Base.Threads
 include("time_evolution.jl")
+
+nthreads() = 8
 
 let 
     # Parameters
@@ -16,7 +19,7 @@ let
     prob_evolves = zeros(T+1, nprob)
     prob_distris = zeros(L+1, nprob)
 
-    for i in 1:nprob
+    @threads for i in 1:nprob
         evolvesamp = []
         distrisamp = []
         # Run multiple samples and average the results.
@@ -37,7 +40,7 @@ let
     eta_evolves = zeros(T+1, neta)
     eta_distris = zeros(L+1, neta)
 
-    for i in 1:neta
+    @threads for i in 1:neta
         evolvesamp = []
         distrisamp = []
         # Run multiple samples and average the results.

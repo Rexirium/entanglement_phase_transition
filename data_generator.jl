@@ -1,14 +1,16 @@
 using HDF5
+using Base.Threads
 include("entropy_calc.jl")
 
 let 
+    # Model parameters
     Ls = 8:8:48
     ps = 0.0:0.05:1.0
     ηs = 0.0:0.5:2.0
     nL, nprob, neta = length(Ls), length(ps), length(ηs)
-
+    # Store entanglement entropy data
     entropy_datas = zeros(nprob, nL, neta)
-    for k in 1:neta
+    @threads for k in 1:neta
         η = ηs[k]
         for j in 1:nL
             l = Ls[j]

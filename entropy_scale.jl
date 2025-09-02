@@ -1,4 +1,5 @@
 using HDF5
+using Base.Threads
 include("entropy_calc.jl")
 
 let
@@ -14,7 +15,7 @@ let
     eta_scales_mean = zeros(neta, nL)
     eta_scales_std = zeros(neta, nL)
     # Calculate entanglement entropy (mean and std) for each parameter set
-    for j in 1:nL
+    @threads for j in 1:nL
         l = Ls[j]
         tt, b = 4l, l ÷ 2
 

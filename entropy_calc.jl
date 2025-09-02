@@ -1,4 +1,5 @@
 using Statistics
+using Base.Threads
 include("time_evolution.jl")
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
@@ -31,11 +32,11 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsi
     ss = siteinds("S=1/2", lsize)
     psi0 = MPS(ss, "Up")
     # mean value of `numsamp` samples
-    entropies = Float64[]
-    for _ in 1:numsamp 
+    entropies = zeros(Float64, numsamp)
+    @threads for i in 1:numsamp 
         psi = mps_evolve(psi0, ttotal, prob, eta; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        push!(entropies, entropy)
+        entropies[i] = entropy
     end
     mean_entropy = mean(entropies)
     # return std if needed
@@ -55,11 +56,11 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Rea
     ss = siteinds("S=1/2", lsize)
     psi0 = MPS(ss, "Up")
 
-    entropies = Float64[]
-    for _ in 1:numsamp 
+    entropies = zeros(Float64, numsamp)
+    @threads for i in 1:numsamp 
         psi = mps_evolve(psi0, ttotal, prob, para; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        push!(entropies, entropy)
+        entropies[i] = entropy
     end
 
     mean_entropy = mean(entropies)
