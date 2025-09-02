@@ -8,16 +8,25 @@ let
     ps = 0.0:0.05:1.0
     ηs = 0.0:0.5:2.0
     nL, nprob, neta = length(Ls), length(ps), length(ηs)
+    
     # Store entanglement entropy data
     entropy_datas = zeros(nprob, nL, neta)
-    @threads for k in 1:neta
+    
+    # Create tasks array for all parameter combinations
+    tasks = [(i,j,k) for i in 1:nprob, j in 1:nL, k in 1:neta]
+    
+    # Parallel computation over all parameter combinations
+    @threads for task in vec(tasks)
+        i, j, k = task
+        l = Ls[j]
+        p = ps[i]
         η = ηs[k]
-        for j in 1:nL
-            l = Ls[j]
-            tt, b = 4l, l ÷ 2
-            mean_entropy = [entropy_mean(l, tt, p, η, b; numsamp=100) for p in ps]
-            entropy_datas[:,j,k] .= mean_entropy
-        end
+        tt, b = 4l, l ÷ 2
+        
+        entropy_datas[i,j,k] = entropy_mean(l, tt, p, η, b; numsamp=100)
+        
+        # Progress tracking
+        println("Completed: L=$(l), p=$(round(p,digits=2)), η=$(round(η,digits=2))")
     end
 
     h5open("entropy_data.h5", "w") do file

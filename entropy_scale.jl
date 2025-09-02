@@ -9,30 +9,39 @@ let
     ps = 0.0:0.05:1.0
     ηs = 0.0:0.1:2.0
     nprob, neta, nL = length(ps), length(ηs), length(Ls)
+    
     # Store results
     prob_scales_mean = zeros(nprob, nL)
     prob_scales_std = zeros(nprob, nL)
     eta_scales_mean = zeros(neta, nL)
     eta_scales_std = zeros(neta, nL)
-    # Calculate entanglement entropy (mean and std) for each parameter set
-    @threads for j in 1:nL
+
+    # Create tasks array for all parameter combinations
+    tasks_prob = [(i,j) for i in 1:nprob, j in 1:nL]
+    tasks_eta = [(i,j) for i in 1:neta, j in 1:nL]
+
+    # Calculate probability scaling
+    @threads for task in vec(tasks_prob)
+        i, j = task
         l = Ls[j]
         tt, b = 4l, l ÷ 2
-
-        for i in 1:nprob
-            p = ps[i]
-            prob_scales_mean[i,j], prob_scales_std[i,j] = 
-                entropy_mean(l, tt, p, η0, b; numsamp=10, retstd=true)
-            println("L=$l, p=$(round(p,digits=2)), η=0.5 done")
-        end
-
-        for i in 1:neta
-            η = ηs[i]
-            eta_scales_mean[i,j], eta_scales_std[i,j] = 
-                entropy_mean(l, tt, p0, η, b; numsamp=10, retstd=true)
-            println("L=$l, p=0.50, η=$(round(η,digits=2)) done")
-        end
+        p = ps[i]
+        prob_scales_mean[i,j], prob_scales_std[i,j] = 
+            entropy_mean(l, tt, p, η0, b; numsamp=10, retstd=true)
+        println("L=$l, p=$(round(p,digits=2)), η=0.5 done")
     end
+
+    # Calculate eta scaling
+    @threads for task in vec(tasks_eta)
+        i, j = task
+        l = Ls[j]
+        tt, b = 4l, l ÷ 2
+        η = ηs[i]
+        eta_scales_mean[i,j], eta_scales_std[i,j] = 
+            entropy_mean(l, tt, p0, η, b; numsamp=10, retstd=true)
+        println("L=$l, p=0.50, η=$(round(η,digits=2)) done")
+    end
+
     # Save data to HDF5 file
     h5open("entropy_scale_data.h5", "w") do file
         write(file, "ps", collect(ps))
