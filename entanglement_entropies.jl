@@ -3,7 +3,7 @@ function von_Neumann_entropy(psi::MPS, b::Int; cutoff=1e-12)
     Calculate the von Neumann entropy of the MPS `psi` biparted after site `b`.
     """
     (b <= 0 || b >= length(psi)) && return 0.0
-
+    # SVD decomposition to obtain the Schmidt coefficients
     psi_tmp = orthogonalize(psi, b)
     llink = linkinds(psi_tmp, b-1)
     lsite = siteinds(psi_tmp, b)
@@ -18,12 +18,12 @@ function zeroth_entropy(psi::MPS, b::Int; cutoff=1e-12)
     Calculate the zeroth order Renyi entropy of the MPS `psi` biparted after site `b`.
     """
     (b <= 0 || b >= length(psi)) && return 0.0
-
+    # SVD decomposition to obtain the Schmidt coefficients
     psi_tmp = orthogonalize(psi, b)
     llink = linkinds(psi_tmp, b-1)
     lsite = siteinds(psi_tmp, b)
     _ , S, _ = ITensors.svd(psi_tmp[b], (llink..., lsite...); cutoff=cutoff)
-
+    
     chi = dim(S,1)
     return log2(chi)
 end
@@ -35,7 +35,7 @@ function Renyi_entropy(psi::MPS, b::Int, n::Real; cutoff=1e-12)
     (b <= 0 || b >= length(psi)) && return 0.0
     n == 0 && return zeroth_entropy(psi, b; cutoff=cutoff)
     n == 1 && return von_Neumann_entropy(psi, b; cutoff=cutoff)
-
+    # SVD decomposition to obtain the Schmidt coefficients
     psi_tmp = orthogonalize(psi, b)
     llink = linkinds(psi_tmp, b-1)
     lsite = siteinds(psi_tmp, b)
@@ -78,11 +78,12 @@ function reduced_density_eigen(psi::MPS, x::Int; cutoff=1e-12)
     """
     Calculate the reduced density matrix eigen values of a region of a single sites `x` from other sites.
     """
-    (x < 0 && x > length(psi)) && error("The site does not exist!")
-
+    (x ≤ 0 && x > length(psi)) && error("The site does not exist!")
+    # obtain the reduced density matrix 
     psi_tmp = orthogonalize(psi, x)
     Ap = prime(dag(psi_tmp[x]), tags="Site")
     rho = contract(Ap, psi_tmp[x])
+    # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true, cutoff=cutoff)
     return diag(D)
 end
@@ -96,7 +97,8 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int}; cutoff=1e-12)
 
     xs = sort(xs)
     a, b = xs[1], xs[end]
-    (a < 0 || b > length(psi)) && error("The sites do not exist!")
+    (a ≤ 0 || b > length(psi)) && error("The sites do not exist!")
+    # obtain the reduced density matrix
     ket = orthogonalize(psi, a)
     bra = prime(dag(ket), linkinds(ket)..., siteinds(ket)[xs]...)
     start = prime(ket[a], linkinds(ket, a-1))
@@ -108,7 +110,7 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int}; cutoff=1e-12)
     end
     rho *= prime(ket[b], linkinds(ket, b))
     rho *= bra[b]
-
+    # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true, cutoff=cutoff)
     return diag(D)
 end

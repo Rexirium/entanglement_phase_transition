@@ -12,6 +12,7 @@ default(
 )
 
 let 
+    # Read data from HDF5 file
     file = h5open("entropy_scale_data.h5", "r")
     ps = read(file, "ps")
     ηs = read(file, "ηs")
@@ -21,14 +22,15 @@ let
     eta_scales_mean = read(file, "eta_scales_mean")
     eta_scales_std = read(file, "eta_scales_std")
     close(file)
-
+    # Plotting
+    # Entanglement entropy scaling for varying p
     pp = plot(ps, prob_scales_mean, lw=2,
          yerror=prob_scales_std,
          xlabel=L"p", ylabel=L"S_1", 
          title="entanglement entropy for varying p",
          label=string.(collect(Ls)'),
          legend_title=L"L")
-
+    # Entanglement entropy scaling for varying η
     ep = plot(Ls, eta_scales_mean, lw=2,
          yerror=eta_scales_std,
          xlabel=L"\eta", ylabel=L"S_1",

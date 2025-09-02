@@ -121,13 +121,14 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
     push!(entropies, ini_entropy)
 
     for t in 1:ttotal
+        # the layer for random unitary operators
         start = isodd(t) ? 1 : 2
         for j in start:2:lsize-1
             s1, s2 = sites[j], sites[j+1]
             U = op("RdU", s1, s2)
             psi = apply(U, psi; cutoff)
         end
-
+        # the layer for random non-Hermitian gates
         for j in 1:lsize
             samp = rand()
             if samp < prob
@@ -137,6 +138,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
                 normalize!(psi)
             end
         end
+        # Record the entanglement entropy after each time step
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         push!(entropies, entropy)
     end
@@ -157,19 +159,21 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
     push!(entropies, ini_entropy)
 
     for t in 1:ttotal
+        # Initialize the entropy vector.
         start = isodd(t) ? 1 : 2
         for j in start:2:lsize-1
             s1, s2 = sites[j], sites[j+1]
             U = op("RdU", s1, s2)
             psi = apply(U, psi; cutoff)
         end
-
+        # apply random weak measurement
         for j in 1:lsize
             samp = rand()
             if samp < prob
                 weak_measure!(psi, j, para)
             end
         end
+        # Record the entanglement entropy after each time step
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         push!(entropies, entropy)
     end

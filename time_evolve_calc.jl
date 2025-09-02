@@ -2,6 +2,7 @@ using HDF5
 include("time_evolution.jl")
 
 let 
+    # Parameters
     L = 10
     T, b = 4L, L ÷ 2
     ps = 0.0:0.2:1.0
@@ -18,7 +19,8 @@ let
     for i in 1:nprob
         evolvesamp = []
         distrisamp = []
-        for _ in 1:numsamp
+        # Run multiple samples and average the results.
+        for _ in 1:numsamp 
             psi, evolve = entropy_evolve(psi0, T, ps[i], 0.5, b, 1)
             distri = [Renyi_entropy(psi, x, 1) for x in 0:L]
             push!(evolvesamp, evolve)
@@ -38,6 +40,7 @@ let
     for i in 1:neta
         evolvesamp = []
         distrisamp = []
+        # Run multiple samples and average the results.
         for _ in 1:numsamp
             psi, evolve = entropy_evolve(psi0, T, 0.5, ηs[i], b, 1)
             distri = [Renyi_entropy(psi, x, 1) for x in 0:L]
