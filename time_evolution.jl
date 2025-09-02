@@ -116,9 +116,8 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
     sites = siteinds(psi) 
     lsize = length(sites)
     # Initialize the entropy vector. 
-    entropies = Float64[]
-    ini_entropy = Renyi_entropy(psi0, b, which_ent; cutoff=ent_cutoff)
-    push!(entropies, ini_entropy)
+    entropies = zeros(Float64, ttotal+1)
+    entropies[1] = Renyi_entropy(psi0, b, which_ent; cutoff=ent_cutoff)
 
     for t in 1:ttotal
         # the layer for random unitary operators
@@ -139,8 +138,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
             end
         end
         # Record the entanglement entropy after each time step
-        entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        push!(entropies, entropy)
+        entropies[t+1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
     end
     return psi, entropies
 end
@@ -154,9 +152,8 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
     sites = siteinds(psi) 
     lsize = length(sites)
     # Initialize the entropy vector. 
-    entropies = Float64[]
-    ini_entropy = Renyi_entropy(psi0, b, which_ent; cutoff=ent_cutoff)
-    push!(entropies, ini_entropy)
+    entropies = zeros(Float64, ttotal+1)
+    entropies[1] = Renyi_entropy(psi0, b, which_ent; cutoff=ent_cutoff)
 
     for t in 1:ttotal
         # Initialize the entropy vector.
@@ -174,8 +171,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
             end
         end
         # Record the entanglement entropy after each time step
-        entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        push!(entropies, entropy)
+        entropies[t+1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
     end
     return psi, entropies
 end
