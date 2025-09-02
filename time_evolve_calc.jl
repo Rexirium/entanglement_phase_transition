@@ -10,7 +10,7 @@ let
     T, b = 4L, L ÷ 2
     ps = 0.0:0.2:1.0
     ηs = 0.0:0.5:2.0
-    numsamp = 10
+    numsamp = 100
     nprob, neta = length(ps), length(ηs)
 
     ss = siteinds("S=1/2", L)
