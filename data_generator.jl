@@ -16,14 +16,14 @@ let
     tasks = [(i,j,k) for i in 1:nprob, j in 1:nL, k in 1:neta]
     
     # Parallel computation over all parameter combinations
-    @threads for task in vec(tasks)
+    for task in vec(tasks)
         i, j, k = task
         l = Ls[j]
         p = ps[i]
         η = ηs[k]
         tt, b = 4l, l ÷ 2
         
-        entropy_datas[i,j,k] = entropy_mean(l, tt, p, η, b; numsamp=100)
+        entropy_datas[i,j,k] = entropy_mean_multi(l, tt, p, η, b; numsamp=100)
         
         # Progress tracking
         println("Completed: L=$(l), p=$(round(p,digits=2)), η=$(round(η,digits=2))")

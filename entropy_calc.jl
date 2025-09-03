@@ -53,11 +53,11 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
-    ss = siteinds("S=1/2", lsize)
-    psi0 = MPS(ss, "Up")
     # mean value of `numsamp` samples
     entropies = zeros(Float64, numsamp)
     @threads for i in 1:numsamp 
+        ss = siteinds("S=1/2", lsize)
+        psi0 = MPS(ss, "Up")
         psi = mps_evolve(psi0, ttotal, prob, eta; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         entropies[i] = entropy
@@ -101,11 +101,10 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     """
     Calculate the mean entanglement entropy over multiple samples. (weak measurement case)
     """
-    ss = siteinds("S=1/2", lsize)
-    psi0 = MPS(ss, "Up")
-
     entropies = zeros(Float64, numsamp)
     @threads for i in 1:numsamp 
+        ss = siteinds("S=1/2", lsize)
+        psi0 = MPS(ss, "Up")
         psi = mps_evolve(psi0, ttotal, prob, para; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         entropies[i] = entropy

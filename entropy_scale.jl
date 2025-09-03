@@ -21,24 +21,24 @@ let
     tasks_eta = [(i,j) for i in 1:neta, j in 1:nL]
 
     # Calculate probability scaling
-    @threads for task in vec(tasks_prob)
+    for task in vec(tasks_prob)
         i, j = task
         l = Ls[j]
         tt, b = 4l, l ÷ 2
         p = ps[i]
         prob_scales_mean[i,j], prob_scales_std[i,j] = 
-            entropy_mean(l, tt, p, η0, b; numsamp=10, retstd=true)
+            entropy_mean_multi(l, tt, p, η0, b; numsamp=10, retstd=true)
         println("L=$l, p=$(round(p,digits=2)), η=0.5 done")
     end
 
     # Calculate eta scaling
-    @threads for task in vec(tasks_eta)
+    for task in vec(tasks_eta)
         i, j = task
         l = Ls[j]
         tt, b = 4l, l ÷ 2
         η = ηs[i]
         eta_scales_mean[i,j], eta_scales_std[i,j] = 
-            entropy_mean(l, tt, p0, η, b; numsamp=10, retstd=true)
+            entropy_mean_multi(l, tt, p0, η, b; numsamp=10, retstd=true)
         println("L=$l, p=0.50, η=$(round(η,digits=2)) done")
     end
 
