@@ -118,3 +118,10 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
         return mean_entropy, std_entropy
     end
 end
+
+let 
+    L = 16
+    T, b = 4L, L ÷ 2
+    p0, η0 = 0.5, 0.5
+    @time entropy_mean_multi(L, T, p0, η0, b; numsamp=10, retstd=true)
+end
