@@ -75,6 +75,6 @@ let
     L = 16
     T, b = 4L, L ÷ 2
     p, η = 0.5, 0.5
-    entropy_mean(L, T, p, η, b; numsamp=10, retstd=true)
+    @time entropy_mean(L, T, p, η, b; numsamp=10, retstd=true)
 end
 
