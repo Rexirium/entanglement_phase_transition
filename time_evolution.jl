@@ -73,6 +73,7 @@ function apply!(G2::ITensor, psi::MPS, loc::Tuple{Int, Int}; cutoff::Real=1e-12)
     U, S, V = svd(A, (lsite..., llink...); cutoff=cutoff)
     psi[j1] = U
     psi[j2] = S * V
+    set_ortho_lims!(psi, j2:j2)
 end
 
 function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=1e-12)
