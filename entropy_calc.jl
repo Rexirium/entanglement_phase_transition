@@ -57,8 +57,8 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
     entropies = zeros(Float64, numsamp)
     @threads for i in 1:numsamp 
         ss = siteinds("S=1/2", lsize)
-        psi0 = MPS(ss, "Up")
-        psi = mps_evolve(psi0, ttotal, prob, eta; cutoff=cutoff)
+        psi = MPS(ss, "Up")
+        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         entropies[i] = entropy
     end
@@ -104,8 +104,8 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     entropies = zeros(Float64, numsamp)
     @threads for i in 1:numsamp 
         ss = siteinds("S=1/2", lsize)
-        psi0 = MPS(ss, "Up")
-        psi = mps_evolve(psi0, ttotal, prob, para; cutoff=cutoff)
+        psi = MPS(ss, "Up")
+        mps_evolve!(psi, ttotal, prob, para; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         entropies[i] = entropy
     end
