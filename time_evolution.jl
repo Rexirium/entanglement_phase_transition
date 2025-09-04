@@ -82,7 +82,7 @@ end
 function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=1e-12)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
-    and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
+    and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
     """
     sites = siteinds(psi)
     lsize = length(sites)
@@ -140,7 +140,7 @@ end
 function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}; cutoff::Real=1e-12)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
-    and a weak measurement operator applied to each site with parameters `λ` and `Δ`.
+    and a weak measurement operator applied to each site with parameters `λ` and `Δ`. (inplace version)
     """
     sites = siteinds(psi)
     lsize = length(sites)
@@ -161,7 +161,6 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real};
             end
         end
     end
-    return psi
 end
 
 function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, which_ent::Real=1; 
@@ -203,7 +202,7 @@ end
 function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, which_ent::Real=1; 
      cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
     """
-    Same with function `mps_evolve` but with entanglement entropy biparted at site `b` recorded after each time step.
+    Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
     sites = siteinds(psi) 
     lsize = length(sites)
@@ -268,10 +267,10 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
     return psi, entropies
 end
 
-function entropy_evolve(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int, which_ent::Real=1; 
+function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int, which_ent::Real=1; 
      cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
     """
-    Same with function `mps_evolve` but with entanglement entropy biparted at site `b` recorded after each time step.
+    Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
     sites = siteinds(psi) 
     lsize = length(sites)
@@ -297,7 +296,7 @@ function entropy_evolve(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Rea
         # Record the entanglement entropy after each time step
         entropies[t+1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
     end
-    return psi, entropies
+    return entropies
 end
 
 
