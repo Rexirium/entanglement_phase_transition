@@ -71,6 +71,7 @@ function apply!(G2::ITensor, psi::MPS, loc::Tuple{Int, Int}; cutoff::Real=1e-12)
     U, S, V = svd(A, (llink..., lsite...); cutoff=cutoff)
     psi[j1] = U 
     psi[j2] = S * V
+    set_ortho_lims!(psi, j2:j2)
 end
 
 function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=1e-12)
@@ -324,3 +325,13 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
     end
     return entropies
 end
+#=
+let 
+    ss = siteinds("S=1/2", 10)
+    psi = random_mps(ss; linkdims = 4)
+
+    U = op("RdU", ss[3], ss[4])
+    apply!(U, psi, (3,4); cutoff=1e-12)
+    ortho_lims(psi)
+end
+=#
