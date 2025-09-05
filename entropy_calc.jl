@@ -1,6 +1,7 @@
 using Statistics
 using Base.Threads
 include("time_evolution.jl")
+#ITensors.BLAS.set_num_threads(1)
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
     cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
@@ -60,7 +61,8 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
         psi = MPS(ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        entropies[i] = entropy
+        @inbounds entropies[i] = entropy
+        println("entropy = $entropy, thread $(threadid())")
     end
     mean_entropy = mean(entropies)
     # return std if needed
@@ -107,7 +109,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
         psi = MPS(ss, "Up")
         mps_evolve!(psi, ttotal, prob, para; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        entropies[i] = entropy
+        @inbounds entropies[i] = entropy
     end
 
     mean_entropy = mean(entropies)
@@ -117,11 +119,4 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
         std_entropy = stdm(entropies, mean_entropy; corrected=false)
         return mean_entropy, std_entropy
     end
-end
-
-let 
-    L = 16
-    T, b = 4L, L ÷ 2
-    p0, η0 = 0.5, 0.5
-    @time entropy_mean_multi(L, T, p0, η0, b; numsamp=10, retstd=true)
 end
