@@ -6,11 +6,11 @@ default(
     titlefontsize=14,
     framestyle=:box,
     legend=:topright,
-    # guidefontsize=12,
+    guidefontsize=12,
     legendfontsize=10,
     tickfontsize=10,
-    bottommargin=1Plots.mm,
-    leftmargin=2Plots.mm
+    bottommargin=1.5Plots.mm,
+    leftmargin=3Plots.mm
 )
 
 let 
@@ -41,6 +41,6 @@ let
          legend_title=L"L")
 
     plot(pp, ep, layout=(1,2), size=(1000, 600))
-
+    savefig("figures/entropy_plot.png")
 end
 
