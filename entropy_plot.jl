@@ -1,14 +1,16 @@
 using Plots, LaTeXStrings
+using HDF5
 default(
     grid=false, 
     titlelocation=:left,
+    titlefontsize=14,
     framestyle=:box,
     legend=:topright,
-    guidefontsize=14,
+    # guidefontsize=12,
     legendfontsize=10,
     tickfontsize=10,
-    bottommargin=2Plots.mm,
-    leftmargin=4Plots.mm
+    bottommargin=1Plots.mm,
+    leftmargin=2Plots.mm
 )
 
 let 
@@ -24,21 +26,21 @@ let
     close(file)
     # Plotting
     # Entanglement entropy scaling for varying p
-    pp = plot(ps, prob_scales_mean, lw=2,
-         yerror=prob_scales_std,
+    pp = plot(ps, prob_scales_mean,
+         yerror=prob_scales_std, lw=1,
          xlabel=L"p", ylabel=L"S_1", 
          title="entanglement entropy for varying p",
          label=string.(collect(Ls)'),
          legend_title=L"L")
     # Entanglement entropy scaling for varying η
-    ep = plot(Ls, eta_scales_mean, lw=2,
-         yerror=eta_scales_std,
+    ep = plot(ηs, eta_scales_mean, 
+         yerror=eta_scales_std, lw=1,
          xlabel=L"\eta", ylabel=L"S_1",
          title="entanglement entropy for varying η",
          label=string.(collect(Ls)'),
          legend_title=L"L")
 
-    plot(pp, ep, layout=(1,2), size=(800, 500))
+    plot(pp, ep, layout=(1,2), size=(1000, 600))
 
 end
 
