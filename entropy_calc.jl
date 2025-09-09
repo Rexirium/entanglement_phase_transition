@@ -62,7 +62,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         @inbounds entropies[i] = entropy
-        println("entropy = $entropy, thread $(threadid())")
+        # println("entropy = $entropy, thread $(threadid())")  # check for multithread
     end
     mean_entropy = mean(entropies)
     # return std if needed
