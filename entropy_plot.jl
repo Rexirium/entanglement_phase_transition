@@ -1,4 +1,5 @@
 using Plots, LaTeXStrings
+using HDF5
 default(
     grid=false, 
     titlelocation=:left,
@@ -31,7 +32,7 @@ let
          label=string.(collect(Ls)'),
          legend_title=L"L")
     # Entanglement entropy scaling for varying η
-    ep = plot(Ls, eta_scales_mean, lw=2,
+    ep = plot(ηs, eta_scales_mean, lw=2,
          yerror=eta_scales_std,
          xlabel=L"\eta", ylabel=L"S_1",
          title="entanglement entropy for varying η",
