@@ -41,6 +41,6 @@ let
          legend_title=L"L")
 
     plot(pp, ep, layout=(1,2), size=(1000, 600))
-    savefig("figures/entropy_plot.png")
+    # savefig("figures/entropy_plot.png")
 end
 
