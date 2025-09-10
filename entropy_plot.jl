@@ -40,7 +40,7 @@ let
          label=string.(collect(Ls)'),
          legend_title=L"L")
 
-    plot(pp, ep, layout=(1,2), size=(1000, 600))
-    # savefig("figures/entropy_plot.png")
+    plot(pp, ep, layout=(1,2), size=(1000, 600), dpi=1200)
+    savefig("figures/entropy_plot_100.png")
 end
 
