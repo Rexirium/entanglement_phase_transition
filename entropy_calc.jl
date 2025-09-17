@@ -1,7 +1,7 @@
 using Statistics
 using Base.Threads
 include("time_evolution.jl")
-#ITensors.BLAS.set_num_threads(1)
+ITensors.BLAS.set_num_threads(1)
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
     cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
@@ -56,12 +56,13 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
     """
     # mean value of `numsamp` samples
     entropies = zeros(Float64, numsamp)
+    mylock = ReentrantLock()
     @threads for i in 1:numsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        @inbounds entropies[i] = entropy
+        @lock mylock entropies[i] = entropy
         # println("entropy = $entropy, thread $(threadid())")  # check for multithread
     end
     mean_entropy = mean(entropies)
@@ -104,12 +105,14 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     Calculate the mean entanglement entropy over multiple samples. (weak measurement case)
     """
     entropies = zeros(Float64, numsamp)
+    mylock = ReentrantLock()
+
     @threads for i in 1:numsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(ss, "Up")
         mps_evolve!(psi, ttotal, prob, para; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        @inbounds entropies[i] = entropy
+        @lock mylock entropies[i] = entropy
     end
 
     mean_entropy = mean(entropies)

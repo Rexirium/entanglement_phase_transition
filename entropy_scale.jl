@@ -6,7 +6,7 @@ Threads.nthreads() = 50
 
 let
     # Parameters
-    Ls = 6:4:22
+    Ls = 6:4:14
     p0, η0 = 0.5, 0.5
     ps = 0.0:0.05:1.0
     ηs = 0.0:0.1:2.0
@@ -28,7 +28,7 @@ let
         l = Ls[j]
         tt, b = 4l, l ÷ 2
         p = ps[i]
-        prob_scales_mean[i,j], prob_scales_std[i,j] = 
+        @inbounds prob_scales_mean[i,j], prob_scales_std[i,j] = 
             entropy_mean_multi(l, tt, p, η0, b; numsamp=100, retstd=true)
         println("L=$l, p=$(round(p,digits=2)), η=0.5 done")
     end
@@ -39,7 +39,7 @@ let
         l = Ls[j]
         tt, b = 4l, l ÷ 2
         η = ηs[i]
-        eta_scales_mean[i,j], eta_scales_std[i,j] = 
+        @inbounds eta_scales_mean[i,j], eta_scales_std[i,j] = 
             entropy_mean_multi(l, tt, p0, η, b; numsamp=100, retstd=true)
         println("L=$l, p=0.50, η=$(round(η,digits=2)) done")
     end

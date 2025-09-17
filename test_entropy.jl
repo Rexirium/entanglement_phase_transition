@@ -7,7 +7,7 @@ include("entanglement_entropies.jl")
 mylock = ReentrantLock()
 
 let 
-    num = 20
+    num = 100
     results = zeros(num)
     @threads for i in 1:num
         ss = siteinds("S=1/2", 10)
