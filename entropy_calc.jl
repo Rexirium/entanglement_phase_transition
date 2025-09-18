@@ -123,3 +123,19 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
         return mean_entropy, std_entropy
     end
 end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    # example usage
+    L = 10
+    T, b = 4L, L ÷ 2
+    prob = 0.1
+    eta = 1.0
+    numsamp = 20
+
+    mean_entropy, std_entropy = entropy_mean_multi(L, T, prob, eta; numsamp=numsamp, retstd=true)
+    println("Mean entropy (non-Hermitian): $mean_entropy ± $std_entropy")
+
+    para = (0.5, 0.5)
+    mean_entropy, std_entropy = entropy_mean_multi(L, T, prob, para; numsamp=numsamp, retstd=true)
+    println("Mean entropy (weak measurement): $mean_entropy ± $std_entropy")
+end
