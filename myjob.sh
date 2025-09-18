@@ -13,4 +13,4 @@ module load julia
 
 export JULIA_NUM_THREADS=50
 
-julia --sysimage ~/.julia/sysimages/sys_itensors.so ./entropy_scale.jl
+julia ./entropy_scale.jl

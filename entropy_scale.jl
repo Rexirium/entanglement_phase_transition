@@ -6,7 +6,7 @@ Threads.nthreads() = 50
 
 let
     # Parameters
-    Ls = 6:4:14
+    Ls = 8:4:16
     p0, η0 = 0.5, 0.5
     ps = 0.0:0.05:1.0
     ηs = 0.0:0.1:2.0
