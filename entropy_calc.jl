@@ -1,5 +1,6 @@
 using Statistics
 using Base.Threads
+using Profile
 include("time_evolution.jl")
 ITensors.BLAS.set_num_threads(1)
 
@@ -56,14 +57,15 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
     """
     # mean value of `numsamp` samples
     entropies = zeros(Float64, numsamp)
-    mylock = ReentrantLock()
+
     @threads for i in 1:numsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        @lock mylock entropies[i] = entropy
-        # println("entropy = $entropy, thread $(threadid())")  # check for multithread
+        @inbounds entropies[i] = entropy
+        psi = nothing
+        ss = nothing
     end
     mean_entropy = mean(entropies)
     # return std if needed
@@ -105,14 +107,15 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     Calculate the mean entanglement entropy over multiple samples. (weak measurement case)
     """
     entropies = zeros(Float64, numsamp)
-    mylock = ReentrantLock()
 
     @threads for i in 1:numsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(ss, "Up")
         mps_evolve!(psi, ttotal, prob, para; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        @lock mylock entropies[i] = entropy
+        @inbounds entropies[i] = entropy
+        psi = nothing
+        ss = nothing
     end
 
     mean_entropy = mean(entropies)
@@ -124,18 +127,15 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     end
 end
 
-if abspath(PROGRAM_FILE) == @__FILE__
+let
+#if abspath(PROGRAM_FILE) == @__FILE__
     # example usage
     L = 10
     T, b = 4L, L ÷ 2
     prob = 0.1
     eta = 1.0
-    numsamp = 20
+    numsamp = 40
 
-    mean_entropy, std_entropy = entropy_mean_multi(L, T, prob, eta; numsamp=numsamp, retstd=true)
+    @timev mean_entropy, std_entropy = entropy_mean_multi(L, T, prob, eta; numsamp=numsamp, retstd=true)
     println("Mean entropy (non-Hermitian): $mean_entropy ± $std_entropy")
-
-    para = (0.5, 0.5)
-    mean_entropy, std_entropy = entropy_mean_multi(L, T, prob, para; numsamp=numsamp, retstd=true)
-    println("Mean entropy (weak measurement): $mean_entropy ± $std_entropy")
 end
