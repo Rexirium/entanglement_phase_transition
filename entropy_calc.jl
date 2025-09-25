@@ -1,6 +1,5 @@
 using Statistics
 using Base.Threads
-using Profile
 include("time_evolution.jl")
 ITensors.BLAS.set_num_threads(1)
 
@@ -127,10 +126,9 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     end
 end
 
-let
-#if abspath(PROGRAM_FILE) == @__FILE__
+if abspath(PROGRAM_FILE) == @__FILE__
     # example usage
-    L = 10
+    L = 14
     T, b = 4L, L ÷ 2
     prob = 0.1
     eta = 1.0

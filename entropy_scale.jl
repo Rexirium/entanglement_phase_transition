@@ -2,14 +2,12 @@ using HDF5
 using Base.Threads
 include("entropy_calc.jl")
 
-Threads.nthreads() = 50
-
 let
     # Parameters
-    Ls = 8:4:16
+    Ls = 8:4:20
     p0, η0 = 0.5, 0.5
     ps = 0.0:0.05:1.0
-    ηs = 0.0:0.1:2.0
+    ηs = 0.0:0.05:1.0
     nprob, neta, nL = length(ps), length(ηs), length(Ls)
     
     # Store results
