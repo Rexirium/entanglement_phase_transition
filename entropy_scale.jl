@@ -21,26 +21,24 @@ let
     tasks_eta = [(i,j) for i in 1:neta, j in 1:nL]
 
     # Calculate probability scaling
+    io = open("entropy_scale_log.txt", "w")
     for task in vec(tasks_prob)
         i, j = task
         l = Ls[j]
-        tt, b = 4l, l ÷ 2
-        p = ps[i]
-        @inbounds prob_scales_mean[i,j], prob_scales_std[i,j] = 
-            entropy_mean_multi(l, tt, p, η0, b; numsamp=100, retstd=true)
-        println("L=$l, p=$(round(p,digits=2)), η=0.5 done")
+        prob_scales_mean[i,j], prob_scales_std[i,j] = 
+            entropy_mean_multi(l, 4l, ps[i], η0, l÷2; numsamp=100, retstd=true)
+        println(io, "L=$l, p=$(round(ps[i],digits=2)), η=0.5 done")
     end
 
     # Calculate eta scaling
     for task in vec(tasks_eta)
         i, j = task
         l = Ls[j]
-        tt, b = 4l, l ÷ 2
-        η = ηs[i]
-        @inbounds eta_scales_mean[i,j], eta_scales_std[i,j] = 
-            entropy_mean_multi(l, tt, p0, η, b; numsamp=100, retstd=true)
-        println("L=$l, p=0.50, η=$(round(η,digits=2)) done")
+        eta_scales_mean[i,j], eta_scales_std[i,j] = 
+            entropy_mean_multi(l, 4l, p0, ηs[i], l÷2; numsamp=100, retstd=true)
+        println(io, "L=$l, p=0.50, η=$(round(ηs[i],digits=2)) done")
     end
+    close(io)
 
     # Save data to HDF5 file
     h5open("entropy_scale_data.h5", "w") do file
