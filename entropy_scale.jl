@@ -39,7 +39,7 @@ let
     end
 
     # Save data to HDF5 file
-    h5open("entropy_scale_data.h5", "w") do file
+    h5open("entropy_scale_test.h5", "w") do file
         write(file, "ps", collect(ps))
         write(file, "ηs", collect(ηs))
         write(file, "Ls", collect(Ls))
