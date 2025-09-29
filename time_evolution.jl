@@ -83,9 +83,8 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
     lsize = length(sites)
 
     for t in 1:ttotal
-        start = isodd(t) ? 1 : 2
         # Apply random unitary operators to pairs of sites
-        for j in start:2:lsize-1
+        for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1])
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
@@ -112,9 +111,8 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
     lsize = length(sites)
 
     for t in 1:ttotal
-        start = isodd(t) ? 1 : 2
         # Apply random unitary operators to pairs of sites
-        for j in start:2:lsize-1
+        for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1])
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
@@ -141,9 +139,8 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real};
     lsize = length(sites)
 
     for t in 1:ttotal
-        start = isodd(t) ? 1 : 2
         # Apply random unitary operators to pairs of sites
-        for j in start:2:lsize-1
+        for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1])
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
@@ -167,9 +164,8 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real};
     lsize = length(sites)
 
     for t in 1:ttotal
-        start = isodd(t) ? 1 : 2
         # Apply random unitary operators to pairs of sites
-        for j in start:2:lsize-1
+        for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1])
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
@@ -197,8 +193,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
 
     for t in 1:ttotal
         # the layer for random unitary operators
-        start = isodd(t) ? 1 : 2
-        for j in start:2:lsize-1
+        for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1])
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
@@ -230,8 +225,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
 
     for t in 1:ttotal
         # the layer for random unitary operators
-        start = isodd(t) ? 1 : 2
-        for j in start:2:lsize-1
+        for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1])
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
@@ -264,8 +258,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
 
     for t in 1:ttotal
         # Initialize the entropy vector.
-        start = isodd(t) ? 1 : 2
-        for j in start:2:lsize-1
+        for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1])
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
@@ -295,8 +288,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
 
     for t in 1:ttotal
         # Initialize the entropy vector.
-        start = isodd(t) ? 1 : 2
-        for j in start:2:lsize-1
+        for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1])
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
