@@ -9,7 +9,7 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=l
     Calculate the final entanglement entropy of the MPS after time evolution. (non-Hermitian case)
     """
     ss = siteinds("S=1/2", lsize)
-    psi0 = MPS(ss, "Up")
+    psi0 = MPS(ComplexF64, ss, "Up")
     psi = mps_evolve(psi0, ttotal, prob, eta; cutoff=cutoff)
     return Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
 end
@@ -20,7 +20,7 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, R
     Calculate the final entanglement entropy of the MPS after time evolution. (weak measurement case)
     """
     ss = siteinds("S=1/2", lsize)
-    psi0 = MPS(ss, "Up")
+    psi0 = MPS(ComplexF64, ss, "Up")
     psi = mps_evolve(psi0, ttotal, prob, para; cutoff=cutoff)
     return Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
 end
@@ -31,7 +31,7 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsi
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
     ss = siteinds("S=1/2", lsize)
-    psi0 = MPS(ss, "Up")
+    psi0 = MPS(ComplexF64, ss, "Up")
     # mean value of `numsamp` samples
     entropies = zeros(Float64, numsamp)
     for i in 1:numsamp 
@@ -59,7 +59,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
 
     @threads for i in 1:numsamp 
         ss = siteinds("S=1/2", lsize)
-        psi = MPS(ss, "Up")
+        psi = MPS(ComplexF64, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         @inbounds entropies[i] = entropy
@@ -82,7 +82,7 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Rea
     Calculate the mean entanglement entropy over multiple samples. (weak measurement case)
     """
     ss = siteinds("S=1/2", lsize)
-    psi0 = MPS(ss, "Up")
+    psi0 = MPS(ComplexF64, ss, "Up")
 
     entropies = zeros(Float64, numsamp)
     for i in 1:numsamp 
@@ -109,7 +109,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
 
     @threads for i in 1:numsamp 
         ss = siteinds("S=1/2", lsize)
-        psi = MPS(ss, "Up")
+        psi = MPS(ComplexF64, ss, "Up")
         mps_evolve!(psi, ttotal, prob, para; cutoff=cutoff)
         entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         @inbounds entropies[i] = entropy
