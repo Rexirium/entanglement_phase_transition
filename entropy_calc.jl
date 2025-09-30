@@ -122,8 +122,8 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     end
 end
 
-#if abspath(PROGRAM_FILE) == @__FILE__
-let
+if abspath(PROGRAM_FILE) == @__FILE__
+# let
     # example usage
     L = 12
     T, b = 4L, L ÷ 2
