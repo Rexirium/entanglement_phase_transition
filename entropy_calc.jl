@@ -36,8 +36,7 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsi
     entropies = zeros(Float64, numsamp)
     for i in 1:numsamp 
         psi = mps_evolve(psi0, ttotal, prob, eta; cutoff=cutoff)
-        entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        entropies[i] = entropy
+        entropies[i] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
     end
     mean_entropy = mean(entropies)
     # return std if needed
@@ -61,8 +60,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
         ss = siteinds("S=1/2", lsize)
         psi = MPS(ComplexF64, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        @inbounds entropies[i] = entropy
+        @inbounds entropies[i] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         psi = nothing
         ss = nothing
     end
@@ -87,8 +85,7 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Rea
     entropies = zeros(Float64, numsamp)
     for i in 1:numsamp 
         psi = mps_evolve(psi0, ttotal, prob, para; cutoff=cutoff)
-        entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        entropies[i] = entropy
+        entropies[i] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
     end
 
     mean_entropy = mean(entropies)
@@ -111,8 +108,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
         ss = siteinds("S=1/2", lsize)
         psi = MPS(ComplexF64, ss, "Up")
         mps_evolve!(psi, ttotal, prob, para; cutoff=cutoff)
-        entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-        @inbounds entropies[i] = entropy
+        @inbounds entropies[i] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         psi = nothing
         ss = nothing
     end
@@ -126,14 +122,15 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     end
 end
 
-if abspath(PROGRAM_FILE) == @__FILE__
+#if abspath(PROGRAM_FILE) == @__FILE__
+let
     # example usage
-    L = 14
+    L = 12
     T, b = 4L, L ÷ 2
-    prob = 0.1
-    eta = 1.0
-    numsamp = 40
+    prob = 0.5
+    eta = 0.5
+    numsamp = 10
 
-    @timev mean_entropy, std_entropy = entropy_mean_multi(L, T, prob, eta; numsamp=numsamp, retstd=true)
-    println("Mean entropy (non-Hermitian): $mean_entropy ± $std_entropy")
+    @timev  entropy_mean(L, T, prob, eta; numsamp=numsamp, retstd=true)
+    @timev  entropy_mean_multi(L, T, prob, eta; numsamp=numsamp, retstd=true)
 end

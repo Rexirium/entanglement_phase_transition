@@ -13,21 +13,24 @@ let
     numsamp = 100
     nprob, neta = length(ps), length(ηs)
 
-    ss = siteinds("S=1/2", L)
-    psi0 = MPS(ss, "Up")
-
     prob_evolves = zeros(T+1, nprob)
     prob_distris = zeros(L+1, nprob)
 
-    @threads for i in 1:nprob
+    for i in 1:nprob
         evolvesamp = zeros(T+1, numsamp)
         distrisamp = zeros(L+1, numsamp)
         # Run multiple samples and average the results.
-        for j in 1:numsamp
-            psi, evolve = entropy_evolve(psi0, T, ps[i], 0.5, b, 1)
+        @threads for j in 1:numsamp
+            ss = siteinds("S=1/2", L)
+            psi = MPS(ComplexF64, ss, "Up")
+            evolve = entropy_evolve!(psi, T, ps[i], 0.5, b, 1)
             distri = [Renyi_entropy(psi, x, 1) for x in 0:L]
             evolvesamp[:, j] .= evolve
             distrisamp[:, j] .= distri
+            psi = nothing
+            ss =nothing
+            evlvoe = nothing
+            distri = nothing
         end
 
         meanevolve = sum(evolvesamp, dims=2)/numsamp
@@ -40,15 +43,21 @@ let
     eta_evolves = zeros(T+1, neta)
     eta_distris = zeros(L+1, neta)
 
-    @threads for i in 1:neta
+    for i in 1:neta
         evolvesamp = zeros(T+1, numsamp)
         distrisamp = zeros(L+1, numsamp)
         # Run multiple samples and average the results.
-        for j in 1:numsamp
-            psi, evolve = entropy_evolve(psi0, T, 0.5, ηs[i], b, 1)
+        @threads for j in 1:numsamp
+            ss = siteinds("S=1/2", L)
+            psi = MPS(ComplexF64, ss, "Up")
+            evolve = entropy_evolve!(psi, T, 0.5, ηs[i], b, 1)
             distri = [Renyi_entropy(psi, x, 1) for x in 0:L]
             evolvesamp[:, j] .= evolve
             distrisamp[:, j] .= distri
+            psi = nothing
+            ss =nothing
+            evlvoe = nothing
+            distri = nothing
         end
 
         meanevolve = sum(evolvesamp, dims=2)/numsamp

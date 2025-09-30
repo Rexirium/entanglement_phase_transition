@@ -4,9 +4,9 @@ include("entropy_calc.jl")
 
 let 
     # Model parameters
-    Ls = 8:8:48
+    Ls = 8:4:20
     ps = 0.0:0.05:1.0
-    ηs = 0.0:0.5:2.0
+    ηs = 0.0:0.2:1.0
     nL, nprob, neta = length(Ls), length(ps), length(ηs)
     
     # Store entanglement entropy data
@@ -19,11 +19,8 @@ let
     for task in vec(tasks)
         i, j, k = task
         l = Ls[j]
-        p = ps[i]
-        η = ηs[k]
         tt, b = 4l, l ÷ 2
-        
-        entropy_datas[i,j,k] = entropy_mean_multi(l, tt, p, η, b; numsamp=100)
+        entropy_datas[i,j,k] = entropy_mean_multi(l, tt, ps[i], ηs[k], b; numsamp=100)
         
         # Progress tracking
         println("Completed: L=$(l), p=$(round(p,digits=2)), η=$(round(η,digits=2))")
