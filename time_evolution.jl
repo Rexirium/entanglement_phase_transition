@@ -55,7 +55,7 @@ function apply!(G1::ITensor, psi::MPS, loc::Int)
     psi[loc] = A
 end
 
-function apply!(G2::ITensor, psi::MPS, j1::Int, j2::Int; cutoff::Real=1e-12)
+function apply!(G2::ITensor, psi::MPS, j1::Int, j2::Int; cutoff::Real=1e-8)
     """
     Apply two adjacent site gate `G2` to the MPS `psi` at sites `loc` inplace.
     """
@@ -72,7 +72,7 @@ function apply!(G2::ITensor, psi::MPS, j1::Int, j2::Int; cutoff::Real=1e-12)
     set_ortho_lims!(psi, j2:j2)
 end
 
-function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=1e-12)
+function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=1e-10)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
@@ -101,7 +101,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
     return psi
 end
 
-function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=1e-12)
+function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=1e-10)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
@@ -128,7 +128,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
     end
 end
 
-function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}; cutoff::Real=1e-12)
+function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}; cutoff::Real=1e-10)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a weak measurement operator applied to each site with parameters `λ` and `Δ`.
@@ -154,7 +154,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real};
     return psi
 end
 
-function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}; cutoff::Real=1e-12)
+function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}; cutoff::Real=1e-10)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a weak measurement operator applied to each site with parameters `λ` and `Δ`. (inplace version)
@@ -179,7 +179,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real};
 end
 
 function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
+     cutoff::Real=1e-10, ent_cutoff::Real=1e-8)
     """
     Same with function `mps_evolve` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
@@ -212,7 +212,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
 end
 
 function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
+     cutoff::Real=1e-10, ent_cutoff::Real=1e-8)
     """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
@@ -244,7 +244,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
 end
 
 function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
+     cutoff::Real=1e-10, ent_cutoff::Real=1e-8)
     """
     Same with function `mps_evolve` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
@@ -275,7 +275,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
 end
 
 function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12, ent_cutoff::Real=1e-10)
+     cutoff::Real=1e-10, ent_cutoff::Real=1e-8)
     """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
@@ -310,6 +310,6 @@ if abspath(PROGRAM_FILE) == @__FILE__
     psi = random_mps(ss; linkdims = 4)
 
     U = op("RdU", ss[3], ss[4])
-    apply!(U, psi, 3, 4; cutoff=1e-12)
+    apply!(U, psi, 3, 4; cutoff=1e-10)
     ortho_lims(psi)
 end

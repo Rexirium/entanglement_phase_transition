@@ -1,4 +1,4 @@
-function von_Neumann_entropy(psi::MPS, b::Int; cutoff=1e-12)
+function von_Neumann_entropy(psi::MPS, b::Int; cutoff=1e-10)
     """
     Calculate the von Neumann entropy of the MPS `psi` biparted after site `b`.
     """
@@ -12,7 +12,7 @@ function von_Neumann_entropy(psi::MPS, b::Int; cutoff=1e-12)
     return - sum(ps .* log2.(ps))
 end
 
-function zeroth_entropy(psi::MPS, b::Int; cutoff=1e-12)
+function zeroth_entropy(psi::MPS, b::Int; cutoff=1e-10)
     """
     Calculate the zeroth order Renyi entropy of the MPS `psi` biparted after site `b`.
     """
@@ -26,7 +26,7 @@ function zeroth_entropy(psi::MPS, b::Int; cutoff=1e-12)
     return log2(chi)
 end
 
-function Renyi_entropy(psi::MPS, b::Int, n::Real; cutoff=1e-12)
+function Renyi_entropy(psi::MPS, b::Int, n::Real; cutoff=1e-10)
     """
     Calculate the n-th order Renyi entropy of the MPS `psi` biparted after site `b`.
     """
@@ -43,7 +43,7 @@ function Renyi_entropy(psi::MPS, b::Int, n::Real; cutoff=1e-12)
     return log2(trace)/(1-n)
 end
 
-function von_Neumann_entropy_region(psi::MPS, xs; cutoff = 1e-12)
+function von_Neumann_entropy_region(psi::MPS, xs; cutoff = 1e-10)
     """
     Calculate the von Neumann entropy of a single site `x` from other sites.
     """
@@ -51,7 +51,7 @@ function von_Neumann_entropy_region(psi::MPS, xs; cutoff = 1e-12)
     return - sum(ps .* log2.(ps))
 end
 
-function zeroth_entropy_region(psi::MPS, xs; cutoff = 1e-12)
+function zeroth_entropy_region(psi::MPS, xs; cutoff = 1e-10)
     """
     Calculate the zeroth order Renyi entropy of a region of sites `x` from other sites.
     """
@@ -59,7 +59,7 @@ function zeroth_entropy_region(psi::MPS, xs; cutoff = 1e-12)
     return log2(length(ps))
 end
 
-function Renyi_entropy_region(psi::MPS, xs, n::Real; cutoff = 1e-12)
+function Renyi_entropy_region(psi::MPS, xs, n::Real; cutoff = 1e-10)
     """
     Calculate the n-th order Renyi entropy of a region of sites `x` from other sites.
     """
@@ -71,7 +71,7 @@ function Renyi_entropy_region(psi::MPS, xs, n::Real; cutoff = 1e-12)
     return log2(trace)/(1-n)
 end
 
-function reduced_density_eigen(psi::MPS, x::Int; cutoff=1e-12)
+function reduced_density_eigen(psi::MPS, x::Int; cutoff=1e-10)
     """
     Calculate the reduced density matrix eigen values of a region of a single sites `x` from other sites.
     """
@@ -85,7 +85,7 @@ function reduced_density_eigen(psi::MPS, x::Int; cutoff=1e-12)
     return diag(D)
 end
 
-function reduced_density_eigen(psi::MPS, xs::Vector{<:Int}; cutoff=1e-12)
+function reduced_density_eigen(psi::MPS, xs::Vector{<:Int}; cutoff=1e-10)
     """
     Calculate the reduced density matrix eigen values of multiple sites `xs` from other sites.
     """
@@ -112,7 +112,7 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int}; cutoff=1e-12)
     return diag(D)
 end
 
-function mutual_information_region(psi::MPS, as, bs, n::Real=1; cutoff=1e-12)
+function mutual_information_region(psi::MPS, as, bs, n::Real=1; cutoff=1e-10)
     """
     Calculate the mutual information of two separate region of sites `as` and `bs`.
     """
