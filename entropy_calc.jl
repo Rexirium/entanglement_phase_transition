@@ -9,8 +9,8 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=l
     Calculate the final entanglement entropy of the MPS after time evolution. (non-Hermitian case)
     """
     ss = siteinds("S=1/2", lsize)
-    psi0 = MPS(ComplexF64, ss, "Up")
-    psi = mps_evolve(psi0, ttotal, prob, eta; cutoff=cutoff)
+    psi = MPS(ComplexF64, ss, "Up")
+    mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
     return Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
 end
 
@@ -20,8 +20,8 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, R
     Calculate the final entanglement entropy of the MPS after time evolution. (weak measurement case)
     """
     ss = siteinds("S=1/2", lsize)
-    psi0 = MPS(ComplexF64, ss, "Up")
-    psi = mps_evolve(psi0, ttotal, prob, para; cutoff=cutoff)
+    psi = MPS(ComplexF64, ss, "Up")
+    mps_evolve!(psi, ttotal, prob, para; cutoff=cutoff)
     return Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
 end
 
@@ -64,6 +64,23 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
         psi = nothing
         ss = nothing
     end
+    mean_entropy = mean(entropies)
+    # return std if needed
+    if retstd==false
+        return mean_entropy
+    else
+        std_entropy = stdm(entropies, mean_entropy; corrected=false)
+        return mean_entropy, std_entropy
+    end
+end
+
+function entropy_mean_spawn(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
+    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false)
+    """
+    Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
+    """
+    entropies = fetch.([@spawn entropy_sample(lsize, ttotal, prob, eta, b, which_ent; 
+        cutoff=cutoff, ent_cutoff=ent_cutoff) for _ in 1:numsamp])
     mean_entropy = mean(entropies)
     # return std if needed
     if retstd==false
@@ -121,4 +138,22 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
         return mean_entropy, std_entropy
     end
 end
+
+function entropy_mean_spawn(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int=lsize ÷ 2, which_ent::Real=1; 
+    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false)
+    """
+    Calculate the mean entanglement entropy over multiple samples. (weak measurement case)
+    """
+    entropies = fetch.([@spawn entropy_sample(lsize, ttotal, prob, para, b, whic_ent; 
+        cutoff=cutoff, ent_cutoff=ent_cutoff) for _ in 1:numsamp])
+    mean_entropy = mean(entropies)
+    # return std if needed
+    if retstd==false
+        return mean_entropy
+    else
+        std_entropy = stdm(entropies, mean_entropy; corrected=false)
+        return mean_entropy, std_entropy
+    end
+end
+
 
