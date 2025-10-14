@@ -1,5 +1,5 @@
+using MKL
 using HDF5
-using Base.Threads
 include("entropy_calc.jl")
 
 let 

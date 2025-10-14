@@ -1,7 +1,11 @@
 using Statistics
 using Base.Threads
-include("time_evolution.jl")
+using ITensors, ITensorMPS
+using Strided
 ITensors.BLAS.set_num_threads(1)
+Strided.disable_threads()
+
+include("time_evolution.jl")
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
     cutoff::Real=1e-12, ent_cutoff::Real=1e-12)
@@ -74,6 +78,23 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
     end
 end
 
+function entropy_mean_spawn(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
+    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false)
+    """
+    Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
+    """
+    entropies = fetch.([@spawn entropy_sample(lsize, ttotal, prob, eta, b, which_ent; 
+        cutoff=cutoff, ent_cutoff=ent_cutoff) for _ in 1:numsamp])
+    mean_entropy = mean(entropies)
+    # return std if needed
+    if retstd==false
+        return mean_entropy
+    else
+        std_entropy = stdm(entropies, mean_entropy; corrected=false)
+        return mean_entropy, std_entropy
+    end
+end
+
 function entropy_mean(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int=lsize ÷ 2, which_ent::Real=1; 
     numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false)
     """
@@ -121,4 +142,22 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
         return mean_entropy, std_entropy
     end
 end
+
+function entropy_mean_spawn(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Real}, b::Int=lsize ÷ 2, which_ent::Real=1; 
+    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false)
+    """
+    Calculate the mean entanglement entropy over multiple samples. (weak measurement case)
+    """
+    entropies = fetch.([@spawn entropy_sample(lsize, ttotal, prob, para, b, whic_ent; 
+        cutoff=cutoff, ent_cutoff=ent_cutoff) for _ in 1:numsamp])
+    mean_entropy = mean(entropies)
+    # return std if needed
+    if retstd==false
+        return mean_entropy
+    else
+        std_entropy = stdm(entropies, mean_entropy; corrected=false)
+        return mean_entropy, std_entropy
+    end
+end
+
 

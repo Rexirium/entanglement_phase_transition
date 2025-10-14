@@ -1,4 +1,3 @@
-using ITensors, ITensorMPS
 include("entanglement_entropies.jl")
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype=ComplexF64)
