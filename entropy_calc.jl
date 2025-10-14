@@ -1,7 +1,11 @@
 using Statistics
 using Base.Threads
-include("time_evolution.jl")
+using ITensors, ITensorMPS
+using Strided
 ITensors.BLAS.set_num_threads(1)
+Strided.disable_threads()
+
+include("time_evolution.jl")
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=lsize ÷ 2, which_ent::Real=1; 
     cutoff::Real=1e-12, ent_cutoff::Real=1e-12)
