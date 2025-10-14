@@ -9,8 +9,8 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::Int=l
     Calculate the final entanglement entropy of the MPS after time evolution. (non-Hermitian case)
     """
     ss = siteinds("S=1/2", lsize)
-    psi0 = MPS(ComplexF64, ss, "Up")
-    psi = mps_evolve(psi0, ttotal, prob, eta; cutoff=cutoff)
+    psi = MPS(ComplexF64, ss, "Up")
+    mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
     return Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
 end
 
@@ -20,8 +20,8 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, R
     Calculate the final entanglement entropy of the MPS after time evolution. (weak measurement case)
     """
     ss = siteinds("S=1/2", lsize)
-    psi0 = MPS(ComplexF64, ss, "Up")
-    psi = mps_evolve(psi0, ttotal, prob, para; cutoff=cutoff)
+    psi = MPS(ComplexF64, ss, "Up")
+    mps_evolve!(psi, ttotal, prob, para; cutoff=cutoff)
     return Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
 end
 
