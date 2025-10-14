@@ -1,9 +1,8 @@
 using Statistics
 using Base.Threads
 using ITensors, ITensorMPS
-using Strided
 ITensors.BLAS.set_num_threads(1)
-Strided.disable_threads()
+ITensors.Strided.set_num_threads(1)
 
 include("time_evolution.jl")
 
