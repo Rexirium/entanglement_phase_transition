@@ -1,5 +1,6 @@
 .vscode/
 /calc_test.jl
+*.sh
 *.out
 *.err
 *.out
