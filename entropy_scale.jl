@@ -25,7 +25,7 @@ let
     for task in vec(tasks_prob)
         i, j = task
         l = Ls[j]
-	cutoff = l^3 * 1e-8
+	cutoff = l^3 * 1e-12
         prob_scales_mean[i,j], prob_scales_std[i,j] = 
             entropy_mean_multi(l, 4l, ps[i], η0, l÷2; 
 		numsamp=100, cutoff=cutoff, ent_cutoff=cutoff,  retstd=true)
@@ -36,6 +36,7 @@ let
     for task in vec(tasks_eta)
         i, j = task
         l = Ls[j]
+	cutoff = l^3 * 1e-12
         eta_scales_mean[i,j], eta_scales_std[i,j] = 
             entropy_mean_multi(l, 4l, p0, ηs[i], l÷2; 
 		numsamp=100, cutoff=cutoff, ent_cutoff=cutoff, retstd=true)
