@@ -1,5 +1,6 @@
 using MKL
 using HDF5
+MKL.set_num_threads(1)
 include("entropy_calc.jl")
 
 let 
