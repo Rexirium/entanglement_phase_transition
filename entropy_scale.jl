@@ -5,7 +5,7 @@ include("entropy_calc.jl")
 
 let
     # Parameters
-    Ls = 8:4:16
+    Ls = 8:4:20
     p0, η0 = 0.5, 0.5
     ps = 0.0:0.05:1.0
     ηs = 0.0:0.05:1.0
