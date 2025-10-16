@@ -16,7 +16,7 @@ default(
 let 
     # Read data from HDF5 file
 
-    file = h5open("data/entropy_scale_data.h5", "r")
+    file = h5open("data/entropy_scale_L8_2_18.h5", "r")
 
     Ls = read(file, "params/Ls")
     ps = read(file, "params/ps")
@@ -32,7 +32,7 @@ let
     eta_scales_mean = Matrix{Float64}(undef, neta, nL)
     eta_scales_std = Matrix{Float64}(undef, neta, nL)
 
-    file = h5open("data/entropy_scale_data.h5", "r")
+    file = h5open("data/entropy_scale_L8_2_18.h5", "r")
     for (i,l) in enumerate(Ls)
         prob_scales_mean[:, i] .= read(file, "results_L=$l/prob_scales_mean")
         prob_scales_std[:, i] .= read(file, "results_L=$l/prob_scales_std")
@@ -48,6 +48,7 @@ let
          title="Entanglement entropy for varying p, \\eta=$η0",
          label=string.(Ls'),
          legend_title=L"L")
+    scatter!(ps, prob_scales_mean, markersize=4)
     # Entanglement entropy scaling for varying η
     ep = plot(ηs, eta_scales_mean, 
          yerror=eta_scales_std, lw=1,
@@ -55,8 +56,9 @@ let
          title="Entanglement entropy for varying \\eta, p=$p0",
          label=string.(Ls'),
          legend_title=L"L")
+    scatter!(ηs, eta_scales_mean, markersize=4)
 
     plot(pp, ep, layout=(1,2), size=(1000, 600), dpi=1200)
-    savefig("figures/entropy_plot_sampx100.png")
+    #savefig("figures/entropy_plot_L8_2_18.png")
 end
 

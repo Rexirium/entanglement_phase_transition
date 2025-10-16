@@ -5,15 +5,15 @@ include("entropy_calc.jl")
 
 let
     # Parameters
-    N = ARGS[1] == nothing ? 100 : parse(Int, ARGS[1])
+    N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
 
     p0, η0 = 0.5, 0.5
     ps = 0.0:0.05:1.0
     ηs = 0.0:0.05:1.0
-    Ls = 8:4:16
+    Ls = 8:2:18
     nprob, neta = length(ps), length(ηs)
 
-    h5open("data/entropy_scale_data.h5", "w") do file
+    h5open("data/entropy_scale_L8_2_18.h5", "w") do file
         grp = create_group(file, "params")
         write(grp, "N", N)  
         write(grp, "p0", p0)  
@@ -49,7 +49,7 @@ let
         end
 
         # Save data to HDF5 file
-        h5open("data/entropy_scale_data.h5", "cw") do file
+        h5open("data/entropy_scale_L8_2_18.h5", "cw") do file
             # create group if not exists
             grp = create_group(file, "results_L=$L")     
 
