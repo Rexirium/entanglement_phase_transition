@@ -11,7 +11,7 @@ let
     ps = 0.0:0.05:1.0
     ηs = 0.0:0.05:1.0
     Ls = 8:4:16
-    nprob, neta = length(ps), length(ηs), length(Ls)
+    nprob, neta, nL = length(ps), length(ηs), length(Ls)
 
     h5open("data/entropy_scale_data.h5", "w") do file
         grp = create_group(file, "params")
