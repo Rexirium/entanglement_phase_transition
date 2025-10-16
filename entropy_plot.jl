@@ -20,7 +20,7 @@ let
     eta_scales_mean = Matrix{Float64}(undef, neta, nL)
     eta_scales_std = Matrix{Float64}(undef, neta, nL)
 
-    file = h5open("entropy_scale_data.h5", "r")
+    file = h5open("data/entropy_scale_data.h5", "r")
 
     Ls = read(file, "params/Ls")
     ps = read(file, "params/ps")

@@ -13,7 +13,7 @@ let
     Ls = 8:4:16
     nprob, neta = length(ps), length(ηs), length(Ls)
 
-    h5open("entropy_scale_data.h5", "w") do file
+    h5open("data/entropy_scale_data.h5", "w") do file
         grp = create_group(file, "params")
         write(grp, "N", N)  
         write(grp, "p0", p0)  
@@ -49,7 +49,7 @@ let
         end
 
         # Save data to HDF5 file
-        h5open("entropy_scale_data.h5", "cw") do file
+        h5open("data/entropy_scale_data.h5", "cw") do file
             # create group if not exists
             grp = create_group(file, "results_L=$L")     
 
