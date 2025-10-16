@@ -38,13 +38,16 @@ let
     end
 
     # Save data to HDF5 file
-    h5open("entropy_scale_test.h5", "cw") do file
-        write(file, "ps", collect(ps))
-        write(file, "ηs", collect(ηs))
-        
-        write(file, "prob_scales_mean", prob_scales_mean)
-        write(file, "prob_scales_std", prob_scales_std)
-        write(file, "eta_scales_mean", eta_scales_mean)
-        write(file, "eta_scales_std", eta_scales_std)
+    h5open("entropy_scale_para.h5", "cw") do file
+        # create group if not exists
+        if !exists(file, "L=$L")
+            create_group(file, "results_L=$L")
+        end
+        grp = file["results_L=$L"]        
+
+        write(grp, "prob_scales_mean", prob_scales_mean)
+        write(grp, "prob_scales_std", prob_scales_std)
+        write(grp, "eta_scales_mean", eta_scales_mean)
+        write(grp, "eta_scales_std", eta_scales_std)
     end
 end

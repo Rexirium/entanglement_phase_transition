@@ -15,14 +15,23 @@ default(
 
 let 
     # Read data from HDF5 file
+    Ls = 8:4:16
+    ps = 0.0:0.05:1.0
+    ηs = 0.0:0.05:1.0
+    nL, nprob, neta = length(Ls), length(ps), length(ηs)
+
+    prob_scales_mean = Matrix{Float64}(undef, nprob, nL)
+    prob_scales_std = Matrix{Float64}(undef, nprob, nL)
+    eta_scales_mean = Matrix{Float64}(undef, neta, nL)
+    eta_scales_std = Matrix{Float64}(undef, neta, nL)
+
     file = h5open("entropy_scale_data.h5", "r")
-    ps = read(file, "ps")
-    ηs = read(file, "ηs")
-    Ls = read(file, "Ls")
-    prob_scales_mean = read(file, "prob_scales_mean")
-    prob_scales_std = read(file, "prob_scales_std")
-    eta_scales_mean = read(file, "eta_scales_mean")
-    eta_scales_std = read(file, "eta_scales_std")
+    for (i,l) in enumerate(Ls)
+        prob_scales_mean[:, i] .= read(file, "results_L=$l/prob_scales_mean")
+        prob_scales_std[:, i] .= read(file, "results_L=$l/prob_scales_std")
+        eta_scales_mean[:, i] .= read(file, "results_L=$l/eta_scales_mean")
+        eta_scales_std[:, i] .= read(file, "results_L=$l/eta_scales_std")
+    end
     close(file)
     # Plotting
     # Entanglement entropy scaling for varying p
