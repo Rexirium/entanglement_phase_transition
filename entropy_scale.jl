@@ -5,49 +5,58 @@ include("entropy_calc.jl")
 
 let
     # Parameters
-    L = ARGS[1] == nothing ? 8 : parse(Int, ARGS[1])
-    T = ARGS[2] == nothing ? 4L : parse(Int, ARGS[2])
-    N = ARGS[3] == nothing ? 100 : parse(Int, ARGS[3])
+    N = ARGS[1] == nothing ? 100 : parse(Int, ARGS[1])
 
     p0, η0 = 0.5, 0.5
     ps = 0.0:0.05:1.0
     ηs = 0.0:0.05:1.0
-    nprob, neta = length(ps), length(ηs)
-    cutoff = 1e-12 * L^3
-    
-    # Store results
-    prob_scales_mean = zeros(nprob)
-    prob_scales_std = zeros(nprob)
-    eta_scales_mean = zeros(neta)
-    eta_scales_std = zeros(neta)
+    Ls = 8:4:16
+    nprob, neta = length(ps), length(ηs), length(Ls)
 
-    # Calculate probability scaling
-    for i in 1:nprob
-        prob_scales_mean[i], prob_scales_std[i] = 
-            entropy_mean_multi(L, T, ps[i], η0, L÷2; 
-		    numsamp=N, cutoff=cutoff, ent_cutoff=cutoff,  retstd=true)
-        println("L=$L, p=$(round(ps[i],digits=2)), η=0.5 done with $N samples.")
+    h5open("entropy_scale_data.h5", "w") do file
+        grp = create_group(file, "params")
+        write(grp, "N", N)  
+        write(grp, "p0", p0)  
+        write(grp, "η0", η0) 
+        write(grp, "ps", collect(ps))  
+        write(grp, "ηs", collect(ηs))    
+        write(grp, "Ls", collect(Ls))
     end
 
-    # Calculate eta scaling
-    for i in 1:neta
-        eta_scales_mean[i], eta_scales_std[i] = 
-            entropy_mean_multi(L, T, p0, ηs[i], L÷2; 
-		    numsamp=N, cutoff=cutoff, ent_cutoff=cutoff, retstd=true)
-        println("L=$L, p=0.50, η=$(round(ηs[i],digits=2)) done with $N samples.")
-    end
+    for L in Ls
+        cutoff = 1e-12 * L^3
+        T = 4L
+        # Store results
+        prob_scales_mean = Vector{Float64}(undef, nprob)
+        prob_scales_std = Vector{Float64}(undef, nprob)
+        eta_scales_mean = Vector{Float64}(undef, neta)
+        eta_scales_std = Vector{Float64}(undef, neta)
 
-    # Save data to HDF5 file
-    h5open("entropy_scale_para.h5", "cw") do file
-        # create group if not exists
-        if !exists(file, "L=$L")
-            create_group(file, "results_L=$L")
+        # Calculate probability scaling
+        for i in 1:nprob
+            prob_scales_mean[i], prob_scales_std[i] = 
+                entropy_mean_multi(L, T, ps[i], η0, L÷2; 
+                    numsamp=N, cutoff=cutoff, ent_cutoff=cutoff,  retstd=true)
+            println("L=$L, p=$(round(ps[i],digits=2)), η=0.5 done with $N samples.")
         end
-        grp = file["results_L=$L"]        
 
-        write(grp, "prob_scales_mean", prob_scales_mean)
-        write(grp, "prob_scales_std", prob_scales_std)
-        write(grp, "eta_scales_mean", eta_scales_mean)
-        write(grp, "eta_scales_std", eta_scales_std)
+        # Calculate eta scaling
+        for i in 1:neta
+            eta_scales_mean[i], eta_scales_std[i] = 
+                entropy_mean_multi(L, T, p0, ηs[i], L÷2; 
+                    numsamp=N, cutoff=cutoff, ent_cutoff=cutoff, retstd=true)
+            println("L=$L, p=0.50, η=$(round(ηs[i],digits=2)) done with $N samples.")
+        end
+
+        # Save data to HDF5 file
+        h5open("entropy_scale_data.h5", "cw") do file
+            # create group if not exists
+            grp = create_group(file, "results_L=$L")     
+
+            write(grp, "prob_scales_mean", prob_scales_mean)
+            write(grp, "prob_scales_std", prob_scales_std)
+            write(grp, "eta_scales_mean", eta_scales_mean)
+            write(grp, "eta_scales_std", eta_scales_std)
+        end
     end
 end
