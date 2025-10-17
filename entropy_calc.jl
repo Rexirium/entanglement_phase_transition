@@ -83,7 +83,7 @@ function entropy_mean_spawn(lsize::Int, ttotal::Int, prob::Real, eta::Real, b::I
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
     entropies = fetch.([@spawn entropy_sample(lsize, ttotal, prob, eta, b, which_ent; 
-        cutoff=cutoff, ent_cutoff=ent_cutoff, eltype=Complex{eltype}) for _ in 1:numsamp])
+        cutoff=cutoff, ent_cutoff=ent_cutoff, eltype=eltype) for _ in 1:numsamp])
     mean_entropy = mean(entropies)
     # return std if needed
     if retstd==false
@@ -148,7 +148,7 @@ function entropy_mean_spawn(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     Calculate the mean entanglement entropy over multiple samples. (weak measurement case)
     """
     entropies = fetch.([@spawn entropy_sample(lsize, ttotal, prob, para, b, which_ent; 
-        cutoff=cutoff, ent_cutoff=ent_cutoff, eltype=Complex{eltype}) for _ in 1:numsamp])
+        cutoff=cutoff, ent_cutoff=ent_cutoff, eltype=eltype) for _ in 1:numsamp])
     mean_entropy = mean(entropies)
     # return std if needed
     if retstd==false
