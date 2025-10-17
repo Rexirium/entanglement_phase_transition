@@ -48,7 +48,7 @@ let
          title="Entanglement entropy for varying p, \\eta=$η0",
          label=string.(Ls'),
          legend_title=L"L")
-    scatter!(ps, prob_scales_mean, markersize=4)
+    scatter!(ps, prob_scales_mean, markersize=2, leg=false)
     # Entanglement entropy scaling for varying η
     ep = plot(ηs, eta_scales_mean, 
          yerror=eta_scales_std, lw=1,
@@ -56,7 +56,7 @@ let
          title="Entanglement entropy for varying \\eta, p=$p0",
          label=string.(Ls'),
          legend_title=L"L")
-    scatter!(ηs, eta_scales_mean, markersize=4)
+    scatter!(ηs, eta_scales_mean, markersize=2, leg=false)
 
     plot(pp, ep, layout=(1,2), size=(1000, 600), dpi=1200)
     #savefig("figures/entropy_plot_L8_2_18.png")
