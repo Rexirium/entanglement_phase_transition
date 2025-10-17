@@ -8,20 +8,21 @@ let
     N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
     type = Float64
 
-    p0, η0 = 0.5, 0.5
-    ps = 0.0:0.05:1.0
-    ηs = 0.0:0.05:1.0
-    Ls = 8:2:18
+    p0, η0 = type(0.5), type(0.5)
+    ps = collect(type, 0.0:0.05:1.0)
+    ηs = collect(type, 0.0:0.05:1.0)
+    Ls = collect(8:2:18)
     nprob, neta = length(ps), length(ηs)
 
     h5open("data/entropy_scale_L8_2_18.h5", "w") do file
+        write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "N", N)  
         write(grp, "p0", p0)  
         write(grp, "η0", η0) 
-        write(grp, "ps", collect(ps))  
-        write(grp, "ηs", collect(ηs))    
-        write(grp, "Ls", collect(Ls))
+        write(grp, "ps", ps)  
+        write(grp, "ηs", ηs)    
+        write(grp, "Ls", Ls)
     end
 
     for L in Ls

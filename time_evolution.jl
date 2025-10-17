@@ -312,8 +312,8 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
     return entropies
 end
 
-#if abspath(PROGRAM_FILE) == @__FILE__ 
-let
+if abspath(PROGRAM_FILE) == @__FILE__ 
+#let
     ss = siteinds("S=1/2", 10)
     psi = random_mps(ComplexF32, ss; linkdims = 4)
 
