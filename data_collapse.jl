@@ -1,5 +1,6 @@
 using Interpolations
 using Optim
+using Base.Threads
 include("entropy_calc.jl")
 
 function object_function(pc::Real, nu::Real, eta::Real, data, Ls, ps; numsamp = 100)
@@ -33,13 +34,15 @@ function data_collapse(datas, Ls, ps, ηs, p0=0.5, nu0=1.0; numsamp=100)
     Perform data collapse to find the optimal critical point and critical exponent.
     """
     neta = length(ηs)
-    critical_params = []
-    for j in 1:neta
+    critical_params = zeros(neta, 2)
+    @threads for j in 1:neta
         data = datas[:,:,j]
         η = ηs[j]
         obj(pc_nu) = object_function(pc_nu[1], pc_nu[2], η, data, Ls, ps; numsamp=numsamp)
         res = optimize(obj, [p0, nu0], GradientDescent(), Optim.Options(g_tol=1e-6, iterations=1000))
-        push!(critical_params, Optim.minimizer(res))
+        critical_params[j, :] .= Optim.minimizer(res)
+        println("η=$(round(η,digits=2)), pc=$(round(critical_params[j,1],digits=4)), 
+            nu=$(round(critical_params[j,2],digits=4)) done")
     end
-    return hcat(critical_params...)'
+    return critical_params
 end

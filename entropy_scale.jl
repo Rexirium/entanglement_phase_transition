@@ -1,46 +1,64 @@
+using MKL
 using HDF5
+MKL.set_num_threads(1)
 include("entropy_calc.jl")
 
 let
     # Parameters
-    Ls = 6:4:22
-    p0, η0 = 0.5, 0.5
-    ps = 0.0:0.05:1.0
-    ηs = 0.0:0.1:2.0
-    nprob, neta, nL = length(ps), length(ηs), length(Ls)
-    # Store results
-    prob_scales_mean = zeros(nprob, nL)
-    prob_scales_std = zeros(nprob, nL)
-    eta_scales_mean = zeros(neta, nL)
-    eta_scales_std = zeros(neta, nL)
-    # Calculate entanglement entropy (mean and std) for each parameter set
-    for j in 1:nL
-        l = Ls[j]
-        tt, b = 4l, l ÷ 2
+    N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
+    type = Float64
 
-        for i in 1:nprob
-            p = ps[i]
-            prob_scales_mean[i,j], prob_scales_std[i,j] = 
-                entropy_mean(l, tt, p, η0, b; numsamp=10, retstd=true)
-            println("L=$l, p=$(round(p,digits=2)), η=0.5 done")
-        end
+    p0, η0 = type(0.5), type(0.5)
+    ps = collect(type, 0.0:0.05:1.0)
+    ηs = collect(type, 0.0:0.05:1.0)
+    Ls = collect(8:2:18)
+    nprob, neta = length(ps), length(ηs)
 
-        for i in 1:neta
-            η = ηs[i]
-            eta_scales_mean[i,j], eta_scales_std[i,j] = 
-                entropy_mean(l, tt, p0, η, b; numsamp=10, retstd=true)
-            println("L=$l, p=0.50, η=$(round(η,digits=2)) done")
-        end
+    h5open("data/entropy_scale_L8_2_18.h5", "w") do file
+        write(file, "datatype", string(type))
+        grp = create_group(file, "params")
+        write(grp, "N", N)  
+        write(grp, "p0", p0)  
+        write(grp, "η0", η0) 
+        write(grp, "ps", ps)  
+        write(grp, "ηs", ηs)    
+        write(grp, "Ls", Ls)
     end
-    # Save data to HDF5 file
-    h5open("entropy_scale_data.h5", "w") do file
-        write(file, "ps", collect(ps))
-        write(file, "ηs", collect(ηs))
-        write(file, "Ls", collect(Ls))
-        
-        write(file, "prob_scales_mean", prob_scales_mean)
-        write(file, "prob_scales_std", prob_scales_std)
-        write(file, "eta_scales_mean", eta_scales_mean)
-        write(file, "eta_scales_std", eta_scales_std)
+
+    for L in Ls
+        cutoff = 1e-12 * L^3
+        T = 4L
+        # Store results
+        prob_scales_mean = Vector{type}(undef, nprob)
+        prob_scales_std = Vector{type}(undef, nprob)
+        eta_scales_mean = Vector{type}(undef, neta)
+        eta_scales_std = Vector{type}(undef, neta)
+
+        # Calculate probability scaling
+        for i in 1:nprob
+            prob_scales_mean[i], prob_scales_std[i] = 
+                entropy_mean_multi(L, T, ps[i], η0, L÷2; numsamp=N, 
+                    cutoff=cutoff, ent_cutoff=cutoff,  retstd=true, eltype=type)
+            println("L=$L, p=$(round(ps[i],digits=2)), η=0.5 done with $N samples.")
+        end
+
+        # Calculate eta scaling
+        for i in 1:neta
+            eta_scales_mean[i], eta_scales_std[i] = 
+                entropy_mean_multi(L, T, p0, ηs[i], L÷2; numsamp=N, 
+                    cutoff=cutoff, ent_cutoff=cutoff, retstd=true, eltype=type)
+            println("L=$L, p=0.50, η=$(round(ηs[i],digits=2)) done with $N samples.")
+        end
+
+        # Save data to HDF5 file
+        h5open("data/entropy_scale_L8_2_18.h5", "cw") do file
+            # create group if not exists
+            grp = create_group(file, "results_L=$L")     
+
+            write(grp, "prob_scales_mean", prob_scales_mean)
+            write(grp, "prob_scales_std", prob_scales_std)
+            write(grp, "eta_scales_mean", eta_scales_mean)
+            write(grp, "eta_scales_std", eta_scales_std)
+        end
     end
 end

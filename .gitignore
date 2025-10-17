@@ -1,1 +1,10 @@
 .vscode/
+/calc_test.jl
+*.sh
+*.h5
+*.png
+*.out
+*.err
+*.out
+*.mem
+*.tmp
