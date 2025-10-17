@@ -8,7 +8,7 @@ let
     N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
     type = Float64
 
-    p0, η0 = type(0.5), type(0.5)
+    p0::type, η0::type = 0.5, 0.5
     ps = collect(type, 0.0:0.05:1.0)
     ηs = collect(type, 0.0:0.05:1.0)
     Ls = collect(8:2:18)
