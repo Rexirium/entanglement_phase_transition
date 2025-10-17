@@ -9,19 +9,19 @@ function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype=Compl
     return op(Q, s...)
 end
 
-function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::Real)
+function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::T) where T<:Real
     """
     Create a non-Hermitian operator for the given site index `s` with parameter `eta`.
     """
-    return op([1 0; 0 eta], s)
+    return op(Matrix{T}([1 0; 0 eta]), s)
 end
 
-function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index; x::Real, λ::Real=1.0, Δ::Real=1.0)
+function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index; x::Real, λ::Real=1.0, Δ::Real=1.0,  eltype= Float64)
     """Create a weak measurement operator for the given site index `s` with parameters `x`, `λ`, and `Δ`."""
     # Assuming `x` is a random variable from a Gaussian distribution
     phiUp = exp(-(x-λ)*(x-λ) / (4*Δ*Δ))
     phiDn = exp(-(x+λ)*(x+λ) / (4*Δ*Δ))
-    M = [phiUp 0; 0 phiDn] 
+    M = Matrix{eltype}([phiUp 0; 0 phiDn])
     return op(M, s)
 end
 
@@ -30,6 +30,7 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{Real, Real}=(1.0, 1.0))
     (loc <= 0 || loc > length(psi)) && return psi
     # Orthogonalize the MPS at site `loc`
     s = siteind(psi, loc)
+    T = promote_itensor_eltype(psi)
     λ, Δ = para
     
     proj = op("ProjUp", s)
@@ -39,7 +40,7 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{Real, Real}=(1.0, 1.0))
     samp = rand()
     # generate a random variable from a Gaussian distribution
     x = samp < probUp ? λ + Δ*randn() : -λ + Δ*randn() 
-    M = op("WM", s; x = x, λ = λ, Δ = Δ)
+    M = op("WM", s; x = x, λ = λ, Δ = Δ, eltype=T)
     # Apply the weak measurement operator
     apply!(M, psi, loc)
     normalize!(psi)
@@ -77,20 +78,21 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
     """
     psi = copy(psi0)
+    T = promote_itensor_eltype(psi)
     sites = siteinds(psi)
     lsize = length(sites)
 
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1])
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
             samp = rand()
             if samp < prob
-                M = op("NH", sites[j]; eta=eta)
+                M = op("NH", sites[j]; eta=T(eta))
                 apply!(M, psi, j)
                 # Normalize the MPS after applying the non Hermitian operator
                 normalize!(psi)
@@ -107,18 +109,19 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
     """
     sites = siteinds(psi)
     lsize = length(sites)
+    T = promote_itensor_eltype(psi)
 
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1])
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
             samp = rand()
             if samp < prob
-                M = op("NH", sites[j]; eta=eta)
+                M = op("NH", sites[j]; eta=T(eta))
                 apply!(M, psi, j)
                 # Normalize the MPS after applying the non Hermitian operator
                 normalize!(psi)
