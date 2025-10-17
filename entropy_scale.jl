@@ -6,6 +6,7 @@ include("entropy_calc.jl")
 let
     # Parameters
     N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
+    type = Float64
 
     p0, η0 = 0.5, 0.5
     ps = 0.0:0.05:1.0
@@ -27,24 +28,24 @@ let
         cutoff = 1e-12 * L^3
         T = 4L
         # Store results
-        prob_scales_mean = Vector{Float64}(undef, nprob)
-        prob_scales_std = Vector{Float64}(undef, nprob)
-        eta_scales_mean = Vector{Float64}(undef, neta)
-        eta_scales_std = Vector{Float64}(undef, neta)
+        prob_scales_mean = Vector{type}(undef, nprob)
+        prob_scales_std = Vector{type}(undef, nprob)
+        eta_scales_mean = Vector{type}(undef, neta)
+        eta_scales_std = Vector{type}(undef, neta)
 
         # Calculate probability scaling
         for i in 1:nprob
             prob_scales_mean[i], prob_scales_std[i] = 
-                entropy_mean_multi(L, T, ps[i], η0, L÷2; 
-                    numsamp=N, cutoff=cutoff, ent_cutoff=cutoff,  retstd=true)
+                entropy_mean_multi(L, T, ps[i], η0, L÷2; numsamp=N, 
+                    cutoff=cutoff, ent_cutoff=cutoff,  retstd=true, eltype=type)
             println("L=$L, p=$(round(ps[i],digits=2)), η=0.5 done with $N samples.")
         end
 
         # Calculate eta scaling
         for i in 1:neta
             eta_scales_mean[i], eta_scales_std[i] = 
-                entropy_mean_multi(L, T, p0, ηs[i], L÷2; 
-                    numsamp=N, cutoff=cutoff, ent_cutoff=cutoff, retstd=true)
+                entropy_mean_multi(L, T, p0, ηs[i], L÷2; numsamp=N, 
+                    cutoff=cutoff, ent_cutoff=cutoff, retstd=true, eltype=type)
             println("L=$L, p=0.50, η=$(round(ηs[i],digits=2)) done with $N samples.")
         end
 

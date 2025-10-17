@@ -1,6 +1,6 @@
 include("entanglement_entropies.jl")
 
-function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype=ComplexF64)
+function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)
     """
     Create a random unitary operator for the given site indices `s`.
     """
@@ -16,7 +16,7 @@ function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::T) where T<
     return op(Matrix{T}([1 0; 0 eta]), s)
 end
 
-function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index; x::Real, λ::Real=1.0, Δ::Real=1.0,  eltype= Float64)
+function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index; x::Real, λ::Real=1.0, Δ::Real=1.0,  eltype::DataType=Float64)
     """Create a weak measurement operator for the given site index `s` with parameters `x`, `λ`, and `Δ`."""
     # Assuming `x` is a random variable from a Gaussian distribution
     phiUp = exp(-(x-λ)*(x-λ) / (4*Δ*Δ))
@@ -40,7 +40,7 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{Real, Real}=(1.0, 1.0))
     samp = rand()
     # generate a random variable from a Gaussian distribution
     x = samp < probUp ? λ + Δ*randn() : -λ + Δ*randn() 
-    M = op("WM", s; x = x, λ = λ, Δ = Δ, eltype=T)
+    M = op("WM", s; x = x, λ = λ, Δ = Δ, eltype=real(T))
     # Apply the weak measurement operator
     apply!(M, psi, loc)
     normalize!(psi)
@@ -92,7 +92,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
         for j in 1:lsize
             samp = rand()
             if samp < prob
-                M = op("NH", sites[j]; eta=T(eta))
+                M = op("NH", sites[j]; eta=real(T)(eta))
                 apply!(M, psi, j)
                 # Normalize the MPS after applying the non Hermitian operator
                 normalize!(psi)
@@ -121,7 +121,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real; cutoff::Real=
         for j in 1:lsize
             samp = rand()
             if samp < prob
-                M = op("NH", sites[j]; eta=T(eta))
+                M = op("NH", sites[j]; eta=real(T)(eta))
                 apply!(M, psi, j)
                 # Normalize the MPS after applying the non Hermitian operator
                 normalize!(psi)
@@ -164,11 +164,12 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Real};
     """
     sites = siteinds(psi)
     lsize = length(sites)
+    T = promote_itensor_eltype(psi)
 
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1])
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
         # Apply weak measurement operator to each site with parameters `λ` and `Δ`
@@ -189,21 +190,22 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
     psi = copy(psi0)
     sites = siteinds(psi) 
     lsize = length(sites)
+    T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
-    entropies = zeros(Float64, ttotal+1)
+    entropies = Vector{real(T)}(undef, ttotal+1)
     entropies[1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
 
     for t in 1:ttotal
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1])
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
         # the layer for random non-Hermitian gates
         for j in 1:lsize
             samp = rand()
             if samp < prob
-                M = op("NH", sites[j]; eta=eta)
+                M = op("NH", sites[j]; eta=real(T)(eta))
                 apply!(M, psi, j)
                 normalize!(psi)
             end
@@ -221,21 +223,22 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, eta::Real, b::Int, w
     """
     sites = siteinds(psi) 
     lsize = length(sites)
+    T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
-    entropies = zeros(Float64, ttotal+1)
+    entropies = Vector{real(T)}(undef, ttotal+1)
     entropies[1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
 
     for t in 1:ttotal
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1])
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
         # the layer for random non-Hermitian gates
         for j in 1:lsize
             samp = rand()
             if samp < prob
-                M = op("NH", sites[j]; eta=eta)
+                M = op("NH", sites[j]; eta=real(T)(eta))
                 apply!(M, psi, j)
                 normalize!(psi)
             end
@@ -254,14 +257,15 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
     psi = copy(psi0)
     sites = siteinds(psi) 
     lsize = length(sites)
+    T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
-    entropies = zeros(Float64, ttotal+1)
+    entropies = Vector{real(T)}(undef, ttotal+1)
     entropies[1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
 
     for t in 1:ttotal
         # Initialize the entropy vector.
         for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1])
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
         # apply random weak measurement
@@ -284,14 +288,15 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
     """
     sites = siteinds(psi) 
     lsize = length(sites)
+    T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
-    entropies = zeros(Float64, ttotal+1)
+    entropies = Vector{real(T)}(undef, ttotal+1)
     entropies[1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
 
     for t in 1:ttotal
         # Initialize the entropy vector.
         for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1])
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
         # apply random weak measurement
@@ -307,12 +312,11 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Real, para::Tuple{Real, Re
     return entropies
 end
 
-if abspath(PROGRAM_FILE) == @__FILE__ 
-# let
+#if abspath(PROGRAM_FILE) == @__FILE__ 
+let
     ss = siteinds("S=1/2", 10)
-    psi = random_mps(ss; linkdims = 4)
+    psi = random_mps(ComplexF32, ss; linkdims = 4)
 
-    U = op("RdU", ss[3], ss[4])
-    apply!(U, psi, 3, 4; cutoff=1e-12)
-    ortho_lims(psi)
+    entropies = entropy_evolve!(psi, 5, 0.3, 0.5, 2; cutoff=1e-12)
+    eltype(entropies)
 end
