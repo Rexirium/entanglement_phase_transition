@@ -38,7 +38,7 @@ let
         for i in 1:nprob
             prob_scales_mean[i], prob_scales_std[i] = 
                 entropy_mean_multi(L, T, ps[i], η0, L÷2; numsamp=N, 
-                    cutoff=cutoff, ent_cutoff=cutoff,  retstd=true, eltype=type)
+                    cutoff=cutoff, ent_cutoff=cutoff,  retstd=true, restype=type)
             println("L=$L, p=$(round(ps[i],digits=2)), η=0.5 done with $N samples.")
         end
 
@@ -46,7 +46,7 @@ let
         for i in 1:neta
             eta_scales_mean[i], eta_scales_std[i] = 
                 entropy_mean_multi(L, T, p0, ηs[i], L÷2; numsamp=N, 
-                    cutoff=cutoff, ent_cutoff=cutoff, retstd=true, eltype=type)
+                    cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type)
             println("L=$L, p=0.50, η=$(round(ηs[i],digits=2)) done with $N samples.")
         end
 
