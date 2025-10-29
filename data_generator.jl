@@ -20,7 +20,7 @@ let
     for task in vec(tasks)
         i, j, k = task
         l = Ls[j]
-        tt, b = 4l, l ÷ 2
+        tt = 4l
         entropy_datas[i,j,k] = entropy_mean_multi(l, tt, ps[i], ηs[k]; numsamp=100)
         
         # Progress tracking
