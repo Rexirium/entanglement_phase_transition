@@ -21,7 +21,7 @@ let
         i, j, k = task
         l = Ls[j]
         tt, b = 4l, l ÷ 2
-        entropy_datas[i,j,k] = entropy_mean_multi(l, tt, ps[i], ηs[k], b; numsamp=100)
+        entropy_datas[i,j,k] = entropy_mean_multi(l, tt, ps[i], ηs[k]; numsamp=100)
         
         # Progress tracking
         println("Completed: L=$(l), p=$(round(p,digits=2)), η=$(round(η,digits=2))")
