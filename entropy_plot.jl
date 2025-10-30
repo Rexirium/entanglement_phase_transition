@@ -1,6 +1,5 @@
 using Plots, LaTeXStrings
 using HDF5
-using HDF5
 default(
     grid=false, 
     titlelocation=:left,
