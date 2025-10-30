@@ -15,7 +15,7 @@ let
     T, b = 4L, L ÷ 2
     ps = collect(type, 0.0:0.2:1.0)
     ηs = collect(type, 0.0:0.5:2.0)
-    p0, η0 = type(0.5), type(0.5)
+    p0::type, η0::type = 0.5, 0.5
     numsamp = 100
     nprob, neta = length(ps), length(ηs)
 
