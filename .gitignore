@@ -1,5 +1,4 @@
 .vscode/
-/calc_test.jl
 *.sh
 *.png
 *.out

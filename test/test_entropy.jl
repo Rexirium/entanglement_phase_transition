@@ -2,7 +2,7 @@ using HDF5
 using Base.Threads
 using ITensors, ITensorMPS
 
-include("entanglement_entropies.jl")
+include("../src/entanglement_entropies.jl")
 
 mylock = ReentrantLock()
 
@@ -17,7 +17,7 @@ let
         println("Iteration $i: Von Neumann Entropy = $svn")
     end
 
-    h5open("test_entropy_results.h5", "w") do file
+    h5open("../data/test_entropy_results.h5", "w") do file
         write(file, "results", results)
     end
 end

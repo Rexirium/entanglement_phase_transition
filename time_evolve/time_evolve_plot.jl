@@ -14,7 +14,7 @@ default(
 
 let 
      # Read data from HDF5 file
-    file = h5open("data/time_evolve_data.h5", "r")
+    file = h5open("../data/time_evolve_data.h5", "r")
     ps = read(file, "params/ps")
     ηs = read(file, "params/ηs")
     T = read(file, "params/T")
@@ -53,5 +53,5 @@ let
          legend_title=L"\eta")
 
     plot(pt, px, et, ex, layout=(2,2), size=(1200, 800))
-    # savefig("figures/time_evolve_plot.png")
+    # savefig("../figures/time_evolve_plot.png")
 end
