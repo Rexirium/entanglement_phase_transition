@@ -6,7 +6,7 @@ MKL.set_num_threads(1)
 
 # add worker processes if none exist (use CPU-1 workers to avoid oversubscription)
 if nprocs() == 1
-    nworkers_to_add = max(Sys.CPU_THREADS // Threads.nthreads() - 1, 1)
+    nworkers_to_add = max(Sys.CPU_THREADS // Threads.nthreads() - 4, 1)
     addprocs(nworkers_to_add)
 end
 
@@ -15,8 +15,6 @@ end
 @everywhere MKL.set_num_threads(1)
 
 # include the entropy calculation code on all processes
-#@everywhere src_path = joinpath(dirname(@__FILE__), "..", "src", "entropy_calc.jl")
-#include("../src/entropy_calc.jl")
 @everywhere include("../src/entropy_calc.jl")
 
 let
@@ -27,10 +25,11 @@ let
     p0::type, η0::type = 0.5, 0.5
     ps = collect(type, 0.0:0.05:1.0)
     ηs = collect(type, 0.0:0.05:1.0)
-    Ls = collect(6:2:10)
+    L1, dL, L2 = 6, 2, 18
+    Ls = collect(L1:dL:L2)
     nprob, neta = length(ps), length(ηs)
 
-    h5open("data/entropy_scale_L8_2_18.h5", "w") do file
+    h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2).h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "N", N)  
@@ -72,7 +71,7 @@ let
         end
 
         # Save data to HDF5 file
-        h5open("data/entropy_scale_L6_2_10.h5", "cw") do file
+        h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2).h5", "cw") do file
             # create group if not exists
             grp = create_group(file, "results_L=$L")     
 
