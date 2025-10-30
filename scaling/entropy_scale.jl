@@ -1,7 +1,23 @@
 using MKL
 using HDF5
+using Distributed
+
 MKL.set_num_threads(1)
-include("../src/entropy_calc.jl")
+
+# add worker processes if none exist (use CPU-1 workers to avoid oversubscription)
+if nprocs() == 1
+    nworkers_to_add = max(Sys.CPU_THREADS // Threads.nthreads() - 1, 1)
+    addprocs(nworkers_to_add)
+end
+
+# make sure workers have required packages and the same MKL threading setting
+@everywhere using MKL
+@everywhere MKL.set_num_threads(1)
+
+# include the entropy calculation code on all processes
+#@everywhere src_path = joinpath(dirname(@__FILE__), "..", "src", "entropy_calc.jl")
+#include("../src/entropy_calc.jl")
+@everywhere include("../src/entropy_calc.jl")
 
 let
     # Parameters
@@ -11,7 +27,7 @@ let
     p0::type, η0::type = 0.5, 0.5
     ps = collect(type, 0.0:0.05:1.0)
     ηs = collect(type, 0.0:0.05:1.0)
-    Ls = collect(8:2:18)
+    Ls = collect(6:2:10)
     nprob, neta = length(ps), length(ηs)
 
     h5open("data/entropy_scale_L8_2_18.h5", "w") do file
@@ -28,30 +44,35 @@ let
     for L in Ls
         cutoff = 1e-12 * L^3
         T = 4L
-        # Store results
-        prob_scales_mean = Vector{type}(undef, nprob)
-        prob_scales_std = Vector{type}(undef, nprob)
-        eta_scales_mean = Vector{type}(undef, neta)
-        eta_scales_std = Vector{type}(undef, neta)
 
-        # Calculate probability scaling
+        # Calculate probability scaling in parallel using pmap
+        prob_results = pmap(p ->
+            entropy_mean_multi(L, T, p, η0; numsamp=N,
+                cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type),
+            ps)
+
+        prob_scales_mean = [r[1] for r in prob_results]
+        prob_scales_std  = [r[2] for r in prob_results]
+
         for i in 1:nprob
-            prob_scales_mean[i], prob_scales_std[i] = 
-                entropy_mean_multi(L, T, ps[i], η0; numsamp=N, 
-                    cutoff=cutoff, ent_cutoff=cutoff,  retstd=true, restype=type)
             println("L=$L, p=$(round(ps[i],digits=2)), η=0.5 done with $N samples.")
         end
 
-        # Calculate eta scaling
+        # Calculate eta scaling in parallel using pmap
+        eta_results = pmap(η ->
+            entropy_mean_multi(L, T, p0, η; numsamp=N,
+                cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type),
+            ηs)
+
+        eta_scales_mean = [r[1] for r in eta_results]
+        eta_scales_std  = [r[2] for r in eta_results]
+
         for i in 1:neta
-            eta_scales_mean[i], eta_scales_std[i] = 
-                entropy_mean_multi(L, T, p0, ηs[i]; numsamp=N, 
-                    cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type)
             println("L=$L, p=0.50, η=$(round(ηs[i],digits=2)) done with $N samples.")
         end
 
         # Save data to HDF5 file
-        h5open("data/entropy_scale_L8_2_18.h5", "cw") do file
+        h5open("data/entropy_scale_L6_2_10.h5", "cw") do file
             # create group if not exists
             grp = create_group(file, "results_L=$L")     
 

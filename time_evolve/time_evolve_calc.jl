@@ -1,6 +1,5 @@
 using MKL
 using HDF5
-using Base.Threads
 using ITensors, ITensorMPS
 MKL.set_num_threads(1)
 ITensors.BLAS.set_num_threads(1)
@@ -37,7 +36,7 @@ let
         evolvesamp = Matrix{type}(undef, T+1, numsamp)
         distrisamp = Matrix{type}(undef, L+1, numsamp)
         # Run multiple samples and average the results.
-        @threads for j in 1:numsamp
+        Threads.@threads for j in 1:numsamp
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
             evolve = entropy_evolve!(psi, T, ps[i], η0, b, 1)
@@ -65,7 +64,7 @@ let
         evolvesamp = Matrix{type}(undef, T+1, numsamp)
         distrisamp = Matrix{type}(undef, L+1, numsamp)
         # Run multiple samples and average the results.
-        @threads for j in 1:numsamp
+        Threads.@threads for j in 1:numsamp
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
             evolve = entropy_evolve!(psi, T, p0, ηs[i], b, 1)
