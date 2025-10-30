@@ -1,7 +1,7 @@
 using Interpolations
 using Optim
 using Base.Threads
-include("src/entropy_calc.jl")
+include("../src/entropy_calc.jl")
 
 function object_function(pc::Real, nu::Real, eta::Real, data, Ls, ps; numsamp = 100)
     """
