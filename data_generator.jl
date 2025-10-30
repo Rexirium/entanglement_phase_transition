@@ -1,7 +1,7 @@
 using MKL
 using HDF5
 MKL.set_num_threads(1)
-include("entropy_calc.jl")
+include("src/entropy_calc.jl")
 
 let 
     # Model parameters
@@ -27,7 +27,7 @@ let
         println("Completed: L=$(l), p=$(round(p,digits=2)), η=$(round(η,digits=2))")
     end
 
-    h5open("entropy_data.h5", "w") do file
+    h5open("data/entropy_data.h5", "w") do file
         write(file, "ps", collect(ps))
         write(file, "ηs", collect(ηs))
         write(file, "Ls", collect(Ls))

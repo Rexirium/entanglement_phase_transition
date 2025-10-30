@@ -6,7 +6,7 @@ MKL.set_num_threads(1)
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
-include("time_evolution.jl")
+include("src/time_evolution.jl")
 
 let 
     # Parameters

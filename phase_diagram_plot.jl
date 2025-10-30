@@ -14,7 +14,7 @@ default(
 )
 
 let 
-    file = h5open("critical_params.h5", "r")
+    file = h5open("data/critical_params.h5", "r")
     ηs = read(file, "ηs")
     critical_params = read(file, "critical_params")
 
