@@ -1,5 +1,4 @@
 using Statistics
-using Base.Threads
 using ITensors, ITensorMPS
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
@@ -67,7 +66,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, whic
     b = lsize ÷ 2
     eta = restype(eta)
 
-    @threads for i in 1:numsamp 
+    Threads.@threads for i in 1:numsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{restype}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
@@ -92,7 +91,7 @@ function entropy_mean_spawn(lsize::Int, ttotal::Int, prob::Real, eta::Real, whic
     """
     eta = restype(eta)
     # mean value of `numsamp` samples
-    entropies = fetch.([@spawn entropy_sample(lsize, ttotal, prob, eta, which_ent; 
+    entropies = fetch.([Threads.@spawn entropy_sample(lsize, ttotal, prob, eta, which_ent; 
         cutoff=cutoff, ent_cutoff=ent_cutoff, restype=restype) for _ in 1:numsamp])
     mean_entropy = mean(entropies)
     # return std if needed
@@ -138,7 +137,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     b = lsize ÷ 2
     para = restype.(para)
 
-    @threads for i in 1:numsamp 
+    Threads.@threads for i in 1:numsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{restype}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, para; cutoff=cutoff)
@@ -163,7 +162,7 @@ function entropy_mean_spawn(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     """
     para = restype.(para)
     # mean value of `numsamp` samples
-    entropies = fetch.([@spawn entropy_sample(lsize, ttotal, prob, para, which_ent; 
+    entropies = fetch.([Threads.@spawn entropy_sample(lsize, ttotal, prob, para, which_ent; 
         cutoff=cutoff, ent_cutoff=ent_cutoff, restype=restype) for _ in 1:numsamp])
     mean_entropy = mean(entropies)
     # return std if needed
