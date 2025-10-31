@@ -8,13 +8,14 @@ let
     N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
     type = Float64
 
+    L1, dL, L2 = 6, 2, 18
     p0::type, η0::type = 0.5, 0.5
     ps = collect(type, 0.0:0.05:1.0)
     ηs = collect(type, 0.0:0.05:1.0)
-    Ls = collect(8:2:18)
+    Ls = collect(L1:dL:L2)
     nprob, neta = length(ps), length(ηs)
 
-    h5open("data/entropy_scale_L8_2_18.h5", "w") do file
+    h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2)t.h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "N", N)  
@@ -51,7 +52,7 @@ let
         end
 
         # Save data to HDF5 file
-        h5open("data/entropy_scale_L8_2_18.h5", "cw") do file
+        h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2)t.h5", "cw") do file
             # create group if not exists
             grp = create_group(file, "results_L=$L")     
 
