@@ -59,7 +59,7 @@ let
         results = nothing  # free memory
 
         h5open("data/entropy_data_$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
-            grpL = create_group(file, "L_$L")
+            grpL = create_group(file, "L=$L")
             write(grpL, "means", data_means)
             write(grpL, "stds", data_stds)
         end
