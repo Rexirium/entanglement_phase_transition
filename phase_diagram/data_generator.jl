@@ -21,6 +21,8 @@ let
     # Model parameters
     @everywhere const N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
 
+    ps = collect(Float64, 0.0:0.1:1.0)
+    ηs = collect(Float64, 0.0:0.1:1.0)
     @everywhere begin
         const type = Float64
         const ps = collect(type, 0.0:0.1:1.0)
