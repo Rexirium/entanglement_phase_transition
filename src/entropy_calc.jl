@@ -84,25 +84,6 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, whic
     end
 end
 
-function entropy_mean_spawn(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
-    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
-    """
-    Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
-    """
-    eta = restype(eta)
-    # mean value of `numsamp` samples
-    entropies = fetch.([Threads.@spawn entropy_sample(lsize, ttotal, prob, eta, which_ent; 
-        cutoff=cutoff, ent_cutoff=ent_cutoff, restype=restype) for _ in 1:numsamp])
-    mean_entropy = mean(entropies)
-    # return std if needed
-    if retstd==false
-        return mean_entropy
-    else
-        std_entropy = stdm(entropies, mean_entropy; corrected=false)
-        return mean_entropy, std_entropy
-    end
-end
-
 function entropy_mean(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Real}, which_ent::Real=1; 
     numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
@@ -147,25 +128,6 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Rea
     end
 
     mean_entropy = mean(entropies)
-    if retstd==false
-        return mean_entropy
-    else
-        std_entropy = stdm(entropies, mean_entropy; corrected=false)
-        return mean_entropy, std_entropy
-    end
-end
-
-function entropy_mean_spawn(lsize::Int, ttotal::Int, prob::Real, para::Tuple{Real, Real}, which_ent::Real=1; 
-    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
-    """
-    Calculate the mean entanglement entropy over multiple samples. (weak measurement case)
-    """
-    para = restype.(para)
-    # mean value of `numsamp` samples
-    entropies = fetch.([Threads.@spawn entropy_sample(lsize, ttotal, prob, para, which_ent; 
-        cutoff=cutoff, ent_cutoff=ent_cutoff, restype=restype) for _ in 1:numsamp])
-    mean_entropy = mean(entropies)
-    # return std if needed
     if retstd==false
         return mean_entropy
     else

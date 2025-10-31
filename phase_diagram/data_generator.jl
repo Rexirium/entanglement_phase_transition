@@ -1,36 +1,69 @@
 using MKL
 using HDF5
+using Distributed
+
 MKL.set_num_threads(1)
-include("../src/entropy_calc.jl")
+
+# add worker processes if none exist (use CPU-1 workers to avoid oversubscription)
+if nprocs() == 1
+    nworkers_to_add = max(Sys.CPU_THREADS ÷ Threads.nthreads() - 4, 1)
+    addprocs(nworkers_to_add)
+end
+
+# make sure workers have required packages and the same MKL threading setting
+@everywhere using MKL
+@everywhere MKL.set_num_threads(1)
+
+# include the entropy calculation code on all processes
+@everywhere include("../src/entropy_calc.jl")
 
 let 
     # Model parameters
-    Ls = 8:4:20
-    ps = 0.0:0.05:1.0
-    ηs = 0.0:0.2:1.0
-    nL, nprob, neta = length(Ls), length(ps), length(ηs)
-    
-    # Store entanglement entropy data
-    entropy_datas = zeros(nprob, nL, neta)
-    
-    # Create tasks array for all parameter combinations
-    tasks = [(i,j,k) for i in 1:nprob, j in 1:nL, k in 1:neta]
-    
-    # Parallel computation over all parameter combinations
-    for task in vec(tasks)
-        i, j, k = task
-        l = Ls[j]
-        tt = 4l
-        entropy_datas[i,j,k] = entropy_mean_multi(l, tt, ps[i], ηs[k]; numsamp=100)
-        
-        # Progress tracking
-        println("Completed: L=$(l), p=$(round(p,digits=2)), η=$(round(η,digits=2))")
+    @everywhere const N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
+
+    @everywhere begin
+        const type = Float64
+        const ps = collect(type, 0.0:0.1:1.0)
+        const ηs = collect(type, 0.0:0.1:1.0)
+        const params = vec([(p, η) for p in ps, η in ηs])
+
+        function entropy_mean_multi_wrapper(lsize, idx)
+            p, η = params[idx]
+            cutoff = 1e-12 * lsize^3
+            return entropy_mean_multi(lsize, 4lsize, p, η; numsamp=N,
+                cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type)
+        end
     end
 
-    h5open("data/entropy_data.h5", "w") do file
-        write(file, "ps", collect(ps))
-        write(file, "ηs", collect(ηs))
-        write(file, "Ls", collect(Ls))
-        write(file, "entropy_datas", entropy_datas)
+    L1, dL, L2 = 6, 2, 18
+    Ls = collect(L1:dL:L2)
+    nprob, neta = length(ps), length(ηs)
+    
+    h5open("data/entropy_data_$(nprob)x$(neta).h5", "w") do file
+        write(file, "datatype", string(type))
+        grp = create_group(file, "params")
+        write(grp, "N", N)  
+        write(grp, "ps", ps)  
+        write(grp, "ηs", ηs)    
+        write(grp, "Ls", Ls)
+    end
+    
+    for L in Ls
+
+        results = pmap(idx -> entropy_mean_multi_wrapper(L, idx), 1:nprob*neta)
+
+        data_means = reshape([r[1] for r in results], nprob, neta)
+        data_stds  = reshape([r[2] for r in results], nprob, neta)
+
+        println("L=$L done with $N samples.")
+        results = nothing  # free memory
+
+        h5open("data/entropy_data_$(nprob)x$(neta).h5", "r+") do file
+            grpL = create_group(file, "L_$L")
+            write(grpL, "means", data_means)
+            write(grpL, "stds", data_stds)
+        end
+        data_means = nothing
+        data_stds = nothing
     end
 end

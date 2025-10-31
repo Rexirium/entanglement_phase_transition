@@ -42,11 +42,10 @@ let
 
     for L in Ls
         cutoff = 1e-12 * L^3
-        T = 4L
 
         # Calculate probability scaling in parallel using pmap
         prob_results = pmap(p ->
-            entropy_mean_multi(L, T, p, η0; numsamp=N,
+            entropy_mean_multi(L, 4L, p, η0; numsamp=N,
                 cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type),
             ps)
 
@@ -56,10 +55,10 @@ let
         for i in 1:nprob
             println("L=$L, p=$(round(ps[i],digits=2)), η=0.5 done with $N samples.")
         end
-
+        prob_results = nothing  # free memory
         # Calculate eta scaling in parallel using pmap
         eta_results = pmap(η ->
-            entropy_mean_multi(L, T, p0, η; numsamp=N,
+            entropy_mean_multi(L, 4L, p0, η; numsamp=N,
                 cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type),
             ηs)
 
@@ -69,7 +68,7 @@ let
         for i in 1:neta
             println("L=$L, p=0.50, η=$(round(ηs[i],digits=2)) done with $N samples.")
         end
-
+        eta_results = nothing  # free memory
         # Save data to HDF5 file
         h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2).h5", "cw") do file
             # create group if not exists
