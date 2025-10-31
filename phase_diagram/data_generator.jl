@@ -38,8 +38,8 @@ let
     L1, dL, L2 = 6, 2, 18
     Ls = collect(L1:dL:L2)
     nprob, neta = length(ps), length(ηs)
-    
-    h5open("data/entropy_data_$(nprob)x$(neta).h5", "w") do file
+
+    h5open("data/entropy_data_$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "N", N)  
@@ -58,7 +58,7 @@ let
         println("L=$L done with $N samples.")
         results = nothing  # free memory
 
-        h5open("data/entropy_data_$(nprob)x$(neta).h5", "r+") do file
+        h5open("data/entropy_data_$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
             grpL = create_group(file, "L_$L")
             write(grpL, "means", data_means)
             write(grpL, "stds", data_stds)

@@ -70,7 +70,7 @@ let
         end
         eta_results = nothing  # free memory
         # Save data to HDF5 file
-        h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2).h5", "cw") do file
+        h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2).h5", "r+") do file
             # create group if not exists
             grp = create_group(file, "results_L=$L")     
 

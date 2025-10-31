@@ -84,7 +84,7 @@ let
         eta_distris[:, i] .= meandistri
     end
 
-    h5open("data/time_evolve_data.h5", "cw") do file
+    h5open("data/time_evolve_data.h5", "r+") do file
         grp = create_group(file, "results")
         write(grp, "prob_evolves", prob_evolves)
         write(grp, "prob_distris", prob_distris)
