@@ -15,7 +15,7 @@ default(
 
 let 
     # Read data from HDF5 file
-    L1, dL, L2 = 6, 2, 18
+    L1, dL, L2 = 8, 2, 18
     file = h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2).h5", "r")
     type_str = read(file, "datatype")
     Ls = read(file, "params/Ls")
@@ -41,26 +41,27 @@ let
     end
     close(file)
     # Plotting
+    colors = palette(:darkrainbow, nL, rev=true)[:]'
     # Entanglement entropy scaling for varying p
-    pp = plot(ps, prob_scales_mean,
-         ribbon=prob_scales_std, 
-         lw=1.5, fillalpha=0.3,
-         xlabel=L"p", ylabel=L"S_1", 
-         title="Entanglement entropy for varying p, \\eta=$η0",
-         label=string.(Ls'),
-         legend_title=L"L")
+    pp = plot(ps, prob_scales_mean, 
+        yerror=prob_scales_std, 
+        lw=1.5, lc=colors,
+        xlabel=L"p", ylabel=L"S_1", 
+        title="Entanglement entropy for varying p, \\eta=$η0",
+        label=string.(Ls'),
+        legend_title=L"L")
     #scatter!(ps, prob_scales_mean, markersize=2, leg=false)
     # Entanglement entropy scaling for varying η
     ep = plot(ηs, eta_scales_mean, 
-         ribbon=eta_scales_std, 
-         lw=1.5, fillalpha=0.3,
-         xlabel=L"\eta", ylabel=L"S_1",
-         title="Entanglement entropy for varying \\eta, p=$p0",
-         label=string.(Ls'),
-         legend_title=L"L")
+        yerror=eta_scales_std, 
+        lw=1.5, lc=colors,
+        xlabel=L"\eta", ylabel=L"S_1",
+        title="Entanglement entropy for varying \\eta, p=$p0",
+        label=string.(Ls'),
+        legend_title=L"L")
     #scatter!(ηs, eta_scales_mean, markersize=2, leg=false)
 
     plot(pp, ep, layout=(1,2), size=(1000, 600), dpi=1200)
-    #savefig("figures/entropy_plot_L$(L1)_$(dL)_$(L2).png")
+    savefig("figures/entropy_plot_L$(L1)_$(dL)_$(L2).png")
 end
 
