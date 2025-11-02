@@ -36,7 +36,7 @@ function data_collapse(datas, Ls, ps, ηs, p0=0.5, nu0=1.0; numsamp=100)
     neta = length(ηs)
     critical_params = zeros(neta, 2)
     @threads for j in 1:neta
-        data = datas[:,:,j]
+        data = datas[:,j,:]
         η = ηs[j]
         obj(pc_nu) = object_function(pc_nu[1], pc_nu[2], η, data, Ls, ps; numsamp=numsamp)
         res = optimize(obj, [p0, nu0], GradientDescent(), Optim.Options(g_tol=1e-6, iterations=1000))

@@ -23,7 +23,7 @@ let
     ηs = read(file, "params/ηs")
     p0 = read(file, "params/p0")
     η0 = read(file, "params/η0")
-    close(file)
+
     type = eval(Meta.parse(type_str))
 
     nprob, neta, nL = length(ps), length(ηs), length(Ls)
@@ -33,7 +33,6 @@ let
     eta_scales_mean = Matrix{type}(undef, neta, nL)
     eta_scales_std = Matrix{type}(undef, neta, nL)
 
-    file = h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2).h5", "r")
     for (i,l) in enumerate(Ls)
         prob_scales_mean[:, i] .= read(file, "results_L=$l/prob_scales_mean")
         prob_scales_std[:, i] .= read(file, "results_L=$l/prob_scales_std")
@@ -44,22 +43,24 @@ let
     # Plotting
     # Entanglement entropy scaling for varying p
     pp = plot(ps, prob_scales_mean,
-         yerror=prob_scales_std, lw=1.5,
+         ribbon=prob_scales_std, 
+         lw=1.5, fillalpha=0.3,
          xlabel=L"p", ylabel=L"S_1", 
          title="Entanglement entropy for varying p, \\eta=$η0",
          label=string.(Ls'),
          legend_title=L"L")
-    scatter!(ps, prob_scales_mean, markersize=2, leg=false)
+    #scatter!(ps, prob_scales_mean, markersize=2, leg=false)
     # Entanglement entropy scaling for varying η
     ep = plot(ηs, eta_scales_mean, 
-         yerror=eta_scales_std, lw=1.5,
+         ribbon=eta_scales_std, 
+         lw=1.5, fillalpha=0.3,
          xlabel=L"\eta", ylabel=L"S_1",
          title="Entanglement entropy for varying \\eta, p=$p0",
          label=string.(Ls'),
          legend_title=L"L")
-    scatter!(ηs, eta_scales_mean, markersize=2, leg=false)
+    #scatter!(ηs, eta_scales_mean, markersize=2, leg=false)
 
     plot(pp, ep, layout=(1,2), size=(1000, 600), dpi=1200)
-    savefig("figures/entropy_plot_L$(L1)_$(dL)_$(L2).png")
+    #savefig("figures/entropy_plot_L$(L1)_$(dL)_$(L2).png")
 end
 
