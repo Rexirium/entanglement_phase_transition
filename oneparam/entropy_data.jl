@@ -29,7 +29,7 @@ let
     Ls = collect(L1:dL:L2)
     nprob, neta = length(ps), length(ηs)
 
-    h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2).h5", "w") do file
+    h5open("data/oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "N", N)  
@@ -49,8 +49,8 @@ let
                 cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type),
             ps)
 
-        prob_scales_mean = [r[1] for r in prob_results]
-        prob_scales_std  = [r[2] for r in prob_results]
+        prob_mean = [r[1] for r in prob_results]
+        prob_std  = [r[2] for r in prob_results]
 
         for i in 1:nprob
             println("L=$L, p=$(round(ps[i],digits=2)), η=0.5 done with $N samples.")
@@ -62,22 +62,22 @@ let
                 cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type),
             ηs)
 
-        eta_scales_mean = [r[1] for r in eta_results]
-        eta_scales_std  = [r[2] for r in eta_results]
+        eta_mean = [r[1] for r in eta_results]
+        eta_std  = [r[2] for r in eta_results]
 
         for i in 1:neta
             println("L=$L, p=0.50, η=$(round(ηs[i],digits=2)) done with $N samples.")
         end
         eta_results = nothing  # free memory
         # Save data to HDF5 file
-        h5open("data/entropy_scale_L$(L1)_$(dL)_$(L2).h5", "r+") do file
+        h5open("data/oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
             # create group if not exists
             grp = create_group(file, "results_L=$L")     
 
-            write(grp, "prob_scales_mean", prob_scales_mean)
-            write(grp, "prob_scales_std", prob_scales_std)
-            write(grp, "eta_scales_mean", eta_scales_mean)
-            write(grp, "eta_scales_std", eta_scales_std)
+            write(grp, "prob_mean", prob_mean)
+            write(grp, "prob_std", prob_std)
+            write(grp, "eta_mean", eta_mean)
+            write(grp, "eta_std", eta_std)
         end
     end
 end
