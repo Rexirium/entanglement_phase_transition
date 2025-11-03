@@ -15,7 +15,7 @@ default(
 
 let 
     # Read data from HDF5 file
-    L1, dL, L2 = 8, 2, 18
+    L1, dL, L2 = 6, 2, 18
     nprob, neta = 21, 21
 
     file = h5open("data/oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
@@ -63,6 +63,6 @@ let
         legend_title=L"L")
 
     plot(pp, ep, layout=(1,2), size=(1000, 600), dpi=1200)
-    #savefig("figures/entropy_plot_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).png")
+    #savefig("figures/oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).png")
 end
 
