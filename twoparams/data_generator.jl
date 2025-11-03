@@ -20,8 +20,8 @@ end
 # define global constants for parameters
 @everywhere begin
     const type = Float64
-    const ps = collect(type, 0.0:0.1:1.0)
-    const ηs = collect(type, 0.0:0.1:1.0)
+    const ps = collect(type, 0.0:0.05:1.0)
+    const ηs = collect(type, 0.0:0.05:1.0)
     const params = vec([(p, η) for p in ps, η in ηs])
 
     function entropy_mean_multi_wrapper(lsize, idx)
