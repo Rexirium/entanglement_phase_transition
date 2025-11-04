@@ -3,23 +3,26 @@ using HDF5
 
 default(    
     grid=false, 
-    titlelocation=:left,
+    titlelocation=:center,
     framestyle=:box,
     legend=:topright,
     guidefontsize=14,
     legendfontsize=10,
     tickfontsize=10,
-    bottommargin=2Plots.mm,
-    leftmargin=4Plots.mm
+    bottommargin=1Plots.mm,
+    leftmargin=2Plots.mm
 )
 
 let 
     file = h5open("data/critical_params.h5", "r")
     ηs = read(file, "ηs")
-    critical_params = read(file, "critical_params")
+    p_crit = read(file, "p_crit")
+    nu_exp = read(file, "nu_exp")
+    close(file)
 
-    pcs = critical_params[:,1]
-    plot(pcs, ηs, lw=2, marker=:o,
-         ylabel=L"\eta", xlabel=L"p_c", 
-         title="2D phase diagram")
+    plot(p_crit, ηs, marker=:o, lw=2,
+         ylabel=L"\eta", xlabel=L"p",
+         title="2D phase diagram", 
+         label=L"p_c")
+    #savefig("figures/phase_diagram.png")
 end

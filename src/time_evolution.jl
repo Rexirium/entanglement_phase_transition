@@ -86,6 +86,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
+        normalize!(psi)
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
             samp = rand(Tp)
@@ -115,6 +116,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
+        normalize!(psi)
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
             samp = rand(Tp)
@@ -144,6 +146,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, para::Tuple{Real, Real}; c
             U = op("RdU", sites[j], sites[j+1], eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
+        normalize!(psi)
         # Apply weak measurement operator to each site with parameters `λ` and `Δ`
         for j in 1:lsize
             samp = rand(Tp)
@@ -170,6 +173,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, para::Tuple{Real, Real}; c
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
+        normalize!(psi)
         # Apply weak measurement operator to each site with parameters `λ` and `Δ`
         for j in 1:lsize
             samp = rand(Tp)
@@ -199,6 +203,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
+        normalize!(psi)
         # the layer for random non-Hermitian gates
         for j in 1:lsize
             samp = rand(Tp)
@@ -232,6 +237,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
+        normalize!(psi)
         # the layer for random non-Hermitian gates
         for j in 1:lsize
             samp = rand(Tp)
@@ -266,6 +272,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, para::Tuple{Real, Real
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
+        normalize!(psi)
         # apply random weak measurement
         for j in 1:lsize
             samp = rand(Tp)
@@ -297,6 +304,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, para::Tuple{Real, Real
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply!(U, psi, j, j+1; cutoff=cutoff)
         end
+        normalize!(psi)
         # apply random weak measurement
         for j in 1:lsize
             samp = rand(Tp)
