@@ -14,15 +14,23 @@ default(
 )
 
 let 
-    file = h5open("data/critical_params.h5", "r")
-    ηs = read(file, "ηs")
-    p_crit = read(file, "p_crit")
-    nu_exp = read(file, "nu_exp")
+    nprob, neta = 21, 21
+    file = h5open("data/critical_params_$(nprob)x$(neta).h5", "r")
+    ηs = read(file, "range/ηs")
+    ps = read(file, "range/ps")
+
+    grp = file["critical"]
+    prob_crit = read(grp, "prob_crit")
+    nu_prob = read(grp, "nu_prob")
+    eta_crit = read(grp, "eta_crit")
+    nu_eta = read(grp, "nu_eta")
     close(file)
 
-    plot(p_crit, ηs, marker=:o, lw=2,
+    plot(prob_crit, ηs, marker=:o, lw=2,
          ylabel=L"\eta", xlabel=L"p",
          title="2D phase diagram", 
          label=L"p_c")
+    plot!(ps, eta_crit, marker=:s, lw=2,
+          label=L"\eta_c")
     #savefig("figures/phase_diagram.png")
 end

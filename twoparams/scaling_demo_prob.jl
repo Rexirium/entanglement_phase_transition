@@ -7,7 +7,7 @@ using Plots, LaTeXStrings
 let 
     # Parameters
     L1, dL, L2 = 6, 2, 18
-    nprob, neta = 11, 11
+    nprob, neta = 21, 21
 
     p0 , η0 = 0.5, 0.5
     file = h5open("data/entropy_data_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
@@ -35,11 +35,9 @@ let
     end
     close(file)
 
-    Sc(lsize::Int, p::Real) = interps[findfirst(Ls .== lsize)](p)
-
     # Finite-size scaling analysis
     x_scaled(X, L, v1, v2) = L^(1/v2) .* (X .- v1)
-    y_scaled(Y, L, v1, v2) = Y .- Sc(L, v1)
+    y_scaled(Y, L, v1, v2) = Y .- interps[findfirst(Ls .== L)](v1)
 
     scaled_data, residuals, min_res, best_pc, best_nu = fss_two_var(
         data = data_with_err,
@@ -54,12 +52,16 @@ let
     plot_data(scaled_data, 
         xlabel=L"(p - p_c) L^{1/\nu}",
         ylabel=L"S_1(p) - S_1(p_c)",
-        legend=:best)
+        legend=:best, 
+        xguidefontsize=12,
+        yguidefontsize=12, 
+        size=(600,400)
+        )
     
     #=
     plot_contour(residuals, 
         v1i=0.0, v1f=1.0, n1 = 100,
-        v2i=0.1, v2f=5.0, n2=100,
+        v2i=0.5, v2f=5.0, n2=100,
         xlabel=L"p_c", ylabel=L"\nu",
         levels=20
     )
