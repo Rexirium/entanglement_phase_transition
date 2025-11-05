@@ -14,7 +14,7 @@ default(
 )
 
 let 
-    nprob, neta = 21, 21
+    nprob, neta = 11, 11
     file = h5open("data/critical_params_$(nprob)x$(neta).h5", "r")
     ηs = read(file, "range/ηs")
     ps = read(file, "range/ps")
@@ -32,5 +32,5 @@ let
          label=L"p_c")
     plot!(ps, eta_crit, marker=:s, lw=2,
           label=L"\eta_c")
-    #savefig("figures/phase_diagram.png")
+    #savefig("figures/phase_diagram_$(nprob)x$(neta).png")
 end
