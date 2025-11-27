@@ -16,21 +16,23 @@ end
 # include the entropy calculation code on all processes
 @everywhere include("../src/entropy_calc.jl")
 
-@everywhere const N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
+@everywhere begin 
+    const N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
+    const type = Float64
+end
 # define global constants for parameters
-const type = Float64
+
 const ps = collect(type, 0.0:0.05:1.0)
 const ηs = collect(type, 0.0:0.05:1.0)
 const param = vec([(p, η) for p in ps, η in ηs])
 
 @everywhere begin
     const params = $param
-    const typex = $type
     function entropy_mean_multi_wrapper(lsize, idx)
         p, η = params[idx]
         cutoff = 1e-12
         return entropy_mean_multi(lsize, 4lsize, p, η; numsamp=N,
-            cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=typex)
+            cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type)
     end
 end
 
