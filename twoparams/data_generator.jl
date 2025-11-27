@@ -18,15 +18,17 @@ end
 
 @everywhere const N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
 # define global constants for parameters
+const type = Float64
+const ps = collect(type, 0.0:0.05:1.0)
+const ηs = collect(type, 0.0:0.05:1.0)
+const param = vec([(p, η) for p in ps, η in ηs])
+
 @everywhere begin
-    const type = Float64
-    const ps = collect(type, 0.0:0.05:1.0)
-    const ηs = collect(type, 0.0:0.05:1.0)
-    const params = vec([(p, η) for p in ps, η in ηs])
+    const params = $param
 
     function entropy_mean_multi_wrapper(lsize, idx)
         p, η = params[idx]
-        cutoff = 1e-12 * lsize^3
+        cutoff = 1e-12
         return entropy_mean_multi(lsize, 4lsize, p, η; numsamp=N,
             cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type)
     end
@@ -34,7 +36,7 @@ end
 
 let 
     # Model parameters
-    L1, dL, L2 = 6, 2, 18
+    L1, dL, L2 = 4, 2, 18
     Ls = collect(L1:dL:L2)
     nprob, neta = length(ps), length(ηs)
 
@@ -48,7 +50,6 @@ let
     end
     
     for L in Ls
-
         results = pmap(idx -> entropy_mean_multi_wrapper(L, idx), 1:nprob*neta)
 
         data_means = reshape([r[1] for r in results], nprob, neta)
