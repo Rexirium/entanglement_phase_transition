@@ -25,12 +25,12 @@ const param = vec([(p, η) for p in ps, η in ηs])
 
 @everywhere begin
     const params = $param
-
+    const typex = $type
     function entropy_mean_multi_wrapper(lsize, idx)
         p, η = params[idx]
         cutoff = 1e-12
         return entropy_mean_multi(lsize, 4lsize, p, η; numsamp=N,
-            cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type)
+            cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=typex)
     end
 end
 
