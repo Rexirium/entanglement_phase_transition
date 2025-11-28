@@ -47,43 +47,39 @@ let
 
     for i in 1:nprob
         for j in 1:neta
-            xs = log.(Ls )
-            ys = log.(abs.(entropy_datas[i, j, :]))
+            xs = log.(Ls .+ 1)
+            ys = log.(abs.(entropy_datas[i, j, :]) .+ log(2))
             yerrs = abs.(entropy_error[i, j, :] ./ entropy_datas[i, j, :])
-            index = linregress(xs, ys, yerrs)
-            if index > 1.25
-                indices[i, j] = 1.25
-            elseif index < 0
+            index = linregress(xs, ys)
+            if index > 1.2 
+                indices[i, j] = 1.2
+            elseif index < 0 || isnan(index)
                 indices[i, j] = 0
             else
                 indices[i, j] = index
             end
-            #indices[i, j] = index
+            #indices[i, j] = isnan(index) ? 0.0 : index
         end
     end
 
     p_knots = range(ps[1], ps[end], length=nprob)
     η_knots = range(ηs[1], ηs[end], length=neta)
-    entropy_itp = linear_interpolation((p_knots, η_knots), indices)
+    entropy_itp = cubic_spline_interpolation((p_knots, η_knots), indices)
 
     p_fine = range(ps[1], ps[end], length=10*nprob)
     η_fine = range(ηs[1], ηs[end], length=10*neta)
     indices_fine = [entropy_itp(p, η) for p in p_fine, η in η_fine]
 
-    contourf(p_fine, η_fine, indices_fine',
-            xlabel=L"p", ylabel=L"\eta",
-            title="Entropy scaling index",
-            colorbar_title="index",
-            framestyle=:box, fill=true
-            )
-    #=
-    heatmap(p_fine, η_fine, indices_fine',
-            xlabel=L"p", ylabel=L"\eta",
-            title="Entropy scaling index",
-            colorbar_title="index",
-            framestyle=:box
-            )
     
+    heatmap(ps, ηs, indices',
+            xlabel=L"p", ylabel=L"\eta",
+            title="Entropy scaling index",
+            titlefontsize=14,
+            colorbar_title="index",
+            framestyle=:box, dpi=800
+            )
+    savefig("phase_apart/entropy_scaling_index_modified.png")
+    #=
     p0, η0 = 0.75, 0.0
     pidx = findfirst(x -> x == p0, ps)
     ηidx = findfirst(x -> x == η0, ηs)
