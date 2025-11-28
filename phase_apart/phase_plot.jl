@@ -1,5 +1,6 @@
 using MKL
 using LinearAlgebra
+using Interpolations
 using Plots, LaTeXStrings
 using HDF5
 
@@ -46,18 +47,43 @@ let
 
     for i in 1:nprob
         for j in 1:neta
-            xs = log.(collect(Ls))
+            xs = log.(Ls )
             ys = log.(abs.(entropy_datas[i, j, :]))
             yerrs = abs.(entropy_error[i, j, :] ./ entropy_datas[i, j, :])
-            indices[i, j] = linregress(xs, ys, yerrs)
+            index = linregress(xs, ys, yerrs)
+            if index > 1.25
+                indices[i, j] = 1.25
+            elseif index < 0
+                indices[i, j] = 0
+            else
+                indices[i, j] = index
+            end
+            #indices[i, j] = index
         end
     end
-#=
-    heatmap(ps, ηs, indices',
+
+    p_knots = range(ps[1], ps[end], length=nprob)
+    η_knots = range(ηs[1], ηs[end], length=neta)
+    entropy_itp = linear_interpolation((p_knots, η_knots), indices)
+
+    p_fine = range(ps[1], ps[end], length=10*nprob)
+    η_fine = range(ηs[1], ηs[end], length=10*neta)
+    indices_fine = [entropy_itp(p, η) for p in p_fine, η in η_fine]
+
+    contourf(p_fine, η_fine, indices_fine',
             xlabel=L"p", ylabel=L"\eta",
             title="Entropy scaling index",
-            colorbar_title="index")
-=#
+            colorbar_title="index",
+            framestyle=:box, fill=true
+            )
+    #=
+    heatmap(p_fine, η_fine, indices_fine',
+            xlabel=L"p", ylabel=L"\eta",
+            title="Entropy scaling index",
+            colorbar_title="index",
+            framestyle=:box
+            )
+    
     p0, η0 = 0.75, 0.0
     pidx = findfirst(x -> x == p0, ps)
     ηidx = findfirst(x -> x == η0, ηs)
@@ -70,4 +96,5 @@ let
          xlabel=L"L", ylabel="Entropy",
          title="Entropy scaling at p=0.75, η=0.0",
          label="data")
+    =#
 end
