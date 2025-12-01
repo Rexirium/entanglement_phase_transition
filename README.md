@@ -1,58 +1,134 @@
 # Entanglement Phase Transition Simulator
 
-A Julia project for simulating entanglement phase transitions in quantum spin chains using Matrix Product States (MPS) and random unitary circuits.
+A Julia project for simulating entanglement dynamics and phase transitions in random-unitary/measurement circuits using Matrix Product States (MPS). The project supports data generation, finite-size scaling, and visualization of results.
 
-## Overview
+---
 
-This project implements numerical simulations to study quantum entanglement dynamics in non-Hermitian systems and under measurements. Key features include:
+## Features
 
-- Time evolution of MPS under random unitary gates and non-Hermitian operations
-- Entropy calculations (von Neumann, Renyi) for MPS bipartitions
-- Scaling analysis of entanglement entropy
-- Data collapse analysis for phase transitions
-- Visualization tools for entropy evolution and distributions
+- **Time Evolution**: Simulate MPS dynamics under random two-site unitaries and weak measurements.
+- **Entropy Calculations**: Compute Renyi and von Neumann entropies for single samples or ensembles.
+- **Finite-Size Scaling**: Perform scaling analysis to extract critical exponents.
+- **Phase Diagrams**: Generate and visualize phase diagrams for entanglement transitions.
+- **Data Storage**: Store results in HDF5 format for efficient analysis and plotting.
 
-## Dependencies
+---
 
-- `Julia 1.x`
-- `ITensors.jl`: For MPS operations
-- `ITensorMPS.jl`: For MPS-specific functionality
-- `HDF5.jl`: For data storage
-- `Plots.jl`: For visualization
-- `LaTeXStrings.jl`: For plot labels
-- `Statistics.jl`: For statistical analysis
+## Project Structure
 
-## Key Components
+- **Core Code**:
+  - [`src/time_evolution.jl`](src/time_evolution.jl): Implements MPS time evolution.
+  - [`src/entropy_calc.jl`](src/entropy_calc.jl): Entropy calculation routines.
+  - [`mytebd.jl`](mytebd.jl): TEBD utilities and benchmarks.
 
-- [`time_evolution.jl`](time_evolution.jl): Core evolution routines for MPS
-- [`entanglement_entropies.jl`](entanglement_entropies.jl): Entropy calculation functions
-- [`mytebd.jl`](mytebd.jl): Time-Evolving Block Decimation implementation
-- [`entropy_calc.jl`](entropy_calc.jl): Statistical sampling of entropy measures
-- [`time_evolve_plot.jl`](time_evolve_plot.jl): Visualization of time evolution results
+- **One-Parameter Experiments**:
+  - [`oneparam/entropy_data.jl`](oneparam/entropy_data.jl): Data generation.
+  - [`oneparam/entropy_plot.jl`](oneparam/entropy_plot.jl): Plotting results.
+  - [`oneparam/finite_size_scaling.jl`](oneparam/finite_size_scaling.jl): Scaling analysis.
 
-## Usage
+- **Two-Parameter Experiments**:
+  - [`twoparams/data_generator.jl`](twoparams/data_generator.jl): Data generation.
+  - [`twoparams/phase_diagram.jl`](twoparams/phase_diagram.jl): Phase diagram generation.
+  - [`twoparams/scaling_demo_prob.jl`](twoparams/scaling_demo_prob.jl): Scaling analysis.
 
-1. Ensure Julia and required packages are installed
-2. Run simulations:
-   ```julia
-   julia> include("time_evolve_calc.jl")  # Generate evolution data
-   julia> include("time_evolve_plot.jl")  # Plot results
+- **Time Evolution**:
+  - [`time_evolve/time_evolve_calc.jl`](time_evolve/time_evolve_calc.jl): Time evolution driver.
+  - [`time_evolve/time_evolve_plot.jl`](time_evolve/time_evolve_plot.jl): Plotting time evolution results.
+
+- **Testing**:
+  - [`test/calc_test.jl`](test/calc_test.jl): Unit tests for entropy calculations.
+
+- **Data**:
+  - HDF5 files stored in the [`data/`](data/) directory.
+
+---
+
+## Requirements
+
+- **Julia**: Version 1.x
+- **Dependencies**:
+  - ITensors.jl, ITensorMPS.jl, HDF5.jl, Plots.jl, LaTeXStrings.jl
+  - Interpolations.jl, FiniteSizeScaling.jl
+- **Recommended**: MKL for optimized performance.
+
+---
+
+## Quick Start
+
+1. **Install Dependencies**:
+   ```sh
+   julia -e 'using Pkg; Pkg.instantiate()'
    ```
 
-3. For scaling analysis:
-   ```julia
-   julia> include("entropy_scale.jl")
-   julia> include("entropy_plot.jl")
-   ```
+2. **Run Experiments**:
+   - One-parameter experiment:
+     ```julia
+     include("oneparam/entropy_data.jl")
+     ```
+   - Two-parameter experiment:
+     ```julia
+     include("twoparams/data_generator.jl")
+     ```
+   - Time evolution:
+     ```julia
+     include("time_evolve/time_evolve_calc.jl")
+     ```
 
-## Data Storage
-Simulation results are stored in HDF5 files:
-- `time_evolve_data.h5`: Time evolution data
-- `entropy_scale_data.h5`: Scaling analysis data
-- `critical_params.h5`: Phase transition parameters
+3. **Analyze Results**:
+   - Plot entropy data:
+     ```julia
+     include("oneparam/entropy_plot.jl")
+     ```
+   - Perform finite-size scaling:
+     ```julia
+     include("oneparam/finite_size_scaling.jl")
+     ```
+   - Generate phase diagrams:
+     ```julia
+     include("twoparams/phase_diagram.jl")
+     ```
 
-## Examples
-See `time_evolve_plot.jl` for example usage and parameter settings.
+---
+
+## Data Layout
+
+- **Directory**: All generated data is stored in the [`data/`](data/) directory.
+- **Examples**:
+  - [`data/time_evolve_data.h5`](data/time_evolve_data.h5)
+  - [`data/oneparam_L8_2_18_21x21.h5`](data/oneparam_L8_2_18_21x21.h5)
+  - [`data/critical_params_11x11.h5`](data/critical_params_11x11.h5)
+
+---
+
+## Example: Finite-Size Scaling
+
+The scaling variable is defined as:
+
+$$
+x = L^{1/\nu} (p - p_c)
+$$
+
+Quantities are plotted as $S_1(p) - S_1(p_c)$ vs. $x$. See:
+- [`oneparam/finite_size_scaling.jl`](oneparam/finite_size_scaling.jl)
+- [`twoparams/scaling_demo_prob.jl`](twoparams/scaling_demo_prob.jl)
+
+---
 
 ## License
-MIT License: 
+
+This project is licensed under the MIT License. See [LICENSE.md](LICENSE.md) for details.
+
+---
+
+## References
+
+- **Core Evolution**: [`src/time_evolution.jl`](src/time_evolution.jl)
+- **Entropy Calculations**: [`src/entropy_calc.jl`](src/entropy_calc.jl)
+- **TEBD Utilities**: [`mytebd.jl`](mytebd.jl)
+- **Data Generation**:
+  - One-parameter: [`oneparam/entropy_data.jl`](oneparam/entropy_data.jl)
+  - Two-parameter: [`twoparams/data_generator.jl`](twoparams/data_generator.jl)
+- **Plotting**:
+  - Entropy: [`oneparam/entropy_plot.jl`](oneparam/entropy_plot.jl)
+  - Time Evolution: [`time_evolve/time_evolve_plot.jl`](time_evolve/time_evolve_plot.jl)
+
