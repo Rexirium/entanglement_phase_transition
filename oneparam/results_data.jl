@@ -28,6 +28,7 @@ let
     L1, dL, L2 = 6, 2, 18
     Ls = collect(L1:dL:L2)
     nprob, neta = length(ps), length(ηs)
+    cutoff = 1e-12 
 
     h5open("data/oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
@@ -41,16 +42,16 @@ let
     end
 
     for L in Ls
-        cutoff = 1e-12 * L^3
-
         # Calculate probability scaling in parallel using pmap
         prob_results = pmap(p ->
-            entropy_mean_multi(L, 4L, p, η0; numsamp=N,
+            calculation_mean_multi(L, 4L, p, η0; numsamp=N,
                 cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type),
             ps)
 
-        prob_mean = [r[1] for r in prob_results]
-        prob_std  = [r[2] for r in prob_results]
+        prob_mean_entropy = [res.mean_entropy for res in prob_results]
+        prob_std_entropy  = [res.std_entropy for res in prob_results]
+        prob_mean_corrs = hcat([res.mean_corrs for res in prob_results]...)
+        prob_std_corrs  = hcat([res.std_corrs for res in prob_results]...)
 
         prob_results = nothing  # free memory
         # Calculate eta scaling in parallel using pmap
@@ -59,19 +60,27 @@ let
                 cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type),
             ηs)
 
-        eta_mean = [r[1] for r in eta_results]
-        eta_std  = [r[2] for r in eta_results]
+        eta_mean_entropy = [res.mean_entropy for res in eta_results]
+        eta_std_entropy  = [res.std_entropy for res in eta_results]
+        eta_mean_corrs = hcat([res.mean_corrs for res in eta_results]...)
+        eta_std_corrs  = hcat([res.std_corrs for res in eta_results]...)
 
         eta_results = nothing  # free memory
         # Save data to HDF5 file
-        h5open("data/oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
+        h5open("data/entropy_corr_oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
             # create group if not exists
             grp = create_group(file, "results_L=$L")     
+            grp1 = create_group(file, "vsprob")
+            write(grp1, "mean_entropy", prob_mean_entropy)
+            write(grp1, "std_entropy", prob_std_entropy)
+            write(grp1, "mean_corrs", prob_mean_corrs)
+            write(grp1, "std_corrs", prob_std_corrs)
 
-            write(grp, "prob_mean", prob_mean)
-            write(grp, "prob_std", prob_std)
-            write(grp, "eta_mean", eta_mean)
-            write(grp, "eta_std", eta_std)
+            grp2 = create_group(file, "vseta")
+            write(grp2, "mean_entropy", eta_mean_entropy)
+            write(grp2, "std_entropy", eta_std_entropy)
+            write(grp2, "mean_corrs", eta_mean_corrs)   
+            write(grp2, "std_corrs", eta_std_corrs)
         end
     end
 end
