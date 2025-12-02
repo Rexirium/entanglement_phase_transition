@@ -97,16 +97,18 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int}; cutoff=1e-12)
     (a ≤ 0 || b > length(psi)) && error("The sites do not exist!")
     # obtain the reduced density matrix
     orthogonalize!(psi, a)
-    bra = prime(dag(psi), linkinds(psi)..., siteinds(psi)[xs]...)
-    start = a==1 ? psi[a] : prime(psi[a], linkinds(psi, a-1))
-    rho = contract(start, bra[a])
 
+    rho = psi[a]
+    ir = linkind(psi, a)
+    rho *= dag(prime(prime(psi[a], tags="Site"), ir))
     for j in (a+1):(b-1)
         rho *= psi[j]
-        rho *= bra[j]
+        rho *= dag(prime(psi[j]))
     end
-    rho *= prime(psi[b], linkind(psi, b))
-    rho *= bra[b]
+    rho *= psi[b]
+    il = linkind(psi, b-1)
+    rho *= dag(prime(prime(psi[b], tags="Site"), il))
+
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true, cutoff=cutoff)
     return diag(D)
