@@ -131,60 +131,6 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
     end
 end
 
-function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, para::Tuple{Real, Real}; cutoff::Real=1e-12) where Tp<:Real
-    """
-    Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
-    and a weak measurement operator applied to each site with parameters `λ` and `Δ`.
-    """
-    psi = copy(psi0)
-    sites = siteinds(psi)
-    lsize = length(sites)
-    T = promote_itensor_eltype(psi)
-
-    for t in 1:ttotal
-        # Apply random unitary operators to pairs of sites
-        for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1], eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
-        end
-        normalize!(psi)
-        # Apply weak measurement operator to each site with parameters `λ` and `Δ`
-        for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                weak_measure!(psi, j, para)
-            end
-        end
-    end
-    return psi
-end
-
-function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, para::Tuple{Real, Real}; cutoff::Real=1e-12) where Tp<:Real
-    """
-    Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
-    and a weak measurement operator applied to each site with parameters `λ` and `Δ`. (inplace version)
-    """
-    sites = siteinds(psi)
-    lsize = length(sites)
-    T = promote_itensor_eltype(psi)
-
-    for t in 1:ttotal
-        # Apply random unitary operators to pairs of sites
-        for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
-        end
-        normalize!(psi)
-        # Apply weak measurement operator to each site with parameters `λ` and `Δ`
-        for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                weak_measure!(psi, j, para)
-            end
-        end
-    end
-end
-
 function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
      cutoff::Real=1e-12, ent_cutoff::Real=1e-12) where Tp<:Real
     """
@@ -246,71 +192,6 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
                 M = op("NH", sites[j]; eta=eta)
                 apply!(M, psi, j)
                 normalize!(psi)
-            end
-        end
-        # Record the entanglement entropy after each time step
-        entropies[t+1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-    end
-    return entropies
-end
-
-function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, para::Tuple{Real, Real}, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12, ent_cutoff::Real=1e-12) where Tp<:Real
-    """
-    Same with function `mps_evolve` but with entanglement entropy biparted at site `b` recorded after each time step.
-    """
-    psi = copy(psi0)
-    sites = siteinds(psi) 
-    lsize = length(sites)
-    T = promote_itensor_eltype(psi)
-    # Initialize the entropy vector. 
-    entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-
-    for t in 1:ttotal
-        # Initialize the entropy vector.
-        for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
-        end
-        normalize!(psi)
-        # apply random weak measurement
-        for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                weak_measure!(psi, j, para)
-            end
-        end
-        # Record the entanglement entropy after each time step
-        entropies[t+1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-    end
-    return psi, entropies
-end
-
-function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, para::Tuple{Real, Real}, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12, ent_cutoff::Real=1e-12) where Tp<:Real
-    """
-    Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
-    """
-    sites = siteinds(psi) 
-    lsize = length(sites)
-    T = promote_itensor_eltype(psi)
-    # Initialize the entropy vector. 
-    entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
-
-    for t in 1:ttotal
-        # Initialize the entropy vector.
-        for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
-        end
-        normalize!(psi)
-        # apply random weak measurement
-        for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                weak_measure!(psi, j, para)
             end
         end
         # Record the entanglement entropy after each time step
