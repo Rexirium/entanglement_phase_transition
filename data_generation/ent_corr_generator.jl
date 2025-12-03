@@ -76,7 +76,7 @@ let
 
         h5open("data/ent_corr_data_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
             grpL = create_group(file, "L=$L")
-            grpe = create_group(grpL, "entropy")
+            grpe = create_group(grpL, "entropy_SvN")
             write(grpe, "means", entropy_means)
             write(grpe, "stds", entropy_stds)
 
