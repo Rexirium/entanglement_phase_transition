@@ -27,7 +27,9 @@ A Julia project for simulating entanglement dynamics and phase transitions in ra
   - [`oneparam/finite_size_scaling.jl`](oneparam/finite_size_scaling.jl): Scaling analysis.
 
 - **Two-Parameter Experiments**:
-  - [`twoparams/data_generator.jl`](twoparams/data_generator.jl): Data generation.
+  - [`twoparams/entropy_generator
+  .jl`](twoparams/entropy_generator
+  .jl): Data generation.
   - [`twoparams/phase_diagram.jl`](twoparams/phase_diagram.jl): Phase diagram generation.
   - [`twoparams/scaling_demo_prob.jl`](twoparams/scaling_demo_prob.jl): Scaling analysis.
 
@@ -67,7 +69,8 @@ A Julia project for simulating entanglement dynamics and phase transitions in ra
      ```
    - Two-parameter experiment:
      ```julia
-     include("twoparams/data_generator.jl")
+     include("twoparams/entropy_generator
+     .jl")
      ```
    - Time evolution:
      ```julia
@@ -127,7 +130,9 @@ This project is licensed under the MIT License. See [LICENSE.md](LICENSE.md) for
 - **TEBD Utilities**: [`mytebd.jl`](mytebd.jl)
 - **Data Generation**:
   - One-parameter: [`oneparam/entropy_data.jl`](oneparam/entropy_data.jl)
-  - Two-parameter: [`twoparams/data_generator.jl`](twoparams/data_generator.jl)
+  - Two-parameter: [`twoparams/entropy_generator
+  .jl`](twoparams/entropy_generator
+  .jl)
 - **Plotting**:
   - Entropy: [`oneparam/entropy_plot.jl`](oneparam/entropy_plot.jl)
   - Time Evolution: [`time_evolve/time_evolve_plot.jl`](time_evolve/time_evolve_plot.jl)
