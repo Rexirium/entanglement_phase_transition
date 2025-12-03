@@ -1,4 +1,4 @@
-include("../src/entropy_calc.jl")
+include("../src/simulation.jl")
 
 let 
     L = 10

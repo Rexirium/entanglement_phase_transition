@@ -15,7 +15,7 @@ end
 @everywhere MKL.set_num_threads(1)
 
 # include the entropy calculation code on all processes
-@everywhere include("../src/entropy_calc.jl")
+@everywhere include("../src/simulation.jl")
 
 let
     # Parameters

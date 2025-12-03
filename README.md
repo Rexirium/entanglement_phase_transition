@@ -18,7 +18,7 @@ A Julia project for simulating entanglement dynamics and phase transitions in ra
 
 - **Core Code**:
   - [`src/time_evolution.jl`](src/time_evolution.jl): Implements MPS time evolution.
-  - [`src/entropy_calc.jl`](src/entropy_calc.jl): Entropy calculation routines.
+  - [`src/simulation.jl`](src/simulation.jl): Entropy calculation routines.
   - [`mytebd.jl`](mytebd.jl): TEBD utilities and benchmarks.
 
 - **One-Parameter Experiments**:
@@ -123,7 +123,7 @@ This project is licensed under the MIT License. See [LICENSE.md](LICENSE.md) for
 ## References
 
 - **Core Evolution**: [`src/time_evolution.jl`](src/time_evolution.jl)
-- **Entropy Calculations**: [`src/entropy_calc.jl`](src/entropy_calc.jl)
+- **Entropy Calculations**: [`src/simulation.jl`](src/simulation.jl)
 - **TEBD Utilities**: [`mytebd.jl`](mytebd.jl)
 - **Data Generation**:
   - One-parameter: [`oneparam/entropy_data.jl`](oneparam/entropy_data.jl)

@@ -14,7 +14,7 @@ end
 @everywhere MKL.set_num_threads(1)
 
 # include the entropy calculation code on all processes
-@everywhere include("../src/entropy_calc.jl")
+@everywhere include("../src/simulation.jl")
 
 @everywhere begin 
     const N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
