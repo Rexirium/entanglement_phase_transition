@@ -2,7 +2,7 @@ using HDF5
 using Base.Threads
 using ITensors, ITensorMPS
 
-include("../src/entanglement_entropies.jl")
+include("../src/entanglement.jl")
 
 mylock = ReentrantLock()
 

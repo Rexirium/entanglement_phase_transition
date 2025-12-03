@@ -1,4 +1,4 @@
-include("entanglement_entropies.jl")
+include("entanglement.jl")
 include("correlation.jl")
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)
