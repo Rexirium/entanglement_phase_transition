@@ -23,7 +23,7 @@ function linregress(xs, ys, yerrs)
 end
 
 let 
-    L1, dL, L2 = 6, 2, 18
+    L1, dL, L2 = 4, 2, 18
     nprob, neta = 21, 21
 
     file = h5open("data/entropy_data_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
@@ -47,14 +47,12 @@ let
 
     for i in 1:nprob
         for j in 1:neta
-            xs = log.(Ls .+ 1)
-            ys = log.(abs.(entropy_datas[i, j, :]) .+ log(2))
+            xs = log.(Ls)
+            ys = log.(abs.(entropy_datas[i, j, :]))
             yerrs = abs.(entropy_error[i, j, :] ./ entropy_datas[i, j, :])
             index = linregress(xs, ys)
-            if index > 1.2 
-                indices[i, j] = 1.2
-            elseif index < 0 || isnan(index)
-                indices[i, j] = 0
+            if (abs(index) > 1.3 && j <= 3) || isnan(index)
+                indices[i, j] = 0.0
             else
                 indices[i, j] = index
             end
@@ -78,7 +76,7 @@ let
             colorbar_title="index",
             framestyle=:box, dpi=800
             )
-    savefig("phase_apart/entropy_scaling_index_modified.png")
+    #savefig("phase_separate/entropy_scaling_index_modified.png")
     #=
     p0, η0 = 0.75, 0.0
     pidx = findfirst(x -> x == p0, ps)
