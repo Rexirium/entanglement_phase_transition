@@ -7,7 +7,7 @@ MKL.set_num_threads(1)
 # add worker processes if none exist (use CPU-1 workers to avoid oversubscription)
 if nprocs() == 1
     nworkers_to_add = max(Sys.CPU_THREADS ÷ Threads.nthreads() - 1, 1)
-    addprocs(SlurmManager(), nworkers_to_add)
+    addprocs(SlurmManager())
 end
 # make sure workers have required packages and the same MKL threading setting
 @everywhere using MKL
@@ -68,8 +68,8 @@ let
 
         entropy_means = reshape(entropy_means, nprob, neta)
         entropy_stds  = reshape(entropy_stds, nprob, neta)
-        corrs_means = reshape(hcat(corrs_means...), nprob, neta)
-        corrs_stds  = reshape(hcat(corrs_stds...), nprob, neta)
+        corrs_means = reshape(hcat(corrs_means...), L, nprob, neta)
+        corrs_stds  = reshape(hcat(corrs_stds...), L, nprob, neta)
 
         println("L=$L done with $N samples.")
         results = nothing  # free memory
