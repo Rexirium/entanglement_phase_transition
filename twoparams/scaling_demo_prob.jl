@@ -6,10 +6,10 @@ using Plots, LaTeXStrings
 
 let 
     # Parameters
-    L1, dL, L2 = 6, 2, 18
+    L1, dL, L2 = 4, 2, 18
     nprob, neta = 21, 21
 
-    p0 , η0 = 0.5, 0.5
+    η0 = 0.0
     file = h5open("data/entropy_data_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
     type_str = read(file, "datatype")
     grp = file["params"]
@@ -49,7 +49,7 @@ let
         norm_y = false
     )
     
-    plot_data(scaled_data, 
+    plot_data(data_with_err, 
         xlabel=L"(p - p_c) L^{1/\nu}",
         ylabel=L"S_1(p) - S_1(p_c)",
         legend=:best, 

@@ -32,15 +32,15 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
-    ss = siteinds("S=1/2", lsize)
-    eta = restype(eta)
-    psi0 = MPS(Complex{restype}, ss, "Up")
-    # mean value of `numsamp` samples
     b = lsize ÷ 2
+    eta = restype(eta)
+    # mean value of `numsamp` samples
     entropies = Vector{restype}(undef, numsamp)
     corrs = Matrix{restype}(undef, lsize, numsamp)
     for i in 1:numsamp 
-        psi = mps_evolve(psi0, ttotal, prob, eta; cutoff=cutoff)
+        ss = siteinds("S=1/2", lsize)
+        psi = MPS(Complex{restype}, ss, "Up")
+        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
         entropies[i] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
         corrs[:, i] .= correlation_vec(psi, which_op, which_op)  
     end
