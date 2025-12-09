@@ -53,5 +53,5 @@ let
          legend_title=L"\eta")
 
     plot(pt, px, et, ex, layout=(2,2), size=(1200, 800))
-    # savefig("figures/time_evolve_plot.png")
+    savefig("figures/time_evolve_plot.png")
 end

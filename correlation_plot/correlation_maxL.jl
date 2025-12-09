@@ -10,7 +10,7 @@ let
     ps = read(file, "params/ps")
     ηs = read(file, "params/ηs")
 
-    p0, η0 = 1.0, 0.0
+    p0, η0 = 0.5, 0.1
     p_idx = findfirst(ps .== p0)
     η_idx = findfirst(ηs .== η0)
 
