@@ -13,7 +13,7 @@ struct CalcResult{T}
 end
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
-    cutoff::Real=1e-12, ent_cutoff::Real=1e-12, restype::DataType=Float64)
+    cutoff::Real=1e-12,  restype::DataType=Float64)
     """
     Calculate the final entanglement entropy of the MPS after time evolution. 
     """
@@ -24,12 +24,12 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_en
     psi = MPS(Complex{restype}, ss, "Up")
     mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
 
-    entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+    entropy = Renyi_entropy(psi, b, which_ent)
     return entropy
 end
 
 function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1, which_op::String="Sz"; 
-    cutoff::Real=1e-12, ent_cutoff::Real=1e-12, restype::DataType=Float64)
+    cutoff::Real=1e-12, restype::DataType=Float64)
     """
     Calculate the final entanglement entropy and correlation function of the MPS after time evolution. 
     """
@@ -40,13 +40,13 @@ function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, whic
     psi = MPS(Complex{restype}, ss, "Up")
     mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
 
-    entropy = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+    entropy = Renyi_entropy(psi, b, which_ent)
     corrs = correlation_vec(psi, which_op, which_op)
     return entropy, corrs
 end
 
 function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
-    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+    numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
@@ -58,7 +58,7 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent:
     for i in 1:numsamp 
         psi = MPS(Complex{restype}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        entropies[i] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+        entropies[i] = Renyi_entropy(psi, b, which_ent)
     end
     mean_entropy = mean(entropies)
     # return std if needed
@@ -71,7 +71,7 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent:
 end
 
 function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1, which_op::String="Sz"; 
-    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+    numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
@@ -84,7 +84,7 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_
     for i in 1:numsamp 
         psi = MPS(Complex{restype}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        entropies[i] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+        entropies[i] = Renyi_entropy(psi, b, which_ent)
         corrs[:, i] .= correlation_vec(psi, which_op, which_op)  
     end
     mean_entropy = mean(entropies)
@@ -100,7 +100,7 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_
 end
 
 function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
-    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+    numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
@@ -113,7 +113,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, whic
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{restype}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        @inbounds entropies[i] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+        @inbounds entropies[i] = Renyi_entropy(psi, b, which_ent)
         psi = nothing
         ss = nothing
     end
@@ -128,7 +128,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, whic
 end
 
 function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1, which_op::String="Sz"; 
-    numsamp::Int=10, cutoff::Real=1e-12, ent_cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+    numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
@@ -142,7 +142,7 @@ function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{restype}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        @inbounds entropies[i] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+        @inbounds entropies[i] = Renyi_entropy(psi, b, which_ent)
         @inbounds corrs[:, i] .= correlation_vec(psi, which_op, which_op)
         psi = nothing
         ss = nothing

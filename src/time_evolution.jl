@@ -132,7 +132,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
 end
 
 function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12, ent_cutoff::Real=1e-12) where Tp<:Real
+     cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve` but with entanglement entropy and correlation function recorded after each time step.
     """
@@ -142,7 +142,7 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
     T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
     entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+    entropies[1] = Renyi_entropy(psi, b, which_ent)
     corrs = Matrix{real(T)}(undef, lsize, ttotal+1)
     corrs[:, 1] .= correlation_vec(psi, which_op, which_op)
 
@@ -163,14 +163,14 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
             end
         end
         # Record the entanglement entropy and correlation function after each time step
-        entropies[t+1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+        entropies[t+1] = Renyi_entropy(psi, b, which_ent)
         corrs[:, t+1] .= correlation_vec(psi, which_op, which_op)
     end
     return psi, entropies, corrs
 end
 
 function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12, ent_cutoff::Real=1e-12) where Tp<:Real
+     cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
@@ -179,7 +179,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
     T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
     entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+    entropies[1] = Renyi_entropy(psi, b, which_ent)
 
     for t in 1:ttotal
         # the layer for random unitary operators
@@ -198,13 +198,13 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
             end
         end
         # Record the entanglement entropy after each time step
-        entropies[t+1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+        entropies[t+1] = Renyi_entropy(psi, b, which_ent)
     end
     return entropies
 end
 
 function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1, which_op::String="Sz"; 
-     cutoff::Real=1e-12, ent_cutoff::Real=1e-12) where Tp<:Real
+     cutoff::Real=1e-12) where Tp<:Real
      """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` and correlation vector recorded after each time step.
     """
@@ -213,7 +213,7 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
     T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
     entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+    entropies[1] = Renyi_entropy(psi, b, which_ent)
     corrs = Matrix{real(T)}(undef, lsize, ttotal+1)
     corrs[:, 1] .= correlation_vec(psi, which_op, which_op)
 
@@ -234,7 +234,7 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
             end
         end
         # Record the entanglement entropy and correlation function after each time step
-        entropies[t+1] = Renyi_entropy(psi, b, which_ent; cutoff=ent_cutoff)
+        entropies[t+1] = Renyi_entropy(psi, b, which_ent)
         corrs[:, t+1] .= correlation_vec(psi, which_op, which_op)
     end
     return entropies, corrs

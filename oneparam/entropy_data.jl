@@ -21,6 +21,7 @@ let
     # Parameters
     N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
     type = Float64
+    cutoff = 1e-12
 
     p0::type, η0::type = 0.5, 0.5
     ps = collect(type, 0.0:0.05:1.0)
@@ -41,12 +42,10 @@ let
     end
 
     for L in Ls
-        cutoff = 1e-12 * L^3
-
         # Calculate probability scaling in parallel using pmap
         prob_results = pmap(p ->
             entropy_mean_multi(L, 4L, p, η0; numsamp=N,
-                cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type),
+                cutoff=cutoff, retstd=true, restype=type),
             ps)
 
         prob_mean = [r[1] for r in prob_results]
@@ -56,7 +55,7 @@ let
         # Calculate eta scaling in parallel using pmap
         eta_results = pmap(η ->
             entropy_mean_multi(L, 4L, p0, η; numsamp=N,
-                cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type),
+                cutoff=cutoff, retstd=true, restype=type),
             ηs)
 
         eta_mean = [r[1] for r in eta_results]

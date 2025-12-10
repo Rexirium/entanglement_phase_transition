@@ -32,7 +32,7 @@ const param = vec([(p, η) for p in ps, η in ηs])
     function calculation_multi_wrapper(lsize, idx)
         p, η = params[idx]
         return calculation_mean_multi(lsize, 4lsize, p, η; numsamp=N,
-            cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type)
+            cutoff=cutoff, retstd=true, restype=type)
     end
 end
 

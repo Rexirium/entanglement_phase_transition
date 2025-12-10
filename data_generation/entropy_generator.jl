@@ -19,20 +19,20 @@ end
 @everywhere begin 
     const N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
     const type = Float64
+    const cutoff = 1e-12
 end
 # define global constants for parameters
 
 const ps = collect(type, 0.0:0.05:1.0)
 const ηs = collect(type, 0.0:0.05:1.0)
 const param = vec([(p, η) for p in ps, η in ηs])
-const cutoff = 1e-12
 
 @everywhere begin
     const params = $param
     function entropy_mean_multi_wrapper(lsize, idx)
         p, η = params[idx]
         return entropy_mean_multi(lsize, 4lsize, p, η; numsamp=N,
-            cutoff=cutoff, ent_cutoff=cutoff, retstd=true, restype=type)
+            cutoff=cutoff, retstd=true, restype=type)
     end
 end
 
