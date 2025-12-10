@@ -5,7 +5,7 @@ let
     L1, dL, L2 = 4, 2, 18
     nprob, neta = 21, 21
 
-    file = h5open("data/ent_corr_data_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
+    file = h5open("data/entr_corr_data_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
     type_str = read(file, "datatype")
     ps = read(file, "params/ps")
     ηs = read(file, "params/ηs")

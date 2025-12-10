@@ -30,7 +30,7 @@ let
     nprob, neta = length(ps), length(ηs)
     cutoff = 1e-12 
 
-    h5open("data/ent_corr_oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
+    h5open("data/entr_corr_oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "N", N)  
@@ -67,7 +67,7 @@ let
 
         eta_results = nothing  # free memory
         # Save data to HDF5 file
-        h5open("data/ent_corr_oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
+        h5open("data/entr_corr_oneparam_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
             # create group if not exists
             grp = create_group(file, "results_L=$L")     
             grp1 = create_group(file, "vsprob")

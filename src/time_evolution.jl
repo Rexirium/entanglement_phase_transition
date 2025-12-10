@@ -131,7 +131,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
     end
 end
 
-function entropy_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
+function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
      cutoff::Real=1e-12, ent_cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve` but with entanglement entropy and correlation function recorded after each time step.
@@ -203,7 +203,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
     return entropies
 end
 
-function entropy_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1, which_op::String="Sz"; 
+function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1, which_op::String="Sz"; 
      cutoff::Real=1e-12, ent_cutoff::Real=1e-12) where Tp<:Real
      """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` and correlation vector recorded after each time step.
