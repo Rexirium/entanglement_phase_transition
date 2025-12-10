@@ -10,7 +10,7 @@ let
     ps = read(file, "params/ps")
     ηs = read(file, "params/ηs")
 
-    p0, η0 = 0.5, 0.1
+    p0, η0 = 0.1, 0.9
     p_idx = findfirst(ps .== p0)
     η_idx = findfirst(ηs .== η0)
 
@@ -25,7 +25,7 @@ let
 
     println("Entropy S_vN at (p, η) = ($(p0), $(η0)) for L=$(L2): $(entropy_mean) ± $(entropy_std)")
     plot(0:(L2-1), corr_func_means, yerror=corr_func_stds,
-         xlabel="Distance r", ylabel=L"C(r)",
+         xlabel=L"r", ylabel=L"C(r)",
          title="Correlation function at (p, η) = ($(p0), $(η0))",
-         legend=false)
+         legend=false, framestyle=:box, lw=1)
 end
