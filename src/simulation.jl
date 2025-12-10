@@ -13,7 +13,7 @@ struct CalcResult{T}
 end
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
-    cutoff::Real=1e-12, ent_cutoff::Real=1e-12, restype::DataType=Float64) where Tp<:Real
+    cutoff::Real=1e-12, ent_cutoff::Real=1e-12, restype::DataType=Float64)
     """
     Calculate the final entanglement entropy of the MPS after time evolution. 
     """

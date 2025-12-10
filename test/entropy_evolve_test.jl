@@ -7,7 +7,7 @@ include("../src/time_evolution.jl")
 
 let 
     L, T = 10, 200
-    p, η = 0.5, 0.5
+    p, η = 0.1, 0.9
     b = L ÷ 2
     
     ss = siteinds("S=1/2", L)
@@ -17,7 +17,11 @@ let
 
     mean_entropy = zeros(T+1)
     for n in 1:T+1
-        mean_entropy[n] = mean(evolve[1:n])
+        if n > 2L
+            mean_entropy[n] = mean(evolve[2L+1:n])
+        else
+            continue
+        end
     end
 
 
