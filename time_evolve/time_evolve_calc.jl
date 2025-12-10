@@ -106,10 +106,10 @@ let
 
     h5open("data/entr_corr_evolve_L$L.h5", "r+") do file
         grp = create_group(file, "eta_results")
-        write(grp, "entropy/evolve", entr_evolv_prob)
-        write(grp, "entropy/distri", entr_distr_prob)
-        write(grp, "correlation/evolve", corr_evolv_prob)
-        write(grp, "correlation/distri", corr_distr_prob)
+        write(grp, "entropy/evolve", entr_evolv_eta)
+        write(grp, "entropy/distri", entr_distr_eta)
+        write(grp, "correlation/evolve", corr_evolv_eta)
+        write(grp, "correlation/distri", corr_distr_eta)
     end
 end
 
