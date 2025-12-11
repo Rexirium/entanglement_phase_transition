@@ -9,6 +9,7 @@ function von_Neumann_entropy(psi::MPS, b::Int)
     _ , S, _ = ITensors.svd(psi[b], linds)
 
     ps = diag(S) .* diag(S)
+    ps = ps[ps.>0] # remove zero probabilities
     return - sum(ps .* log2.(ps))
 end
 
@@ -19,11 +20,7 @@ function zeroth_entropy(psi::MPS, b::Int)
     (b <= 0 || b >= length(psi)) && return 0.0
     # SVD decomposition to obtain the Schmidt coefficients
     orthogonalize!(psi, b)
-    linds = uniqueinds(psi[b], psi[b+1])
-    _ , S, _ = ITensors.svd(psi[b], linds)
-    
-    chi = dim(S,1)
-    return log2(chi)
+    return log2(linkdim(psi, b))
 end
 
 function Renyi_entropy(psi::MPS, b::Int, n::Real)
@@ -39,6 +36,7 @@ function Renyi_entropy(psi::MPS, b::Int, n::Real)
     _ , S, _ = ITensors.svd(psi[b], linds)
 
     ps = diag(S) .* diag(S)
+    ps = ps[ps.>0]
     trace = sum(ps .^ n)
     return log2(trace)/(1-n)
 end
@@ -82,7 +80,8 @@ function reduced_density_eigen(psi::MPS, x::Int)
     rho = contract(Ap, psi[x])
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
-    return diag(D)
+    ps = diag(D)
+    return ps[ps.>0]  # remove zero probabilities
 end
 
 function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})
@@ -111,7 +110,8 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})
 
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
-    return diag(D)
+    ps = diag(D)
+    return ps[ps.>0]  # remove zero probabilities
 end
 
 function mutual_information_region(psi::MPS, as, bs, n::Real=1)
