@@ -54,12 +54,13 @@ function apply!(G1::ITensor, psi::MPS, loc::Int)
     psi[loc] = A
 end
 
-function apply!(G2::ITensor, psi::MPS, j1::Int, j2::Int; cutoff::Real=1e-12)
+function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-12)
     """
-    Apply two adjacent site gate `G2` to the MPS `psi` at sites `loc` inplace.
+    Apply two adjacent site gate `G2` to the MPS `psi` at sites `j1` and `j1+1` inplace.
     """
-    (j2 - j1 != 1) && error("The two sites is not adjacent or in wrong order!")
+    (j1<=0 || j1>= length(psi)) && error("Wrong starting site for two-site gate application.")
     orthogonalize!(psi, j1)
+    j2 = j1 + 1
     A = (psi[j1] * psi[j2]) * G2
     noprime!(A)
     linds = uniqueinds(psi[j1], psi[j2])
@@ -82,7 +83,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
+            apply2!(U, psi, j; cutoff=cutoff)
         end
         normalize!(psi)
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
@@ -112,7 +113,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
+            apply2!(U, psi, j; cutoff=cutoff)
         end
         normalize!(psi)
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
@@ -145,7 +146,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
+            apply2!(U, psi, j; cutoff=cutoff)
         end
         normalize!(psi)
         # the layer for random non-Hermitian gates
@@ -179,7 +180,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
+            apply2!(U, psi, j; cutoff=cutoff)
         end
         normalize!(psi)
         # the layer for random non-Hermitian gates
@@ -213,7 +214,7 @@ function entropy_evolve_test!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
+            apply2!(U, psi, j; cutoff=cutoff)
         end
         normalize!(psi)
         # the layer for random non-Hermitian gates
@@ -252,7 +253,7 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
+            apply2!(U, psi, j; cutoff=cutoff)
         end
         normalize!(psi)
         # the layer for random non-Hermitian gates
@@ -289,7 +290,7 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply!(U, psi, j, j+1; cutoff=cutoff)
+            apply2!(U, psi, j; cutoff=cutoff)
         end
         normalize!(psi)
         # the layer for random non-Hermitian gates
