@@ -5,7 +5,7 @@ function von_Neumann_entropy(psi::MPS, b::Int)
     (b <= 0 || b >= length(psi)) && return 0.0
     # SVD decomposition to obtain the Schmidt coefficients
     orthogonalize!(psi, b)
-    linds =  b==1 ? siteind(psi ,1) : (linkind(psi, b-1), siteind(psi, b))
+    linds = uniqueinds(psi[b], psi[b+1])
     _ , S, _ = ITensors.svd(psi[b], linds)
 
     ps = diag(S) .* diag(S)
@@ -19,7 +19,7 @@ function zeroth_entropy(psi::MPS, b::Int)
     (b <= 0 || b >= length(psi)) && return 0.0
     # SVD decomposition to obtain the Schmidt coefficients
     orthogonalize!(psi, b)
-    linds =  b==1 ? siteind(psi ,1) : (linkind(psi, b-1), siteind(psi, b))
+    linds = uniqueinds(psi[b], psi[b+1])
     _ , S, _ = ITensors.svd(psi[b], linds)
     
     chi = dim(S,1)
@@ -35,7 +35,7 @@ function Renyi_entropy(psi::MPS, b::Int, n::Real)
     n == 1 && return von_Neumann_entropy(psi, b)
     # SVD decomposition to obtain the Schmidt coefficients
     orthogonalize!(psi, b)
-    linds =  b==1 ? siteind(psi ,1) : (linkind(psi, b-1), siteind(psi, b))
+    linds = uniqueinds(psi[b], psi[b+1])
     _ , S, _ = ITensors.svd(psi[b], linds)
 
     ps = diag(S) .* diag(S)

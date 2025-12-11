@@ -60,13 +60,10 @@ function apply!(G2::ITensor, psi::MPS, j1::Int, j2::Int; cutoff::Real=1e-12)
     """
     (j2 - j1 != 1) && error("The two sites is not adjacent or in wrong order!")
     orthogonalize!(psi, j1)
-    A = psi[j1] * psi[j2] * G2
+    A = (psi[j1] * psi[j2]) * G2
     noprime!(A)
-    if j1 == 1
-        psi[j1], S, psi[j2] = svd(A, siteind(psi, j1); cutoff=cutoff)
-    else
-        psi[j1], S, psi[j2] = svd(A, (siteind(psi, j1), linkind(psi, j1-1)); cutoff=cutoff)
-    end
+    linds = uniqueinds(psi[j1], psi[j2])
+    psi[j1], S, psi[j2] = svd(A, linds; cutoff=cutoff)
     psi[j2] *= S
     set_ortho_lims!(psi, j2:j2)
 end
@@ -179,7 +176,9 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
     T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
     entropies = Vector{real(T)}(undef, ttotal+1)
+    maxbonds = Vector{Int}(undef, ttotal+1)
     entropies[1] = Renyi_entropy(psi, b, which_ent)
+    maxbonds[1] = 1
 
     for t in 1:ttotal
         # the layer for random unitary operators
@@ -199,8 +198,9 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
         end
         # Record the entanglement entropy after each time step
         entropies[t+1] = Renyi_entropy(psi, b, which_ent)
+        maxbonds[t+1] = maxlinkdim(psi)
     end
-    return entropies
+    return entropies, maxbonds
 end
 
 function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1, which_op::String="Sz"; 
