@@ -6,14 +6,15 @@ using Plots, LaTeXStrings
 include("../src/time_evolution.jl")
 
 let 
-    L, T = 10, 200
-    p, η = 0.1, 0.9
+    L, T = 12, 48
+    p, η = 0.8, 0.5
     b = L ÷ 2
     
     ss = siteinds("S=1/2", L)
     psi = MPS(ss, "Up")
 
-    evolve = entropy_evolve!(psi, T, p, η, b)
+    evolve = @timev entropy_evolve!(psi, T, p, η, b; cutoff=1e-12)
+    distri = [Renyi_entropy(psi, j, 1) for j in 0:L]
 
     mean_entropy = zeros(T+1)
     for n in 1:T+1
@@ -25,6 +26,8 @@ let
     end
 
 
-    plot(0:T, evolve, lw = 2, framestyle=:box, label=L"S_\mathrm{vN}(t)")
+    pe = plot(0:T, evolve, lw = 2, framestyle=:box, xlabel=L"t", label=L"S_\mathrm{vN}(t)")
     plot!(0:T, mean_entropy, lw = 2, framestyle=:box, label=L"\overline{S_\mathrm{vN}}(t)")
+    pd = plot(0:L, distri, lw = 2, framestyle=:box, xlabel=L"x", label=L"S_\mathrm{vN}(x)")
+    plot(pe, pd, layout = (2,1), size=(600,800), legend=:topright)
 end
