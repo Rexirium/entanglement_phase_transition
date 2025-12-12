@@ -1,9 +1,7 @@
 using Statistics
-using ITensors, ITensorMPS
+include("time_evolution.jl")
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
-
-include("time_evolution.jl")
 
 struct CalcResult{T}
     mean_entropy::T

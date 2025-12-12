@@ -1,3 +1,4 @@
+using ITensors, ITensorMPS
 include("entanglement.jl")
 include("correlation.jl")
 
@@ -88,13 +89,13 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
         normalize!(psi)
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                M = op("NH", sites[j]; eta=eta)
-                apply!(M, psi, j)
-                # Normalize the MPS after applying the non Hermitian operator
-                normalize!(psi)
+            if rand(Tp) >= prob
+                continue
             end
+            M = op("NH", sites[j]; eta=eta)
+            apply!(M, psi, j)
+            # Normalize the MPS after applying the non Hermitian operator
+            normalize!(psi)
         end
     end
     return psi
@@ -118,13 +119,13 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
         normalize!(psi)
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                M = op("NH", sites[j]; eta=eta)
-                apply!(M, psi, j)
-                # Normalize the MPS after applying the non Hermitian operator
-                normalize!(psi)
+            if rand(Tp) >= prob
+                continue
             end
+            M = op("NH", sites[j]; eta=eta)
+            apply!(M, psi, j)
+            # Normalize the MPS after applying the non Hermitian operator
+            normalize!(psi)
         end
     end
 end
@@ -151,12 +152,12 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
         normalize!(psi)
         # the layer for random non-Hermitian gates
         for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                M = op("NH", sites[j]; eta=eta)
-                apply!(M, psi, j)
-                normalize!(psi)
+            if rand(Tp) >= prob
+                continue
             end
+            M = op("NH", sites[j]; eta=eta)
+            apply!(M, psi, j)
+            normalize!(psi)
         end
         # Record the entanglement entropy after each time step
         entropies[t+1] = Renyi_entropy(psi, b, which_ent)
@@ -185,12 +186,12 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
         normalize!(psi)
         # the layer for random non-Hermitian gates
         for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                M = op("NH", sites[j]; eta=eta)
-                apply!(M, psi, j)
-                normalize!(psi)
+            if rand(Tp) >= prob
+                continue
             end
+            M = op("NH", sites[j]; eta=eta)
+            apply!(M, psi, j)
+            normalize!(psi)
         end
         # Record the entanglement entropy after each time step
         entropies[t+1] = Renyi_entropy(psi, b, which_ent)
@@ -220,11 +221,11 @@ function entropy_evolve_test!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int
         # the layer for random non-Hermitian gates
         gates = ITensor[]
         for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                M = op("NH", sites[j]; eta=eta)
-                push!(gates, M)
+            if rand(Tp) >= prob
+                continue
             end
+            M = op("NH", sites[j]; eta=eta)
+            push!(gates, M)
         end
         psi = apply(gates, psi)
         normalize!(psi)
@@ -258,12 +259,12 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
         normalize!(psi)
         # the layer for random non-Hermitian gates
         for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                M = op("NH", sites[j]; eta=eta)
-                apply!(M, psi, j)
-                normalize!(psi)
+            if rand(Tp) >= prob
+                continue
             end
+            M = op("NH", sites[j]; eta=eta)
+            apply!(M, psi, j)
+            normalize!(psi)
         end
         # Record the entanglement entropy and correlation function after each time step
         entropies[t+1] = Renyi_entropy(psi, b, which_ent)
@@ -295,12 +296,12 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
         normalize!(psi)
         # the layer for random non-Hermitian gates
         for j in 1:lsize
-            samp = rand(Tp)
-            if samp < prob
-                M = op("NH", sites[j]; eta=eta)
-                apply!(M, psi, j)
-                normalize!(psi)
+            if rand(Tp) >= prob
+                continue
             end
+            M = op("NH", sites[j]; eta=eta)
+            apply!(M, psi, j)
+            normalize!(psi)
         end
         # Record the entanglement entropy and correlation function after each time step
         entropies[t+1] = Renyi_entropy(psi, b, which_ent)
@@ -308,4 +309,21 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
     end
     return entropies, corrs
 end
+#=
+let
+    L = 10
+    ss = siteinds("S=1/2", L)
+    psi = random_mps(ss; linkdims=4)
 
+    for j in 1:L
+        samp = rand()
+        if samp >= 0.5
+            continue
+        end
+        M = op("NH", siteind(psi, j); eta=0.0)
+        apply!(M, psi, j)
+        normalize!(psi)
+    end
+    println(von_Neumann_entropy(psi, 5))
+end
+=#

@@ -1,7 +1,7 @@
 using MKL
-using ITensors, ITensorMPS
 using Statistics
 using Plots, LaTeXStrings
+#MKL.set_num_threads(1)
 
 include("../src/time_evolution.jl")
 
