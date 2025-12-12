@@ -47,7 +47,7 @@ end
 #=
 let 
     ss = siteinds("S=1/2", 10)
-    psi = random_mps(ss; linkdims=4)
+    psi = randomMPS(ss; linkdims=4)
     @time println(correlation_vec(psi, "Sx", "Sx"))
     @time println(correlation_matrix(psi, "Sx", "Sx")[4, 4])
 end

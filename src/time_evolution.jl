@@ -199,42 +199,6 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
     return entropies
 end
 
-function entropy_evolve_test!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12) where Tp<:Real
-    """
-    Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
-    """
-    sites = siteinds(psi) 
-    lsize = length(sites)
-    T = promote_itensor_eltype(psi)
-    # Initialize the entropy vector. 
-    entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = Renyi_entropy(psi, b, which_ent)
-
-    for t in 1:ttotal
-        # the layer for random unitary operators
-        for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply2!(U, psi, j; cutoff=cutoff)
-        end
-        normalize!(psi)
-        # the layer for random non-Hermitian gates
-        gates = ITensor[]
-        for j in 1:lsize
-            if rand(Tp) >= prob
-                continue
-            end
-            M = op("NH", sites[j]; eta=eta)
-            push!(gates, M)
-        end
-        psi = apply(gates, psi)
-        normalize!(psi)
-        # Record the entanglement entropy after each time step
-        entropies[t+1] = Renyi_entropy(psi, b, which_ent)
-    end
-    return entropies
-end
-
 function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
      cutoff::Real=1e-12) where Tp<:Real
     """
@@ -313,7 +277,7 @@ end
 let
     L = 10
     ss = siteinds("S=1/2", L)
-    psi = random_mps(ss; linkdims=4)
+    psi = randomMPS(ss; linkdims=4)
 
     for j in 1:L
         samp = rand()
