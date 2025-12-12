@@ -86,7 +86,6 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply2!(U, psi, j; cutoff=cutoff)
         end
-        normalize!(psi)
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
             if rand(Tp) >= prob
@@ -116,7 +115,6 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply2!(U, psi, j; cutoff=cutoff)
         end
-        normalize!(psi)
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
             if rand(Tp) >= prob
@@ -149,7 +147,6 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply2!(U, psi, j; cutoff=cutoff)
         end
-        normalize!(psi)
         # the layer for random non-Hermitian gates
         for j in 1:lsize
             if rand(Tp) >= prob
@@ -183,7 +180,6 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply2!(U, psi, j; cutoff=cutoff)
         end
-        normalize!(psi)
         # the layer for random non-Hermitian gates
         for j in 1:lsize
             if rand(Tp) >= prob
@@ -220,7 +216,6 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply2!(U, psi, j; cutoff=cutoff)
         end
-        normalize!(psi)
         # the layer for random non-Hermitian gates
         for j in 1:lsize
             if rand(Tp) >= prob
@@ -257,7 +252,6 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             apply2!(U, psi, j; cutoff=cutoff)
         end
-        normalize!(psi)
         # the layer for random non-Hermitian gates
         for j in 1:lsize
             if rand(Tp) >= prob
