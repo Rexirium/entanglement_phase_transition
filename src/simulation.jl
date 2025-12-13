@@ -68,6 +68,23 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent:
     end
 end
 
+function entropy_once(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
+        cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+    b = lsize ÷ 2
+    eta = restype(eta)
+    ss = siteinds("S=1/2", lsize)
+    psi = MPS(Complex{restype}, ss, "Up")
+
+    mean_entropy, std_entropy = entropy_avg!(psi, ttotal, prob, eta, b, which_ent; cutoff=cutoff)
+
+    # return std if needed
+    if retstd==false
+        return mean_entropy
+    else
+        return mean_entropy, std_entropy
+    end
+end
+
 function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1, which_op::String="Sz"; 
     numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
