@@ -1,6 +1,14 @@
 using ITensors, ITensorMPS
+using LinearAlgebra, Random
 include("entanglement.jl")
 include("correlation.jl")
+
+struct CalcResult{T}
+    mean_entropy::T
+    std_entropy::T
+    mean_corrs::Vector{T}
+    std_corrs::Vector{T}
+end
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)
     """
@@ -15,7 +23,8 @@ function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::T) where T<
     """
     Create a non-Hermitian operator for the given site index `s` with parameter `eta`.
     """
-    return op(Matrix{T}([1 0; 0 eta]), s)
+    M = diagm(shuffle([1, eta]))
+    return op(M, s)
 end
 
 function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index; x::Real, λ::Real=1.0, Δ::Real=1.0)
@@ -129,7 +138,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
 end
 
 function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12) where Tp<:Real
+    cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
@@ -163,7 +172,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
 end
 
 function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12) where Tp<:Real
+    cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
@@ -196,7 +205,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
 end
 
 function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12) where Tp<:Real
+    cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
     """
@@ -221,7 +230,7 @@ function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_
             apply!(M, psi, j)
             normalize!(psi)
         end
-        if t == sat
+        if t == sat  #Welford algorithm
             avg = Renyi_entropy(psi, b, which_ent)
         elseif t > sat
             entropy = Renyi_entropy(psi, b, which_ent)
@@ -234,7 +243,7 @@ function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_
 end
 
 function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
-     cutoff::Real=1e-12) where Tp<:Real
+    cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve` but with entanglement entropy and correlation function recorded after each time step.
     """
@@ -271,7 +280,7 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
 end
 
 function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1, which_op::String="Sz"; 
-     cutoff::Real=1e-12) where Tp<:Real
+    cutoff::Real=1e-12) where Tp<:Real
      """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` and correlation vector recorded after each time step.
     """
@@ -304,6 +313,53 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
         corrs[:, t+1] .= correlation_vec(psi, which_op, which_op)
     end
     return entropies, corrs
+end
+
+function entr_corr_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1, which_op::String="Sz"; 
+    cutoff::Real=1e-12) where Tp<:Real
+    sites = siteinds(psi) 
+    lsize = length(sites)
+    T = promote_itensor_eltype(psi)
+    restype = real(T)
+    sat = 2lsize + 1
+    # Initialize the entropy and correlation
+    avg_entr, s2_entr = 0.0, 0.0
+    avg_corr = zeros(restype, lsize)
+    s2_corr = zeros(restype, lsize)
+
+    for t in 1:ttotal
+        # the layer for random unitary operators
+        for j in (iseven(t) + 1):2:lsize-1
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
+            apply2!(U, psi, j; cutoff=cutoff)
+        end
+        # the layer for random non-Hermitian gates
+        for j in 1:lsize
+            if rand(Tp) >= prob
+                continue
+            end
+            M = op("NH", sites[j]; eta=eta)
+            apply!(M, psi, j)
+            normalize!(psi)
+        end
+        if t == sat
+            avg_entr = Renyi_entropy(psi, b, which_ent)
+            avg_corr .= correlation_vec(psi, which_op, which_op)
+        elseif t > sat
+            entr = Renyi_entropy(psi, b, which_ent)
+            corr = correlation_vec(psi, which_op, which_op)
+
+            delta_entr = entr - avg_entr
+            delta_corr = corr .- avg_corr
+            avg_entr += delta_entr / (t + 1 - sat)
+            avg_corr .+= delta_corr ./ (t + 1 - sat)
+            s2_entr += delta_entr * (entr - avg_entr)
+            s2_corr .+= delta_corr .* (corr .- avg_corr)
+        end
+    end
+    std_entr = sqrt(s2_entr / (ttotal - sat))
+    std_corr = sqrt.(s2_corr ./ (ttotal - sat))
+    return CalcResult{restype}(avg_entr, std_entr, avg_corr, std_corr)
 end
 #=
 let

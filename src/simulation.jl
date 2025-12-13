@@ -3,13 +3,6 @@ include("time_evolution.jl")
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
-struct CalcResult{T}
-    mean_entropy::T
-    std_entropy::T
-    mean_corrs::Vector{T}
-    std_corrs::Vector{T}
-end
-
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
     cutoff::Real=1e-12,  restype::DataType=Float64)
     """
@@ -111,6 +104,25 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_
         std_entropy = stdm(entropies, mean_entropy; corrected=false)
         std_corrs = vec(stdm(corrs, mean_corrs; dims=2, corrected=false))
         return CalcResult{restype}(mean_entropy, std_entropy, mean_corrs, std_corrs)
+    end
+end
+
+function calculation_once(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1, which_op::String="Sz"; 
+    cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+
+    b = lsize ÷ 2
+    eta = restype(eta)
+    ss = siteinds("S=1/2", lsize)
+    psi = MPS(Complex{restype}, ss, "Up")
+
+    res = entr_corr_avg!(psi, ttotal, prob, eta, b, which_ent, which_op; 
+        cutoff=cutoff)
+    
+    # return std if needed
+    if retstd==false
+        return res.mean_entropy, res.mean_corrs
+    else
+        return res
     end
 end
 
