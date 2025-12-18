@@ -47,8 +47,9 @@ end
 #=
 let 
     ss = siteinds("S=1/2", 10)
-    psi = randomMPS(ss; linkdims=4)
-    @time println(correlation_vec(psi, "Sx", "Sx"))
-    @time println(correlation_matrix(psi, "Sx", "Sx")[4, 4])
+    psi = randomMPS(ss; linkdims=1)
+    orthogonalize!(psi, 5)
+    @time println(correlation_vec(psi, "Sz", "Sz"))
 end
 =#
+

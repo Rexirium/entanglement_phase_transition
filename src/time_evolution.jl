@@ -23,7 +23,7 @@ function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::T) where T<
     """
     Create a non-Hermitian operator for the given site index `s` with parameter `eta`.
     """
-    M = diagm(shuffle([1, eta]))
+    M = diagm([1, eta])
     return op(M, s)
 end
 
@@ -59,7 +59,9 @@ function apply!(G1::ITensor, psi::MPS, loc::Int)
     """
     Apply the gate `G1` to the MPS `psi` at site `loc` inplace.
     """
-    orthogonalize!(psi, loc)
+    if ortho_lims(psi) != loc:loc
+        orthogonalize!(psi, loc)
+    end
     A = noprime(psi[loc] * G1)
     psi[loc] = A
 end
@@ -364,18 +366,12 @@ end
 #=
 let
     L = 10
+    p, η = 0.9, 0.0
     ss = siteinds("S=1/2", L)
-    psi = randomMPS(ss; linkdims=4)
+    psi = MPS(ComplexF64, ss, "Up")
 
-    for j in 1:L
-        samp = rand()
-        if samp >= 0.5
-            continue
-        end
-        M = op("NH", siteind(psi, j); eta=0.0)
-        apply!(M, psi, j)
-        normalize!(psi)
-    end
-    println(von_Neumann_entropy(psi, 5))
+    mps_evolve!(psi, 4L, p, η; cutoff=1e-14)
+    
+    println(norm(psi))
 end
 =#
