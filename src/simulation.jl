@@ -3,7 +3,7 @@ include("time_evolution.jl")
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
-function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
+function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
     cutoff::Real=1e-12,  restype::DataType=Float64)
     """
     Calculate the final entanglement entropy of the MPS after time evolution. 
@@ -19,8 +19,8 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_en
     return entropy
 end
 
-function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1, which_op::String="Sz"; 
-    cutoff::Real=1e-12, restype::DataType=Float64)
+function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
+    which_op::String="Sz", cutoff::Real=1e-12, restype::DataType=Float64)
     """
     Calculate the final entanglement entropy and correlation function of the MPS after time evolution. 
     """
@@ -36,7 +36,7 @@ function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, whic
     return entropy, corrs
 end
 
-function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
+function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
     numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
@@ -61,14 +61,14 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent:
     end
 end
 
-function entropy_once(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
+function entropy_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
         cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     b = lsize ÷ 2
     eta = restype(eta)
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{restype}, ss, "Up")
 
-    mean_entropy, std_entropy = entropy_avg!(psi, ttotal, prob, eta, b, which_ent; cutoff=cutoff)
+    mean_entropy, std_entropy = entropy_avg!(psi, ttotal, prob, eta, b; which_ent, cutoff=cutoff)
 
     # return std if needed
     if retstd==false
@@ -78,7 +78,7 @@ function entropy_once(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent:
     end
 end
 
-function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1, which_op::String="Sz"; 
+function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, which_op::String="Sz", 
     numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
@@ -107,7 +107,7 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_
     end
 end
 
-function calculation_once(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1, which_op::String="Sz"; 
+function calculation_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, which_op::String="Sz", 
     cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
 
     b = lsize ÷ 2
@@ -115,7 +115,7 @@ function calculation_once(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{restype}, ss, "Up")
 
-    res = entr_corr_avg!(psi, ttotal, prob, eta, b, which_ent, which_op; 
+    res = entr_corr_avg!(psi, ttotal, prob, eta, b; which_ent, which_op, 
         cutoff=cutoff)
     
     # return std if needed
@@ -126,7 +126,7 @@ function calculation_once(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_
     end
 end
 
-function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1; 
+function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
     numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
@@ -154,7 +154,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, whic
     end
 end
 
-function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, which_ent::Real=1, which_op::String="Sz"; 
+function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, which_op::String="Sz", 
     numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)

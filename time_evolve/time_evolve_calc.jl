@@ -43,7 +43,7 @@ let
         Threads.@threads for j in 1:numsamp
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
-            entr, corr = entr_corr_evolve!(psi, T, ps[i], η0, b, 1)
+            entr, corr = entr_corr_evolve!(psi, T, ps[i], η0, b)
             entr_distr = [Renyi_entropy(psi, x, 1) for x in 0:L]
 
             corr_distr[:, j] .= correlation_vec(psi, "Sz", "Sz")
@@ -85,7 +85,7 @@ let
         Threads.@threads for j in 1:numsamp
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
-            entr, corr = entr_corr_evolve!(psi, T, p0, ηs[i], b, 1)
+            entr, corr = entr_corr_evolve!(psi, T, p0, ηs[i], b)
             entr_distr = [Renyi_entropy(psi, x, 1) for x in 0:L]
 
             corr_distr[:, j] .= correlation_vec(psi, "Sz", "Sz")

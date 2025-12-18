@@ -139,7 +139,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
     end
 end
 
-function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
+function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, 
     cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
@@ -173,7 +173,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
     return psi, entropies
 end
 
-function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
+function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, 
     cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
@@ -206,7 +206,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, whi
     return entropies
 end
 
-function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
+function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, 
     cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
@@ -244,7 +244,7 @@ function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_
     return avg, sqrt(s2 / (ttotal - sat))
 end
 
-function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1; 
+function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, which_op="Sz",
     cutoff::Real=1e-12) where Tp<:Real
     """
     Same with function `mps_evolve` but with entanglement entropy and correlation function recorded after each time step.
@@ -281,7 +281,7 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
     return psi, entropies, corrs
 end
 
-function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1, which_op::String="Sz"; 
+function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, which_op::String="Sz", 
     cutoff::Real=1e-12) where Tp<:Real
      """
     Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` and correlation vector recorded after each time step.
@@ -317,7 +317,7 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, w
     return entropies, corrs
 end
 
-function entr_corr_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int, which_ent::Real=1, which_op::String="Sz"; 
+function entr_corr_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, which_op::String="Sz", 
     cutoff::Real=1e-12) where Tp<:Real
     sites = siteinds(psi) 
     lsize = length(sites)
@@ -370,7 +370,7 @@ let
     ss = siteinds("S=1/2", L)
     psi = MPS(ComplexF64, ss, "Up")
 
-    mps_evolve!(psi, 4L, p, η; cutoff=1e-14)
+    apply2!(op("RdU", ss[1], ss[2]), psi, 1; cutoff=1e-10)
     
     println(norm(psi))
 end

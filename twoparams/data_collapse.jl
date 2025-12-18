@@ -7,7 +7,7 @@ function object_function(pc::Real, nu::Real, eta::Real, data, Ls, ps; numsamp = 
     """
     Objective function for data collapse.
     """
-    critical_entropies = [ entropy_mean_multi(l, 4l, pc, eta, l ÷ 2; numsamp=numsamp) for l in Ls ]
+    critical_entropies = [ entropy_mean_multi(l, 4l, pc, eta; numsamp=numsamp) for l in Ls ]
     ys = data .- transpose(critical_entropies)
     xs = (ps .- pc) .* transpose(Ls .^(1/nu))
 
