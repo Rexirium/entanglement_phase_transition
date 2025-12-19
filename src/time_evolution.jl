@@ -23,7 +23,7 @@ function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::T) where T<
     """
     Create a non-Hermitian operator for the given site index `s` with parameter `eta`.
     """
-    M = diagm([1, eta])
+    M = diagm(shuffle([1, eta]))
     return op(M, s)
 end
 
@@ -59,9 +59,7 @@ function apply!(G1::ITensor, psi::MPS, loc::Int)
     """
     Apply the gate `G1` to the MPS `psi` at site `loc` inplace.
     """
-    if ortho_lims(psi) != loc:loc
-        orthogonalize!(psi, loc)
-    end
+    orthogonalize!(psi, loc)
     A = noprime(psi[loc] * G1)
     psi[loc] = A
 end

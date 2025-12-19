@@ -1,4 +1,4 @@
-function ent_entropy(ps::NDTensors.DenseTensor, n::Real=1)
+function ent_entropy(ps::NDTensors.Tensor, n::Real=1)
     """
     Calculate the n-th order Renyi entropy from the eigenvalues ps.
     """
@@ -138,10 +138,3 @@ function mutual_information_region(psi::MPS, as::Vector{<:Int}, bs::Vector{<:Int
     Sab = ent_entropy(psi, sort(union(as, bs)), n)
     return Sa + Sb - Sab
 end
-#=
-let 
-    ss = siteinds("S=1/2", 10)
-    psi = randomMPS(ss; linkdims=4)
-    entropy_bipart(psi, 5)
-end
-=#
