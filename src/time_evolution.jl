@@ -150,7 +150,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whi
     T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
     entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = Renyi_entropy(psi, b, which_ent)
+    entropies[1] = ent_entropy(psi, b, which_ent)
 
     for t in 1:ttotal
         # the layer for random unitary operators
@@ -168,7 +168,7 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whi
             normalize!(psi)
         end
         # Record the entanglement entropy after each time step
-        entropies[t+1] = Renyi_entropy(psi, b, which_ent)
+        entropies[t+1] = ent_entropy(psi, b, which_ent)
     end
     return psi, entropies
 end
@@ -183,7 +183,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whi
     T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
     entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = Renyi_entropy(psi, b, which_ent)
+    entropies[1] = ent_entropy(psi, b, which_ent)
 
     for t in 1:ttotal
         # the layer for random unitary operators
@@ -201,7 +201,7 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whi
             normalize!(psi)
         end
         # Record the entanglement entropy after each time step
-        entropies[t+1] = Renyi_entropy(psi, b, which_ent)
+        entropies[t+1] = ent_entropy(psi, b, which_ent)
     end
     return entropies
 end
@@ -233,9 +233,9 @@ function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_
             normalize!(psi)
         end
         if t == sat  #Welford algorithm
-            avg = Renyi_entropy(psi, b, which_ent)
+            avg = ent_entropy(psi, b, which_ent)
         elseif t > sat
-            entropy = Renyi_entropy(psi, b, which_ent)
+            entropy = ent_entropy(psi, b, which_ent)
             delta = entropy - avg
             avg += delta /(t + 1 - sat) 
             s2 += delta * (entropy - avg)
@@ -255,7 +255,7 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; w
     T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
     entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = Renyi_entropy(psi, b, which_ent)
+    entropies[1] = ent_entropy(psi, b, which_ent)
     corrs = Matrix{real(T)}(undef, lsize, ttotal+1)
     corrs[:, 1] .= correlation_vec(psi, which_op, which_op)
 
@@ -275,7 +275,7 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; w
             normalize!(psi)
         end
         # Record the entanglement entropy and correlation function after each time step
-        entropies[t+1] = Renyi_entropy(psi, b, which_ent)
+        entropies[t+1] = ent_entropy(psi, b, which_ent)
         corrs[:, t+1] .= correlation_vec(psi, which_op, which_op)
     end
     return psi, entropies, corrs
@@ -291,7 +291,7 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; w
     T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
     entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = Renyi_entropy(psi, b, which_ent)
+    entropies[1] = ent_entropy(psi, b, which_ent)
     corrs = Matrix{real(T)}(undef, lsize, ttotal+1)
     corrs[:, 1] .= correlation_vec(psi, which_op, which_op)
 
@@ -311,7 +311,7 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; w
             normalize!(psi)
         end
         # Record the entanglement entropy and correlation function after each time step
-        entropies[t+1] = Renyi_entropy(psi, b, which_ent)
+        entropies[t+1] = ent_entropy(psi, b, which_ent)
         corrs[:, t+1] .= correlation_vec(psi, which_op, which_op)
     end
     return entropies, corrs
@@ -345,10 +345,10 @@ function entr_corr_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whic
             normalize!(psi)
         end
         if t == sat
-            avg_entr = Renyi_entropy(psi, b, which_ent)
+            avg_entr = ent_entropy(psi, b, which_ent)
             avg_corr .= correlation_vec(psi, which_op, which_op)
         elseif t > sat
-            entr = Renyi_entropy(psi, b, which_ent)
+            entr = ent_entropy(psi, b, which_ent)
             corr = correlation_vec(psi, which_op, which_op)
 
             delta_entr = entr - avg_entr

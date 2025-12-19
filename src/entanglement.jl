@@ -1,6 +1,20 @@
-function von_Neumann_entropy(psi::MPS, b::Int)
+function ent_entropy(ps::NDTensors.DenseTensor, n::Real=1)
     """
-    Calculate the von Neumann entropy of the MPS `psi` biparted after site `b`.
+    Calculate the n-th order Renyi entropy from the eigenvalues ps.
+    """
+    if n == 0
+        return log2(length(ps))
+    elseif n == 1
+        return -sum(ps .* log2.(ps))
+    else
+        trace = sum(ps .^ n)
+        return log2(trace)/(1-n)
+    end
+end
+
+function ent_entropy(psi::MPS, b::Int, n::Real=1)
+    """
+    Calculate the n-th order Renyi entropy of the MPS `psi` biparted after site `b`.
     """
     (b <= 0 || b >= length(psi)) && return 0.0
     # SVD decomposition to obtain the Schmidt coefficients
@@ -10,7 +24,22 @@ function von_Neumann_entropy(psi::MPS, b::Int)
 
     ps = diag(S) .* diag(S)
     ps = ps[ps.>0] # remove zero probabilities
-    return - sum(ps .* log2.(ps))
+    return ent_entropy(ps, n)
+end
+
+function ent_entropy(psi::MPS, xs::Vector{<:Int}, n::Real=1)
+    """
+    Calculate the n-th order Renyi entropy of a region of sites `xs` from other sites.
+    """
+    ps = reduced_density_eigen(psi, xs)
+    return ent_entropy(ps, n)
+end
+
+function von_Neumann_entropy(psi::MPS, b::Int)
+    """
+    Calculate the von Neumann entropy of the MPS `psi` biparted after site `b`.
+    """
+    return ent_entropy(psi, b, 1)
 end
 
 function zeroth_entropy(psi::MPS, b::Int)
@@ -20,6 +49,7 @@ function zeroth_entropy(psi::MPS, b::Int)
     (b <= 0 || b >= length(psi)) && return 0.0
     # SVD decomposition to obtain the Schmidt coefficients
     orthogonalize!(psi, b)
+    truncate!(psi, b) 
     return log2(linkdim(psi, b))
 end
 
@@ -27,46 +57,28 @@ function Renyi_entropy(psi::MPS, b::Int, n::Real)
     """
     Calculate the n-th order Renyi entropy of the MPS `psi` biparted after site `b`.
     """
-    (b <= 0 || b >= length(psi)) && return 0.0
-    n == 0 && return zeroth_entropy(psi, b)
-    n == 1 && return von_Neumann_entropy(psi, b)
-    # SVD decomposition to obtain the Schmidt coefficients
-    orthogonalize!(psi, b)
-    linds = uniqueinds(psi[b], psi[b+1])
-    _ , S, _ = ITensors.svd(psi[b], linds)
-
-    ps = diag(S) .* diag(S)
-    ps = ps[ps.>0]
-    trace = sum(ps .^ n)
-    return log2(trace)/(1-n)
+    return ent_entropy(psi, b, n)
 end
 
-function von_Neumann_entropy_region(psi::MPS, xs)
+function von_Neumann_entropy_region(psi::MPS, xs::Vector{<:Int})
     """
-    Calculate the von Neumann entropy of a single site `x` from other sites.
+    Calculate the von Neumann entropy of a region of sites `xs` from other sites.
     """
-    ps = reduced_density_eigen(psi, xs)
-    return - sum(ps .* log2.(ps))
+    return ent_entropy(psi, xs, 1)
 end
 
-function zeroth_entropy_region(psi::MPS, xs)
+function zeroth_entropy_region(psi::MPS, xs::Vector{<:Int})
     """
-    Calculate the zeroth order Renyi entropy of a region of sites `x` from other sites.
+    Calculate the zeroth order Renyi entropy of a region of sites `xs` from other sites.
     """
-    ps = reduced_density_eigen(psi, xs)
-    return log2(length(ps))
+    return ent_entropy(psi, xs, 0)
 end
 
-function Renyi_entropy_region(psi::MPS, xs, n::Real)
+function Renyi_entropy_region(psi::MPS, xs::Vector{<:Int}, n::Real)
     """
-    Calculate the n-th order Renyi entropy of a region of sites `x` from other sites.
+    Calculate the n-th order Renyi entropy of a region of sites `xs` from other sites.
     """
-    n == 0 && return zeroth_entropy_region(psi, xs)
-    n == 1 && return von_Neumann_entropy_region(psi, xs)
-
-    ps = reduced_density_eigen(psi, xs)
-    trace = sum(ps .^ n)
-    return log2(trace)/(1-n)
+    return ent_entropy(psi, xs, n)
 end
 
 function reduced_density_eigen(psi::MPS, x::Int)
@@ -88,7 +100,6 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})
     """
     Calculate the reduced density matrix eigen values of multiple sites `xs` from other sites.
     """
-    length(xs) == 0 && return 0.0
     length(xs) == 1 && return reduced_density_eigen(psi, xs[1])
 
     xs = sort(xs)
@@ -102,7 +113,11 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})
     rho *= dag(prime(prime(psi[a], tags="Site"), ir))
     for j in (a+1):(b-1)
         rho *= psi[j]
-        rho *= dag(prime(psi[j]))
+        if j in xs
+            rho *= dag(prime(psi[j]))
+        else
+            rho *= dag(prime(psi[j], tags="Link"))
+        end
     end
     rho *= psi[b]
     il = linkind(psi, b-1)
@@ -114,12 +129,19 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})
     return ps[ps.>0]  # remove zero probabilities
 end
 
-function mutual_information_region(psi::MPS, as, bs, n::Real=1)
+function mutual_information_region(psi::MPS, as::Vector{<:Int}, bs::Vector{<:Int}, n::Real=1)
     """
     Calculate the mutual information of two separate region of sites `as` and `bs`.
     """
-    Sa = Renyi_entropy_region(psi, as, n)
-    Sb = Renyi_entropy_region(psi, bs, n)
-    Sab = Renyi_entropy_region(psi, union(as, bs), n)
+    Sa = ent_entropy(psi, as, n)
+    Sb = ent_entropy(psi, bs, n)
+    Sab = ent_entropy(psi, sort(union(as, bs)), n)
     return Sa + Sb - Sab
 end
+#=
+let 
+    ss = siteinds("S=1/2", 10)
+    psi = randomMPS(ss; linkdims=4)
+    entropy_bipart(psi, 5)
+end
+=#

@@ -14,7 +14,7 @@ let
     psi = MPS(ss, "Up")
 
     evolve = @timev entropy_evolve!(psi, T, p, η, b; cutoff=eps(Float64))
-    distri = [Renyi_entropy(psi, j, 1) for j in 0:L]
+    distri = [ent_entropy(psi, j, 1) for j in 0:L]
 
     mean_entropy = zeros(T+1)
     for n in 1:T+1

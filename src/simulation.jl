@@ -15,7 +15,7 @@ function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_en
     psi = MPS(Complex{restype}, ss, "Up")
     mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
 
-    entropy = Renyi_entropy(psi, b, which_ent)
+    entropy = ent_entropy(psi, b, which_ent)
     return entropy
 end
 
@@ -31,7 +31,7 @@ function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real; whic
     psi = MPS(Complex{restype}, ss, "Up")
     mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
 
-    entropy = Renyi_entropy(psi, b, which_ent)
+    entropy = ent_entropy(psi, b, which_ent)
     corrs = correlation_vec(psi, which_op, which_op)
     return entropy, corrs
 end
@@ -49,7 +49,7 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent:
     for i in 1:numsamp 
         psi = MPS(Complex{restype}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        entropies[i] = Renyi_entropy(psi, b, which_ent)
+        entropies[i] = ent_entropy(psi, b, which_ent)
     end
     mean_entropy = mean(entropies)
     # return std if needed
@@ -68,7 +68,7 @@ function entropy_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent:
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{restype}, ss, "Up")
 
-    mean_entropy, std_entropy = entropy_avg!(psi, ttotal, prob, eta, b; which_ent, cutoff=cutoff)
+    mean_entropy, std_entropy = entropy_avg!(psi, ttotal, prob, eta, b; which_ent=which_ent, cutoff=cutoff)
 
     # return std if needed
     if retstd==false
@@ -92,7 +92,7 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_
     for i in 1:numsamp 
         psi = MPS(Complex{restype}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        entropies[i] = Renyi_entropy(psi, b, which_ent)
+        entropies[i] = ent_entropy(psi, b, which_ent)
         corrs[:, i] .= correlation_vec(psi, which_op, which_op)  
     end
     mean_entropy = mean(entropies)
@@ -115,8 +115,8 @@ function calculation_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{restype}, ss, "Up")
 
-    res = entr_corr_avg!(psi, ttotal, prob, eta, b; which_ent, which_op, 
-        cutoff=cutoff)
+    res = entr_corr_avg!(psi, ttotal, prob, eta, b; which_ent=which_ent, 
+        which_op=which_op, cutoff=cutoff)
     
     # return std if needed
     if retstd==false
@@ -140,7 +140,7 @@ function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real; whic
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{restype}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        @inbounds entropies[i] = Renyi_entropy(psi, b, which_ent)
+        @inbounds entropies[i] = ent_entropy(psi, b, which_ent)
         psi = nothing
         ss = nothing
     end
@@ -169,7 +169,7 @@ function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real; 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{restype}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        @inbounds entropies[i] = Renyi_entropy(psi, b, which_ent)
+        @inbounds entropies[i] = ent_entropy(psi, b, which_ent)
         @inbounds corrs[:, i] .= correlation_vec(psi, which_op, which_op)
         psi = nothing
         ss = nothing
