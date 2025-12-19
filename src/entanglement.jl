@@ -35,7 +35,7 @@ function ent_entropy(psi::MPS, xs::Vector{<:Int}, n::Real=1)
     return ent_entropy(ps, n)
 end
 
-function von_Neumann_entropy(psi::MPS, b::Int)
+function von_neumann_entropy(psi::MPS, b::Int)
     """
     Calculate the von Neumann entropy of the MPS `psi` biparted after site `b`.
     """
@@ -53,14 +53,14 @@ function zeroth_entropy(psi::MPS, b::Int)
     return log2(linkdim(psi, b))
 end
 
-function Renyi_entropy(psi::MPS, b::Int, n::Real)
+function renyi_entropy(psi::MPS, b::Int, n::Real)
     """
     Calculate the n-th order Renyi entropy of the MPS `psi` biparted after site `b`.
     """
     return ent_entropy(psi, b, n)
 end
 
-function von_Neumann_entropy_region(psi::MPS, xs::Vector{<:Int})
+function von_neumann_entropy_region(psi::MPS, xs::Vector{<:Int})
     """
     Calculate the von Neumann entropy of a region of sites `xs` from other sites.
     """
@@ -74,7 +74,7 @@ function zeroth_entropy_region(psi::MPS, xs::Vector{<:Int})
     return ent_entropy(psi, xs, 0)
 end
 
-function Renyi_entropy_region(psi::MPS, xs::Vector{<:Int}, n::Real)
+function renyi_entropy_region(psi::MPS, xs::Vector{<:Int}, n::Real)
     """
     Calculate the n-th order Renyi entropy of a region of sites `xs` from other sites.
     """
