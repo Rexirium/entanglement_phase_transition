@@ -4,7 +4,7 @@ ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
 function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
-    cutoff::Real=1e-12,  restype::DataType=Float64)
+    cutoff::Real=1e-12, restype::DataType=Float64)
     """
     Calculate the final entanglement entropy of the MPS after time evolution. 
     """
@@ -62,7 +62,7 @@ function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent:
 end
 
 function entropy_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
-        cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+    cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     b = lsize ÷ 2
     eta = restype(eta)
     ss = siteinds("S=1/2", lsize)
