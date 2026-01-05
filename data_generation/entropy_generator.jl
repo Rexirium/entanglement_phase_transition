@@ -1,13 +1,13 @@
 using MKL
 using HDF5
-using Distributed
+using Distributed, SlurmClusterManager
 
 MKL.set_num_threads(1)
 
 # add worker processes if none exist (use CPU-1 workers to avoid oversubscription)
 if nprocs() == 1
     nworkers_to_add = max(Sys.CPU_THREADS ÷ Threads.nthreads() - 2, 1)
-    addprocs(nworkers_to_add)
+    addprocs(SlurmManager())
 end
 # make sure workers have required packages and the same MKL threading setting
 @everywhere using MKL
