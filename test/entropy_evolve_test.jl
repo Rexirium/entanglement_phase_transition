@@ -7,7 +7,7 @@ include("../src/time_evolution.jl")
 
 let 
     L, T = 16, 64
-    p, η = 0.1, 0.9
+    p, η = 0.5, 0.1
     b = L ÷ 2
     
     ss = siteinds("S=1/2", L)
