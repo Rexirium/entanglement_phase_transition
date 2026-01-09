@@ -63,6 +63,9 @@ end
 
 function entropy_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
     cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+    """
+    Calculate the mean entanglement entropy over different time steps of a single sample.
+    """
     b = lsize ÷ 2
     eta = restype(eta)
     ss = siteinds("S=1/2", lsize)
@@ -109,7 +112,9 @@ end
 
 function calculation_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, which_op::String="Sz", 
     cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
-
+    """
+    Calculate the mean entanglement entropy and correlation function over different time steps of a single sample
+    """
     b = lsize ÷ 2
     eta = restype(eta)
     ss = siteinds("S=1/2", lsize)
@@ -129,7 +134,7 @@ end
 function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
     numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
-    Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
+    Calculate the mean entanglement entropy over multiple samples using multithreads. (non-Hermitian case)
     """
     # mean value of `numsamp` samples
     b = lsize ÷ 2
@@ -157,7 +162,7 @@ end
 function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, which_op::String="Sz", 
     numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
     """
-    Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
+    Calculate the mean entanglement entropy over multiple samples using multithreads. (non-Hermitian case)
     """
     # mean value of `numsamp` samples
     b = lsize ÷ 2

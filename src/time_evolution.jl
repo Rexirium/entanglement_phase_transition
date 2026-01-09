@@ -74,9 +74,10 @@ function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-12)
     A = (psi[j1] * psi[j2]) * G2
     noprime!(A)
     linds = uniqueinds(psi[j1], psi[j2])
-    psi[j1], S, psi[j2] = svd(A, linds; cutoff=cutoff)
+    psi[j1], S, psi[j2], spec = svd(A, linds; cutoff=cutoff)
     psi[j2] *= S
     set_ortho_lims!(psi, j2:j2)
+    return truncerror(spec)
 end
 
 function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e-12) where Tp<:Real
@@ -207,7 +208,8 @@ end
 function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, 
     cutoff::Real=1e-12) where Tp<:Real
     """
-    Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
+    Same with function `entropy_evolve!` but with entanglement entropy averaged over different time steps after saturate time `sat`.
+    Using Welfold alg to compute mean and std for efficiency in memory. 
     """
     sites = siteinds(psi) 
     lsize = length(sites)
@@ -317,6 +319,10 @@ end
 
 function entr_corr_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, which_op::String="Sz", 
     cutoff::Real=1e-12) where Tp<:Real
+    """
+    Same with function `entr_corr_evolve` but with entropy and correlation averaged over different time steps after saturate time `sat`.
+    Using Welfold alg to compute mean and std for efficiency in memory. 
+    """
     sites = siteinds(psi) 
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
@@ -366,10 +372,11 @@ let
     L = 10
     p, η = 0.9, 0.0
     ss = siteinds("S=1/2", L)
-    psi = MPS(ComplexF64, ss, "Up")
-
-    apply2!(op("RdU", ss[1], ss[2]), psi, 1; cutoff=1e-10)
+    psi = randomMPS(ComplexF64, ss; linkdims=64)
+    @show maxlinkdim(psi)
+    spec = apply2!(op("RdU", ss[4], ss[5]), psi, 4; cutoff=0.0)
     
-    println(norm(psi))
+    @show truncerror(spec)
+    @show maxlinkdim(psi)
 end
 =#
