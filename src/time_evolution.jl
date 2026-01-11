@@ -112,6 +112,39 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
     return psi, truncerr
 end
 
+function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractObserver; cutoff::Real=1e-12) where Tp<:Real
+    """
+    Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
+    and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
+    """
+    psi = deepcopy(psi0)
+    T = promote_itensor_eltype(psi)
+    sites = siteinds(psi)
+    lsize = length(sites)
+    
+    truncerr = 0.0
+    for t in 1:ttotal
+        # Apply random unitary operators to pairs of sites
+        for j in (iseven(t) + 1):2:lsize-1
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
+            err = apply2!(U, psi, j; cutoff=cutoff)
+            truncerr += err
+        end
+        # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
+        for j in 1:lsize
+            if rand(Tp) >= prob
+                continue
+            end
+            M = op("NH", sites[j]; eta=eta)
+            apply!(M, psi, j)
+            # Normalize the MPS after applying the non Hermitian operator
+            normalize!(psi)
+        end
+        mps_measure!(obs, psi, t)
+    end
+    return psi, truncerr
+end
+
 function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e-12) where Tp<:Real
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
@@ -143,266 +176,95 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
     return truncerr
 end
 
-function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, 
-    cutoff::Real=1e-12) where Tp<:Real
+function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractObserver; cutoff::Real=1e-12) where Tp<:Real
     """
-    Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
+    Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
+    and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
     """
-    psi = deepcopy(psi0)
-    sites = siteinds(psi) 
+    sites = siteinds(psi)
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
-    # Initialize the entropy vector. 
-    entropies = Vector{real(T)}(undef, ttotal+1)
-    truncerrs = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = ent_entropy(psi, b, which_ent)
-    truncerrs[1] = 0.0
-
-    err_t = 0.0
-    for t in 1:ttotal
-        # the layer for random unitary operators
-        for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff)
-            err_t += err
-        end
-        # the layer for random non-Hermitian gates
-        for j in 1:lsize
-            if rand(Tp) >= prob
-                continue
-            end
-            M = op("NH", sites[j]; eta=eta)
-            apply!(M, psi, j)
-            normalize!(psi)
-        end
-        # Record the entanglement entropy after each time step
-        entropies[t+1] = ent_entropy(psi, b, which_ent)
-        truncerrs[t+1] = err_t
-    end
-    return psi, entropies, truncerrs
-end
-
-function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, 
-    cutoff::Real=1e-12) where Tp<:Real
-    """
-    Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` recorded after each time step.
-    """
-    sites = siteinds(psi) 
-    lsize = length(sites)
-    T = promote_itensor_eltype(psi)
-    # Initialize the entropy vector and truncation errors. 
-    entropies = Vector{real(T)}(undef, ttotal+1)
-    truncerrs = Vector{real(T)}(undef, ttotal+1)
-    maxbonds = Vector{Int}(undef, ttotal+1)
-
-    entropies[1] = ent_entropy(psi, b, which_ent)
-    truncerrs[1] = 0.0
-    maxbonds[1] = maxlinkdim(psi)
-    
-    err_t = 0.0
-    for t in 1:ttotal
-        # the layer for random unitary operators
-        for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff)
-            err_t += err
-        end
-        # the layer for random non-Hermitian gates
-        for j in 1:lsize
-            if rand(Tp) >= prob
-                continue
-            end
-            M = op("NH", sites[j]; eta=eta)
-            apply!(M, psi, j)
-            normalize!(psi)
-        end
-        # Record the entanglement entropy after each time step
-        entropies[t+1] = ent_entropy(psi, b, which_ent)
-        truncerrs[t+1] = err_t
-        maxbonds[t+1] = maxlinkdim(psi)
-    end
-    return entropies, truncerrs, maxbonds
-end
-
-function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, 
-    cutoff::Real=1e-12) where Tp<:Real
-    """
-    Same with function `entropy_evolve!` but with entanglement entropy averaged over different time steps after saturate time `sat`.
-    Using Welfold alg to compute mean and std for efficiency in memory. 
-    """
-    sites = siteinds(psi) 
-    lsize = length(sites)
-    T = promote_itensor_eltype(psi)
-    sat = 2lsize + 1
-
-    avg, s2 = 0.0, 0.0
-    truncerr = 0.0
-    for t in 1:ttotal
-        # the layer for random unitary operators
-        for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff)
-            truncerr += err
-        end
-        # the layer for random non-Hermitian gates
-        for j in 1:lsize
-            if rand(Tp) >= prob
-                continue
-            end
-            M = op("NH", sites[j]; eta=eta)
-            apply!(M, psi, j)
-            normalize!(psi)
-        end
-        if t == sat  #Welford algorithm
-            avg = ent_entropy(psi, b, which_ent)
-        elseif t > sat
-            entropy = ent_entropy(psi, b, which_ent)
-            delta = entropy - avg
-            avg += delta /(t + 1 - sat) 
-            s2 += delta * (entropy - avg)
-        end
-    end
-    return avg, sqrt(s2 / (ttotal - sat)), truncerr
-end
-
-function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, which_op="Sz",
-    cutoff::Real=1e-12) where Tp<:Real
-    """
-    Same with function `mps_evolve` but with entanglement entropy and correlation function recorded after each time step.
-    """
-    psi = deepcopy(psi0)
-    sites = siteinds(psi) 
-    lsize = length(sites)
-    T = promote_itensor_eltype(psi)
-    # Initialize the entropy vector. 
-    entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = ent_entropy(psi, b, which_ent)
-    corrs = Matrix{real(T)}(undef, lsize, ttotal+1)
-    corrs[:, 1] .= correlation_vec(psi, which_op, which_op)
     
     truncerr = 0.0
     for t in 1:ttotal
-        # the layer for random unitary operators
+        # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
             err = apply2!(U, psi, j; cutoff=cutoff)
             truncerr += err
         end
-        # the layer for random non-Hermitian gates
+        # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
             if rand(Tp) >= prob
                 continue
             end
             M = op("NH", sites[j]; eta=eta)
             apply!(M, psi, j)
+            # Normalize the MPS after applying the non Hermitian operator
             normalize!(psi)
         end
-        # Record the entanglement entropy and correlation function after each time step
-        entropies[t+1] = ent_entropy(psi, b, which_ent)
-        corrs[:, t+1] .= correlation_vec(psi, which_op, which_op)
+        mps_measure!(obs, psi, t)
     end
-    return psi, entropies, corrs, truncerr
+    return truncerr
 end
 
-function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, which_op::String="Sz", 
-    cutoff::Real=1e-12) where Tp<:Real
-     """
-    Same with function `mps_evolve!` but with entanglement entropy biparted at site `b` and correlation vector recorded after each time step.
+mutable struct EntropyObserver{T} <: AbstractObserver
     """
-    sites = siteinds(psi) 
-    lsize = length(sites)
-    T = promote_itensor_eltype(psi)
-    # Initialize the entropy vector. 
-    entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = ent_entropy(psi, b, which_ent)
-    corrs = Matrix{real(T)}(undef, lsize, ttotal+1)
-    corrs[:, 1] .= correlation_vec(psi, which_op, which_op)
-    
-    truncerr = 0.0
-    for t in 1:ttotal
-        # the layer for random unitary operators
-        for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff)
-            truncerr += err
-        end
-        # the layer for random non-Hermitian gates
-        for j in 1:lsize
-            if rand(Tp) >= prob
-                continue
-            end
-            M = op("NH", sites[j]; eta=eta)
-            apply!(M, psi, j)
-            normalize!(psi)
-        end
-        # Record the entanglement entropy and correlation function after each time step
-        entropies[t+1] = ent_entropy(psi, b, which_ent)
-        corrs[:, t+1] .= correlation_vec(psi, which_op, which_op)
-    end
-    return entropies, corrs, truncerr
+    Observe and record the entanglement entropy at a specific bond `b` of the MPS during time evolution.
+    """
+    b::Int
+    n::Real
+    entropies::Vector{T}
+    EntropyObserver{T}(b::Int, n::Real=1) where T<:Real = new{T}(b, n, T[])
 end
 
-function entr_corr_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, which_op::String="Sz", 
-    cutoff::Real=1e-12) where Tp<:Real
-    """
-    Same with function `entr_corr_evolve` but with entropy and correlation averaged over different time steps after saturate time `sat`.
-    Using Welfold alg to compute mean and std for efficiency in memory. 
-    """
-    sites = siteinds(psi) 
-    lsize = length(sites)
-    T = promote_itensor_eltype(psi)
-    restype = real(T)
-    sat = 2lsize + 1
-    # Initialize the entropy and correlation
-    avg_entr, s2_entr = 0.0, 0.0
-    avg_corr = zeros(restype, lsize)
-    s2_corr = zeros(restype, lsize)
-    truncerr = 0.0
-    for t in 1:ttotal
-        # the layer for random unitary operators
-        for j in (iseven(t) + 1):2:lsize-1
-            U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff)
-            truncerr += err
-        end
-        # the layer for random non-Hermitian gates
-        for j in 1:lsize
-            if rand(Tp) >= prob
-                continue
-            end
-            M = op("NH", sites[j]; eta=eta)
-            apply!(M, psi, j)
-            normalize!(psi)
-        end
-        if t == sat
-            avg_entr = ent_entropy(psi, b, which_ent)
-            avg_corr .= correlation_vec(psi, which_op, which_op)
-        elseif t > sat
-            entr = ent_entropy(psi, b, which_ent)
-            corr = correlation_vec(psi, which_op, which_op)
+mutable struct ResultObserver{T} <: AbstractObserver
+    lsize::Int
+    n::Real
+    op::String
+    mean_entr::T
+    sstd_entr::T
+    mean_corr::Vector{T}
+    sstd_corr::Vector{T}
 
-            delta_entr = entr - avg_entr
-            delta_corr = corr .- avg_corr
-            avg_entr += delta_entr / (t + 1 - sat)
-            avg_corr .+= delta_corr ./ (t + 1 - sat)
-            s2_entr += delta_entr * (entr - avg_entr)
-            s2_corr .+= delta_corr .* (corr .- avg_corr)
-        end
+    ResultObserver{T}(lsize::Int, n::Real=1, op::String="Sz") where T<:Real = 
+        new{T}(lsize, n, op, zero(T), zero(T), zeros(T, lsize), zeros(T, lsize))
+end
+
+function mps_measure!(obs::EntropyObserver{T}, psi::MPS, t::Int) where T<:Real
+    push!(obs.entropies, ent_entropy(psi, obs.b, obs.n))
+end
+
+function mps_measure!(obs::ResultObserver{T}, psi::MPS, t::Int) where T<:Real
+    """
+    Update the mean and SST of entanglement entropy and correlation function in `obs`.
+    Using Welford's algorithm.
+    """
+    b = obs.lsize ÷ 2
+    sat = 2*obs.lsize + 1
+    if t ==sat
+        obs.mean_entr = ent_entropy(psi, b, obs.n)
+        obs.mean_corr .= correlation_vec(psi, obs.op, obs.op)
+    elseif t > sat
+        entr = ent_entropy(psi, b, obs.n)
+        corr = correlation_vec(psi, obs.op, obs.op)
+
+        delta_entr = entr - obs.mean_entr
+        delta_corr = corr .- obs.mean_corr
+        obs.mean_entr += delta_entr / (t + 1 - sat)
+        obs.mean_corr .+= delta_corr ./ (t + 1 - sat)
+        obs.sstd_entr += delta_entr * (entr - obs.mean_entr)
+        obs.sstd_corr .+= delta_corr .* (corr .- obs.mean_corr)
     end
-    std_entr = sqrt(s2_entr / (ttotal - sat))
-    std_corr = sqrt.(s2_corr ./ (ttotal - sat))
-    return CalcResult{restype}(avg_entr, std_entr, avg_corr, std_corr), truncerr
 end
 #=
-let
-    L = 10
-    p, η = 0.9, 0.0
+let 
+    L, T = 10, 100
     ss = siteinds("S=1/2", L)
-    psi = randomMPS(ComplexF64, ss; linkdims=64)
-    @show maxlinkdim(psi)
-    spec = apply2!(op("RdU", ss[4], ss[5]), psi, 4; cutoff=0.0)
-    
-    @show truncerror(spec)
-    @show maxlinkdim(psi)
+    psi = MPS(ComplexF64, ss, "Up")
+    obs = ResultObserver{Float64}(L, 1, "Sz")
+    truncerr = mps_evolve!(psi, 40, 0.5, 0.5, obs; cutoff=eps(Float64))
+    println("Entropy: ", sqrt.(obs.sstd_corr ./ (T - 2L)))
+
 end
 =#
