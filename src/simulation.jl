@@ -71,7 +71,7 @@ function entropy_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent:
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{restype}, ss, "Up")
 
-    mean_entropy, std_entropy = entropy_avg!(psi, ttotal, prob, eta, b; which_ent=which_ent, cutoff=cutoff)
+    mean_entropy, std_entropy, _ = entropy_avg!(psi, ttotal, prob, eta, b; which_ent=which_ent, cutoff=cutoff)
 
     # return std if needed
     if retstd==false
@@ -120,7 +120,7 @@ function calculation_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{restype}, ss, "Up")
 
-    res = entr_corr_avg!(psi, ttotal, prob, eta, b; which_ent=which_ent, 
+    res, _ = entr_corr_avg!(psi, ttotal, prob, eta, b; which_ent=which_ent, 
         which_op=which_op, cutoff=cutoff)
     
     # return std if needed

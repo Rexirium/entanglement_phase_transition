@@ -77,7 +77,7 @@ function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-12)
     psi[j1], S, psi[j2], spec = svd(A, linds; cutoff=cutoff)
     psi[j2] *= S
     set_ortho_lims!(psi, j2:j2)
-    return truncerror(spec)
+    return spec.truncerr
 end
 
 function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e-12) where Tp<:Real
@@ -89,12 +89,14 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
     T = promote_itensor_eltype(psi)
     sites = siteinds(psi)
     lsize = length(sites)
-
+    
+    truncerr = 0.0
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff)
+            truncerr += err
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
@@ -107,7 +109,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
             normalize!(psi)
         end
     end
-    return psi
+    return psi, truncerr
 end
 
 function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e-12) where Tp<:Real
@@ -118,12 +120,14 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
     sites = siteinds(psi)
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
-
+    
+    truncerr = 0.0
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff)
+            truncerr += err
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
         for j in 1:lsize
@@ -136,6 +140,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
             normalize!(psi)
         end
     end
+    return truncerr
 end
 
 function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, 
@@ -149,13 +154,17 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whi
     T = promote_itensor_eltype(psi)
     # Initialize the entropy vector. 
     entropies = Vector{real(T)}(undef, ttotal+1)
+    truncerrs = Vector{real(T)}(undef, ttotal+1)
     entropies[1] = ent_entropy(psi, b, which_ent)
+    truncerrs[1] = 0.0
 
+    err_t = 0.0
     for t in 1:ttotal
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff)
+            err_t += err
         end
         # the layer for random non-Hermitian gates
         for j in 1:lsize
@@ -168,8 +177,9 @@ function entropy_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whi
         end
         # Record the entanglement entropy after each time step
         entropies[t+1] = ent_entropy(psi, b, which_ent)
+        truncerrs[t+1] = err_t
     end
-    return psi, entropies
+    return psi, entropies, truncerrs
 end
 
 function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, 
@@ -180,15 +190,22 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whi
     sites = siteinds(psi) 
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
-    # Initialize the entropy vector. 
+    # Initialize the entropy vector and truncation errors. 
     entropies = Vector{real(T)}(undef, ttotal+1)
-    entropies[1] = ent_entropy(psi, b, which_ent)
+    truncerrs = Vector{real(T)}(undef, ttotal+1)
+    maxbonds = Vector{Int}(undef, ttotal+1)
 
+    entropies[1] = ent_entropy(psi, b, which_ent)
+    truncerrs[1] = 0.0
+    maxbonds[1] = maxlinkdim(psi)
+    
+    err_t = 0.0
     for t in 1:ttotal
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff)
+            err_t += err
         end
         # the layer for random non-Hermitian gates
         for j in 1:lsize
@@ -201,8 +218,10 @@ function entropy_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whi
         end
         # Record the entanglement entropy after each time step
         entropies[t+1] = ent_entropy(psi, b, which_ent)
+        truncerrs[t+1] = err_t
+        maxbonds[t+1] = maxlinkdim(psi)
     end
-    return entropies
+    return entropies, truncerrs, maxbonds
 end
 
 function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, 
@@ -215,13 +234,15 @@ function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
     sat = 2lsize + 1
-    avg, s2 = 0.0, 0.0
 
+    avg, s2 = 0.0, 0.0
+    truncerr = 0.0
     for t in 1:ttotal
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff)
+            truncerr += err
         end
         # the layer for random non-Hermitian gates
         for j in 1:lsize
@@ -241,7 +262,7 @@ function entropy_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_
             s2 += delta * (entropy - avg)
         end
     end
-    return avg, sqrt(s2 / (ttotal - sat))
+    return avg, sqrt(s2 / (ttotal - sat)), truncerr
 end
 
 function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, which_op="Sz",
@@ -258,12 +279,14 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; w
     entropies[1] = ent_entropy(psi, b, which_ent)
     corrs = Matrix{real(T)}(undef, lsize, ttotal+1)
     corrs[:, 1] .= correlation_vec(psi, which_op, which_op)
-
+    
+    truncerr = 0.0
     for t in 1:ttotal
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff)
+            truncerr += err
         end
         # the layer for random non-Hermitian gates
         for j in 1:lsize
@@ -278,7 +301,7 @@ function entr_corr_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; w
         entropies[t+1] = ent_entropy(psi, b, which_ent)
         corrs[:, t+1] .= correlation_vec(psi, which_op, which_op)
     end
-    return psi, entropies, corrs
+    return psi, entropies, corrs, truncerr
 end
 
 function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, which_op::String="Sz", 
@@ -294,12 +317,14 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; w
     entropies[1] = ent_entropy(psi, b, which_ent)
     corrs = Matrix{real(T)}(undef, lsize, ttotal+1)
     corrs[:, 1] .= correlation_vec(psi, which_op, which_op)
-
+    
+    truncerr = 0.0
     for t in 1:ttotal
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff)
+            truncerr += err
         end
         # the layer for random non-Hermitian gates
         for j in 1:lsize
@@ -314,7 +339,7 @@ function entr_corr_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; w
         entropies[t+1] = ent_entropy(psi, b, which_ent)
         corrs[:, t+1] .= correlation_vec(psi, which_op, which_op)
     end
-    return entropies, corrs
+    return entropies, corrs, truncerr
 end
 
 function entr_corr_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; which_ent::Real=1, which_op::String="Sz", 
@@ -332,12 +357,13 @@ function entr_corr_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whic
     avg_entr, s2_entr = 0.0, 0.0
     avg_corr = zeros(restype, lsize)
     s2_corr = zeros(restype, lsize)
-
+    truncerr = 0.0
     for t in 1:ttotal
         # the layer for random unitary operators
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff)
+            truncerr += err
         end
         # the layer for random non-Hermitian gates
         for j in 1:lsize
@@ -365,7 +391,7 @@ function entr_corr_avg!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, b::Int; whic
     end
     std_entr = sqrt(s2_entr / (ttotal - sat))
     std_corr = sqrt.(s2_corr ./ (ttotal - sat))
-    return CalcResult{restype}(avg_entr, std_entr, avg_corr, std_corr)
+    return CalcResult{restype}(avg_entr, std_entr, avg_corr, std_corr), truncerr
 end
 #=
 let
