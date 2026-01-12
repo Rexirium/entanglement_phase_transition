@@ -21,7 +21,8 @@ mutable struct EntropyObserver{T} <: AbstractObserver
 end
 
 mutable struct EntrCorrObserver{T} <: AbstractObserver
-    lsize::Int
+    b::Int
+    len::Int
     n::Real
     op::String
     mean_entr::T
@@ -29,8 +30,8 @@ mutable struct EntrCorrObserver{T} <: AbstractObserver
     mean_corr::Vector{T}
     sstd_corr::Vector{T}
 
-    ResultObserver{T}(lsize::Int, n::Real=1, op::String="Sz") where T<:Real = 
-        new{T}(lsize, n, op, zero(T), zero(T), zeros(T, lsize), zeros(T, lsize))
+    EntrCorrObserver{T}(len::Int, n::Real=1, op::String="Sz") where T<:Real = 
+        new{T}(len÷2, len, n, op, zero(T), zero(T), zeros(T, len), zeros(T, len))
 end
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)
@@ -240,13 +241,12 @@ function mps_monitor!(obs::EntrCorrObserver{T}, psi::MPS, t::Int) where T<:Real
     Update the mean and SST of entanglement entropy and correlation function in `obs`.
     Using Welford's algorithm.
     """
-    b = obs.lsize ÷ 2
-    sat = 2*obs.lsize + 1
+    sat = 2*obs.len + 1
     if t ==sat
-        obs.mean_entr = ent_entropy(psi, b, obs.n)
+        obs.mean_entr = ent_entropy(psi, obs.b, obs.n)
         obs.mean_corr .= correlation_vec(psi, obs.op, obs.op)
     elseif t > sat
-        entr = ent_entropy(psi, b, obs.n)
+        entr = ent_entropy(psi, obs.b, obs.n)
         corr = correlation_vec(psi, obs.op, obs.op)
 
         delta_entr = entr - obs.mean_entr
