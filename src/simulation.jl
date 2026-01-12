@@ -1,194 +1,124 @@
-using Statistics
 include("time_evolution.jl")
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
-function entropy_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
-    cutoff::Real=1e-12, restype::DataType=Float64)
-    """
-    Calculate the final entanglement entropy of the MPS after time evolution. 
-    """
-    b = lsize ÷ 2
-    eta = restype(eta)
+abstract type AbstractResult end
 
-    ss = siteinds("S=1/2", lsize)
-    psi = MPS(Complex{restype}, ss, "Up")
-    mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-
-    entropy = ent_entropy(psi, b, which_ent)
-    return entropy
+mutable struct EntropySample{T} <: AbstractResult
+    """
+    Store the entanglement entropy result after time evolution.
+    """
+    type::DataType
+    b::Int
+    n::Real
+    entropy::T
+    EntropySample{T}(b::Int, n = 1) where T<:Real = new{T}(T, b, n, zero(T))
 end
 
-function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
-    which_op::String="Sz", cutoff::Real=1e-12, restype::DataType=Float64)
+mutable struct EntrCorrSample{T} <: AbstractResult
     """
-    Calculate the final entanglement entropy and correlation function of the MPS after time evolution. 
+    Store the entanglement entropy and correlation function results after time evolution.
     """
-    b = lsize ÷ 2
-    eta = restype(eta)
-
-    ss = siteinds("S=1/2", lsize)
-    psi = MPS(Complex{restype}, ss, "Up")
-    mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-
-    entropy = ent_entropy(psi, b, which_ent)
-    corrs = correlation_vec(psi, which_op, which_op)
-    return entropy, corrs
+    type::DataType
+    b::Int
+    len::Int
+    n::Real
+    op::String
+    entropy::T
+    corrs::Vector{T}
+    CalculationSample{T}(b::Int, len::Int, n = 1, op = "Sz") where T<:Real = new{T}(T, b, len, n, op, zero(T), zeros(T, len))
 end
 
-function entropy_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
-    numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+mutable struct EntropyResults{T} <: AbstractResult
+    """
+    Store the mean and std of entanglement entropy over multiple samples after time evolution.
+    """
+    type::DataType
+    b::Int
+    n::Real
+    nsamp::Int
+    entropies::Vector{T}
+    EntropyResults{T}(b::Int, n=1; nsamp::Int = 100) where T<:Real = new{T}(T, b, n, nsamp, zeros(T, nsamp))
+end
+
+mutable struct EntrCorrResults{T} <: AbstractResult
+    """
+    Store the mean and std of entanglement entropy and correlation function over multiple samples after time evolution.
+    """
+    type::DataType
+    b::Int
+    len::Int
+    n::Real
+    op::String
+    nsamp::Int
+    entropies::Vector{T}
+    corrs::Matrix{T}
+    EntrCorrResults{T}(b::Int, len::Int, n=1, op="Sz"; nsamp::Int=100) where T<:Real = 
+        new{T}(T, b, len, n, op, nsamp, zeros(T, nsamp), zeros(T, len, nsamp))
+end
+
+function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; cutoff::Real=1e-12)
+    """
+    Calculate the final properties of the MPS after time evolution. 
+    """
+    eta = (res.type)(eta)
+
+    ss = siteinds("S=1/2", lsize)
+    psi = MPS(Complex{res.type}, ss, "Up")
+    mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
+
+    mps_measure!(res, psi)
+end
+
+function mps_measure!(res::EntropySample{T}, psi::MPS) where T<:Real
+    """
+    Measure the entanglement entropy and store it in `res`.
+    """
+    res.entropy = ent_entropy(psi, res.b, res.n)
+end
+
+function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; cutoff::Real=1e-12)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
-    b = lsize ÷ 2
-    eta = restype(eta)
+    eta = (res.type)(eta)
     ss = siteinds("S=1/2", lsize)
-    # mean value of `numsamp` samples
-    entropies = Vector{restype}(undef, numsamp)
-    for i in 1:numsamp 
-        psi = MPS(Complex{restype}, ss, "Up")
-        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        entropies[i] = ent_entropy(psi, b, which_ent)
-    end
-    mean_entropy = mean(entropies)
-    # return std if needed
-    if retstd==false
-        return mean_entropy
-    else
-        std_entropy = stdm(entropies, mean_entropy; corrected=false)
-        return mean_entropy, std_entropy
-    end
-end
-
-function entropy_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
-    cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
-    """
-    Calculate the mean entanglement entropy over different time steps of a single sample.
-    """
-    b = lsize ÷ 2
-    eta = restype(eta)
-    ss = siteinds("S=1/2", lsize)
-    psi = MPS(Complex{restype}, ss, "Up")
-
-    mean_entropy, std_entropy, _ = entropy_avg!(psi, ttotal, prob, eta, b; which_ent=which_ent, cutoff=cutoff)
-
-    # return std if needed
-    if retstd==false
-        return mean_entropy
-    else
-        return mean_entropy, std_entropy
-    end
-end
-
-function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, which_op::String="Sz", 
-    numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
-    """
-    Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
-    """
-    b = lsize ÷ 2
-    eta = restype(eta)
-    ss = siteinds("S=1/2", lsize)
-    # mean value of `numsamp` samples
-    entropies = Vector{restype}(undef, numsamp)
-    corrs = Matrix{restype}(undef, lsize, numsamp)
-    for i in 1:numsamp 
-        psi = MPS(Complex{restype}, ss, "Up")
-        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        entropies[i] = ent_entropy(psi, b, which_ent)
-        corrs[:, i] .= correlation_vec(psi, which_op, which_op)  
-    end
-    mean_entropy = mean(entropies)
-    mean_corrs = vec(mean(corrs, dims=2))
-    # return std if needed
-    if retstd==false
-        return mean_entropy, mean_corrs
-    else
-        std_entropy = stdm(entropies, mean_entropy; corrected=false)
-        std_corrs = vec(stdm(corrs, mean_corrs; dims=2, corrected=false))
-        return CalcResult{restype}(mean_entropy, std_entropy, mean_corrs, std_corrs)
-    end
-end
-
-function calculation_once(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, which_op::String="Sz", 
-    cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
-    """
-    Calculate the mean entanglement entropy and correlation function over different time steps of a single sample
-    """
-    b = lsize ÷ 2
-    eta = restype(eta)
-    ss = siteinds("S=1/2", lsize)
-    psi = MPS(Complex{restype}, ss, "Up")
-
-    res, _ = entr_corr_avg!(psi, ttotal, prob, eta, b; which_ent=which_ent, 
-        which_op=which_op, cutoff=cutoff)
     
-    # return std if needed
-    if retstd==false
-        return res.mean_entropy, res.mean_corrs
-    else
-        return res
+    for i in 1:res.numsamp 
+        psi = MPS(Complex{res.type}, ss, "Up")
+        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
+        mps_measure!(res, psi, i)
     end
 end
 
-function entropy_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, 
-    numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; cutoff::Real=1e-12)
     """
     Calculate the mean entanglement entropy over multiple samples using multithreads. (non-Hermitian case)
     """
-    # mean value of `numsamp` samples
-    b = lsize ÷ 2
-    eta = restype(eta)
+    eta = (res.type)(eta)
 
-    entropies = Vector{restype}(undef, numsamp)
-    Threads.@threads for i in 1:numsamp 
+    Threads.@threads for i in 1:res.numsamp 
         ss = siteinds("S=1/2", lsize)
-        psi = MPS(Complex{restype}, ss, "Up")
+        psi = MPS(Complex{res.type}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        @inbounds entropies[i] = ent_entropy(psi, b, which_ent)
+        @inbounds mps_measure!(res, psi, i)
         psi = nothing
         ss = nothing
     end
-    mean_entropy = mean(entropies)
-    # return std if needed
-    if retstd==false
-        return mean_entropy
-    else
-        std_entropy = stdm(entropies, mean_entropy; corrected=false)
-        return mean_entropy, std_entropy
-    end
 end
 
-function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real; which_ent::Real=1, which_op::String="Sz", 
-    numsamp::Int=10, cutoff::Real=1e-12, retstd::Bool=false, restype::DataType=Float64)
+function mps_measure!(res::EntropyResults{T}, psi::MPS, i::Int) where T<:Real
     """
-    Calculate the mean entanglement entropy over multiple samples using multithreads. (non-Hermitian case)
+    Measure the entanglement entropy and store it in `res`.
     """
-    # mean value of `numsamp` samples
-    b = lsize ÷ 2
-    eta = restype(eta)
-
-    entropies = Vector{restype}(undef, numsamp)
-    corrs = Matrix{restype}(undef, lsize, numsamp)
-    Threads.@threads for i in 1:numsamp 
-        ss = siteinds("S=1/2", lsize)
-        psi = MPS(Complex{restype}, ss, "Up")
-        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        @inbounds entropies[i] = ent_entropy(psi, b, which_ent)
-        @inbounds corrs[:, i] .= correlation_vec(psi, which_op, which_op)
-        psi = nothing
-        ss = nothing
-    end
-    mean_entropy = mean(entropies)
-    mean_corrs = vec(mean(corrs, dims=2))
-    # return std if needed
-    if retstd==false
-        return mean_entropy, mean_corrs
-    else
-        std_entropy = stdm(entropies, mean_entropy; corrected=false)
-        std_corrs = vec(stdm(corrs, mean_corrs; dims=2, corrected=false))
-        return CalcResult{restype}(mean_entropy, std_entropy, mean_corrs, std_corrs)
-    end
+    res.entropies[i] = ent_entropy(psi, res.b, res.n)
 end
 
+function mps_measure!(res::EntrCorrResults{T}, psi::MPS, i::Int) where T<:Real
+    """
+    Measure the entanglement entropy and correlation function and store them in `res`.
+    """
+    res.entropies[i] = ent_entropy(psi, res.b, res.n)
+    res.corrs[:, i] .= correlation_vec(psi, res.op, res.op)
+end
 
