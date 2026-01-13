@@ -84,7 +84,7 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::A
     eta = (res.type)(eta)
     ss = siteinds("S=1/2", lsize)
     
-    for i in 1:res.numsamp 
+    for i in 1:res.nsamp 
         psi = MPS(Complex{res.type}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
         mps_measure!(res, psi, i)
@@ -97,7 +97,7 @@ function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, 
     """
     eta = (res.type)(eta)
 
-    Threads.@threads for i in 1:res.numsamp 
+    Threads.@threads for i in 1:res.nsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{res.type}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
