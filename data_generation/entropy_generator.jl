@@ -1,4 +1,5 @@
 using MKL
+using Statistics
 using HDF5
 using Distributed, SlurmClusterManager
 
@@ -10,11 +11,14 @@ if nprocs() == 1
     addprocs(SlurmManager())
 end
 # make sure workers have required packages and the same MKL threading setting
-@everywhere using MKL
-@everywhere MKL.set_num_threads(1)
-
-# include the entropy calculation code on all processes
-@everywhere include("../src/simulation.jl")
+@everywhere begin
+    using MKL
+    MKL.set_num_threads(1)
+    # include the entropy calculation code on all processes
+    include("../src/simulation.jl")
+    ITensors.BLAS.set_num_threads(1)
+    ITensors.Strided.set_num_threads(1)
+end
 
 @everywhere begin 
     const N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
@@ -31,8 +35,13 @@ const param = vec([(p, η) for p in ps, η in ηs])
     const params = $param
     function entropy_mean_multi_wrapper(lsize, idx)
         p, η = params[idx]
-        return entropy_mean_multi(lsize, 4lsize, p, η; numsamp=N,
-            cutoff=cutoff, retstd=true, restype=type)
+        res = EntropyResults{type}(lsize ÷ 2, lsize; n=1, nsamp=N)
+        calculation_mean_multi(lsize, 4lsize, p, η, res; cutoff=cutoff)
+
+        entr_mean = mean(res.entropies)
+        entr_std = stdm(res.entropies, entr_mean; corrected=false)
+        
+        return (entr_mean, entr_std)
     end
 end
 

@@ -3,13 +3,6 @@ using LinearAlgebra, Random
 include("entanglement.jl")
 include("correlation.jl")
 
-struct CalcResult{T}
-    mean_entropy::T
-    std_entropy::T
-    mean_corrs::Vector{T}
-    std_corrs::Vector{T}
-end
-
 mutable struct EntropyObserver{T} <: AbstractObserver
     """
     Observe and record the entanglement entropy at a specific bond `b` of the MPS during time evolution.
@@ -17,10 +10,13 @@ mutable struct EntropyObserver{T} <: AbstractObserver
     b::Int
     n::Real
     entropies::Vector{T}
-    EntropyObserver{T}(b::Int, n::Real=1) where T<:Real = new{T}(b, n, T[])
+    truncerrs::Vector{T}
+    maxbonds::Vector{Int}
+
+    EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], T[], Int[])
 end
 
-mutable struct EntrCorrObserver{T} <: AbstractObserver
+mutable struct EntrCorrAverager{T} <: AbstractObserver
     b::Int
     len::Int
     n::Real
@@ -29,9 +25,11 @@ mutable struct EntrCorrObserver{T} <: AbstractObserver
     sstd_entr::T
     mean_corr::Vector{T}
     sstd_corr::Vector{T}
+    truncerrs::Vector{T}
 
-    EntrCorrObserver{T}(len::Int, n::Real=1, op::String="Sz") where T<:Real = 
-        new{T}(len÷2, len, n, op, zero(T), zero(T), zeros(T, len), zeros(T, len))
+    EntrCorrAverager{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
+        new{T}(b, len, n, op, zero(T), zero(T), 
+        Vector{T}(undef, len), Vector{T}(undef, len), T[])
 end
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)
@@ -210,6 +208,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     T = promote_itensor_eltype(psi)
     
     truncerr = 0.0
+    mps_monitor!(obs, psi, 0, truncerr)
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
@@ -227,16 +226,18 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
             # Normalize the MPS after applying the non Hermitian operator
             normalize!(psi)
         end
-        mps_monitor!(obs, psi, t)
+        mps_monitor!(obs, psi, t, truncerr)
     end
     return truncerr
 end
 
-function mps_monitor!(obs::EntropyObserver{T}, psi::MPS, t::Int) where T<:Real
+function mps_monitor!(obs::EntropyObserver{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
     push!(obs.entropies, ent_entropy(psi, obs.b, obs.n))
+    push!(obs.truncerrs, truncerr)
+    push!(obs.maxbonds, maxlinkdim(psi))
 end
 
-function mps_monitor!(obs::EntrCorrObserver{T}, psi::MPS, t::Int) where T<:Real
+function mps_monitor!(obs::EntrCorrAverager{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
     """
     Update the mean and SST of entanglement entropy and correlation function in `obs`.
     Using Welford's algorithm.
@@ -256,13 +257,14 @@ function mps_monitor!(obs::EntrCorrObserver{T}, psi::MPS, t::Int) where T<:Real
         obs.sstd_entr += delta_entr * (entr - obs.mean_entr)
         obs.sstd_corr .+= delta_corr .* (corr .- obs.mean_corr)
     end
+    push!(obs.truncerrs, truncerr)
 end
 #=
 let 
     L, T = 10, 100
     ss = siteinds("S=1/2", L)
     psi = MPS(ComplexF64, ss, "Up")
-    obs = EntrCorrObserver{Float64}(L, 1, "Sz")
+    obs = EntrCorrObserver{Float64}(L; n=1, op="Sz")
     truncerr = mps_evolve!(psi, 40, 0.5, 0.5, obs; cutoff=eps(Float64))
     println("Entropy: ", sqrt.(obs.sstd_corr ./ (T - 2L)))
 

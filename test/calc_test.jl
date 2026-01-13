@@ -5,14 +5,20 @@ MKL.set_num_threads(1)
 include("../src/simulation.jl")
 
 let 
-    L, T = 12, 48
+    L, T = 10, 40
     b = L ÷ 2
-    p, η = 0.5, 0.5   
+    p, η = 0.9, 0.1   
     N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
 
-    res = EntropyResults{Float64}(b, 1; nsamp=N)
-    @timev calculation_mean_multi(L, T, p, η, res; cutoff=1e-14)
+    res = EntrCorrResults{Float64}(b, L; n=1, op="Sz", nsamp=N)
+    @timev calculation_mean_multi(L, T, p, η, res; cutoff=eps(Float64))
     entr = mean(res.entropies)
     entr_std = stdm(res.entropies, entr; corrected=false)
+    @show res.corrs[2,:]
+    corr = mean(res.corrs, dims=2)
+    corr_std = stdm(res.corrs, corr; corrected=false, dims=2)
     println("Mean entropy: $entr ± $entr_std")
+
+    dist = 0:(L-1)
+    plot(dist, corr[:], yerror=corr_std[:], xlabel=L"r", ylabel=L"C(r)", title="Mean Correlation Function", legend=false)
 end

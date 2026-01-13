@@ -1,6 +1,11 @@
 include("time_evolution.jl")
-ITensors.BLAS.set_num_threads(1)
-ITensors.Strided.set_num_threads(1)
+
+struct CalcResult{T}
+    entr_mean::T
+    entr_std::T
+    corr_mean::Vector{T}
+    corr_std::Vector{T}
+end
 
 abstract type AbstractResult end
 
@@ -12,7 +17,7 @@ mutable struct EntropySample{T} <: AbstractResult
     b::Int
     n::Real
     entropy::T
-    EntropySample{T}(b::Int, n = 1) where T<:Real = new{T}(T, b, n, zero(T))
+    EntropySample{T}(b::Int; n = 1) where T<:Real = new{T}(T, b, n, zero(T))
 end
 
 mutable struct EntrCorrSample{T} <: AbstractResult
@@ -26,7 +31,8 @@ mutable struct EntrCorrSample{T} <: AbstractResult
     op::String
     entropy::T
     corrs::Vector{T}
-    EntrCorrSample{T}(len::Int, n = 1, op = "Sz") where T<:Real = new{T}(T, len÷2, len, n, op, zero(T), zeros(T, len))
+    EntrCorrSample{T}(b::Int, len::Int; n = 1, op = "Sz") where T<:Real = 
+        new{T}(T, b, len, n, op, zero(T), Vector{T}(undef, len))
 end
 
 mutable struct EntropyResults{T} <: AbstractResult
@@ -38,7 +44,8 @@ mutable struct EntropyResults{T} <: AbstractResult
     n::Real
     nsamp::Int
     entropies::Vector{T}
-    EntropyResults{T}(b::Int, n=1; nsamp::Int = 100) where T<:Real = new{T}(T, b, n, nsamp, zeros(T, nsamp))
+    EntropyResults{T}(b::Int; n=1, nsamp::Int = 100) where T<:Real = 
+        new{T}(T, b, n, nsamp, Vector{T}(undef, nsamp))
 end
 
 mutable struct EntrCorrResults{T} <: AbstractResult
@@ -53,8 +60,8 @@ mutable struct EntrCorrResults{T} <: AbstractResult
     nsamp::Int
     entropies::Vector{T}
     corrs::Matrix{T}
-    EntrCorrResults{T}(len::Int, n=1, op="Sz"; nsamp::Int=100) where T<:Real = 
-        new{T}(T, len÷2, len, n, op, nsamp, zeros(T, nsamp), zeros(T, len, nsamp))
+    EntrCorrResults{T}(b::Int, len::Int; n=1, op="Sz", nsamp::Int=100) where T<:Real = 
+        new{T}(T, b, len, n, op, nsamp, Vector{T}(undef, nsamp), Matrix{T}(undef, len, nsamp))
 end
 
 function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; cutoff::Real=1e-12)

@@ -7,6 +7,25 @@ ITensors.Strided.set_num_threads(1)
 
 include("../src/time_evolution.jl")
 
+mutable struct EntrCorrObserver{T} <: AbstractObserver
+    b::Int
+    len::Int
+    n::Real
+    op::String
+    entrs::Vector{T}
+    corrs::Vector{Vector{T}}
+    truncerrs::Vector{T}
+
+    EntrCorrObserver{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
+        new{T}(b, len, n, op, T[], Vector{T}[], T[])
+end
+
+function mps_monitor!(obs::EntrCorrObserver{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
+    push!(obs.entrs, ent_entropy(psi, obs.b, obs.n))
+    push!(obs.corrs, correlation_vec(psi, obs.op, obs.op))
+    push!(obs.truncerrs, truncerr)
+end
+
 let 
     # Parameters
     type = Float64
@@ -15,7 +34,7 @@ let
     ps = collect(type, 0.0:0.2:1.0)
     ηs = collect(type, 0.0:0.2:1.0)
     p0::type, η0::type = 0.5, 0.5
-    numsamp = 100
+    nsamp = 100
     nprob, neta = length(ps), length(ηs)
 
     h5open("data/entr_corr_evolve_L$L.h5", "w") do file
@@ -29,36 +48,38 @@ let
         write(grp, "ηs", ηs)
     end
 
-    entr_evolv_prob = zeros(type, T+1, nprob)
-    entr_distr_prob = zeros(type, L+1, nprob)
-    corr_evolv_prob = zeros(type, L, T+1, nprob)
-    corr_distr_prob = zeros(type, L, nprob)
+    entr_evolv_prob = Matrix{type}(undef, T+1, nprob)
+    entr_distr_prob = Matrix{type}(undef, L+1, nprob)
+    corr_evolv_prob = Array{type, 3}(undef, L, T+1, nprob)
+    corr_distr_prob = Matrix{type}(undef, L, nprob)
 
     for i in 1:nprob
-        entr_evolv = Matrix{type}(undef, T+1, numsamp)
-        entr_distr = Matrix{type}(undef, L, L+1, numsamp)
-        corr_evolv = Array{type, 3}(undef, L, T+1, numsamp)
-        corr_distr = Matrix{type}(undef, L, numsamp)
+        entr_evolv = Matrix{type}(undef, T+1, nsamp)
+        entr_distr = Matrix{type}(undef, L+1, nsamp)
+        corr_evolv = Array{type, 3}(undef, L, T+1, nsamp)
+        corr_distr = Matrix{type}(undef, L, nsamp)
         # Run multiple samples and average the results.
-        Threads.@threads for j in 1:numsamp
+        Threads.@threads for j in 1:nsamp
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
-            entr, corr, _ = entr_corr_evolve!(psi, T, ps[i], η0, b)
-            entr_distr = [ent_entropy(psi, x, 1) for x in 0:L]
+            obs = EntrCorrObserver{type}(b, L; n=1, op="Sx")
+            mps_evolve!(psi, T, ps[i], η0, obs; cutoff=eps(type))
 
-            corr_distr[:, j] .= correlation_vec(psi, "Sz", "Sz")
-            entr_evolv[:, j] .= entr
-            corr_evolv[:, :, j] .= corr
-            entr_distr[:, j] .= entr_distr
+            entr_distr[:, j] .= [ent_entropy(psi, x, 1) for x in 0:L]
+            corr_distr[:, j] .= correlation_vec(psi, "Sx", "Sx")
+
+            entr_evolv[:, j] .= obs.entrs
+            corr_evolv[:, :, j] .= hcat((obs.corrs)...)
 
             psi = nothing
             ss =nothing
+            obs = nothing
         end
 
-        entr_evolv_prob[:, i] .= sum(entr_evolv, dims=2)/numsamp
-        entr_distr_prob[:, i] .= sum(entr_distr, dims=2)/numsamp
-        corr_evolv_prob[:, :, i] .= sum(corr_evolv, dims=3)/numsamp
-        corr_distr_prob[:, i] .= sum(corr_distr, dims=2)/numsamp
+        entr_evolv_prob[:, i] .= sum(entr_evolv, dims=2)/nsamp
+        entr_distr_prob[:, i] .= sum(entr_distr, dims=2)/nsamp
+        corr_evolv_prob[:, :, i] .= sum(corr_evolv, dims=3)/nsamp
+        corr_distr_prob[:, i] .= sum(corr_distr, dims=2)/nsamp
         println("Probability p = $((i-1)/(nprob-1)) done.")
     end
 
@@ -71,36 +92,38 @@ let
     end
 
 
-    entr_evolv_eta = zeros(type, T+1, neta)
-    entr_distr_eta = zeros(type, L+1, neta)
-    corr_evolv_eta = zeros(type, L, T+1, neta)
-    corr_distr_eta = zeros(type, L, neta)
+    entr_evolv_eta = Matrix{type}(undef, T+1, neta)
+    entr_distr_eta = Matrix{type}(undef, L+1, neta)
+    corr_evolv_eta = Array{type, 3}(undef, L, T+1, neta)
+    corr_distr_eta = Matrix{type}(undef, L, neta)
 
     for i in 1:neta
-        entr_evolv = Matrix{type}(undef, T+1, numsamp)
-        entr_distr = Matrix{type}(undef, L, L+1, numsamp)
-        corr_evolv = Array{type, 3}(undef, L, T+1, numsamp)
-        corr_distr = Matrix{type}(undef, L, numsamp)
+        entr_evolv = Matrix{type}(undef, T+1, nsamp)
+        entr_distr = Matrix{type}(undef, L+1, nsamp)
+        corr_evolv = Array{type, 3}(undef, L, T+1, nsamp)
+        corr_distr = Matrix{type}(undef, L, nsamp)
         # Run multiple samples and average the results.
-        Threads.@threads for j in 1:numsamp
+        Threads.@threads for j in 1:nsamp
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
-            entr, corr, _ = entr_corr_evolve!(psi, T, p0, ηs[i], b)
-            entr_distr = [ent_entropy(psi, x, 1) for x in 0:L]
+            obs = EntrCorrObserver{type}(b, L; n=1, op="Sz")
+            mps_evolve!(psi, T, p0, ηs[i], obs; cutoff=eps(type))
+
+            entr_distr[:, j] .= [ent_entropy(psi, x, 1) for x in 0:L]
 
             corr_distr[:, j] .= correlation_vec(psi, "Sz", "Sz")
-            entr_evolv[:, j] .= entr
-            corr_evolv[:, :, j] .= corr
-            entr_distr[:, j] .= entr_distr
+            entr_evolv[:, j] .= obs.entrs
+            corr_evolv[:, :, j] .= hcat((obs.corrs)...)
 
             psi = nothing
             ss =nothing
+            obs = nothing
         end
 
-        entr_evolv_eta[:, i] .= sum(entr_evolv, dims=2)/numsamp
-        entr_distr_eta[:, i] .= sum(entr_distr, dims=2)/numsamp
-        corr_evolv_eta[:, :, i] .= sum(corr_evolv, dims=3)/numsamp
-        corr_distr_eta[:, i] .= sum(corr_distr, dims=2)/numsamp
+        entr_evolv_eta[:, i] .= sum(entr_evolv, dims=2)/nsamp
+        entr_distr_eta[:, i] .= sum(entr_distr, dims=2)/nsamp
+        corr_evolv_eta[:, :, i] .= sum(corr_evolv, dims=3)/nsamp
+        corr_distr_eta[:, i] .= sum(corr_distr, dims=2)/nsamp
         println("Non Hermitian η = $((i-1)/(neta-1)) done.")
     end
 
