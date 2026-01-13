@@ -26,7 +26,7 @@ mutable struct EntrCorrSample{T} <: AbstractResult
     op::String
     entropy::T
     corrs::Vector{T}
-    CalculationSample{T}(len::Int, n = 1, op = "Sz") where T<:Real = new{T}(T, len÷2, len, n, op, zero(T), zeros(T, len))
+    EntrCorrSample{T}(len::Int, n = 1, op = "Sz") where T<:Real = new{T}(T, len÷2, len, n, op, zero(T), zeros(T, len))
 end
 
 mutable struct EntropyResults{T} <: AbstractResult
