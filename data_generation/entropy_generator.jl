@@ -2,8 +2,6 @@ using MKL
 using HDF5
 using Distributed, SlurmClusterManager
 
-MKL.set_num_threads(1)
-
 # add worker processes if none exist (use CPU-1 workers to avoid oversubscription)
 if nprocs() == 1
     nworkers_to_add = max(Sys.CPU_THREADS ÷ Threads.nthreads() - 2, 1)

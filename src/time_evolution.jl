@@ -3,6 +3,13 @@ using LinearAlgebra, Random
 include("entanglement.jl")
 include("correlation.jl")
 
+struct CalcResult{T}
+    entr_mean::T
+    entr_std::T
+    corr_mean::Vector{T}
+    corr_std::Vector{T}
+end
+
 mutable struct EntropyObserver{T} <: AbstractObserver
     """
     Observe and record the entanglement entropy at a specific bond `b` of the MPS during time evolution.
@@ -29,15 +36,27 @@ mutable struct EntrCorrObserver{T} <: AbstractObserver
         new{T}(b, len, n, op, T[], Vector{T}[], T[])
 end
 
+mutable struct EntropyAverager{T} <: AbstractObserver
+    b::Int
+    len::Int
+    n::Real
+    entr_mean::T
+    entr_sstd::T
+    truncerrs::Vector{T}
+
+    EntropyAverager{T}(b::Int, len::Int; n::Real=1) where T<:Real = 
+        new{T}(b,len, n, zero(T), zero(T), T[])
+end
+
 mutable struct EntrCorrAverager{T} <: AbstractObserver
     b::Int
     len::Int
     n::Real
     op::String
-    mean_entr::T
-    sstd_entr::T
-    mean_corr::Vector{T}
-    sstd_corr::Vector{T}
+    entr_mean::T
+    entr_sstd::T
+    corr_mean::Vector{T}
+    corr_sstd::Vector{T}
     truncerrs::Vector{T}
 
     EntrCorrAverager{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
@@ -256,6 +275,23 @@ function mps_monitor!(obs::EntrCorrObserver{T}, psi::MPS, t::Int, truncerr::Real
     push!(obs.truncerrs, truncerr)
 end
 
+function mps_monitor!(obs::EntropyAverager{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
+    """
+    Update the mean and SST of entanglement entropy in `obs`.
+    Using Welford's algorithm.
+    """
+    sat = 2*obs.len + 1
+    if t ==sat
+        obs.entr_mean = ent_entropy(psi, obs.b, obs.n)
+    elseif t > sat
+        entr = ent_entropy(psi, obs.b, obs.n)
+        delta = entr - obs.entr_mean
+        obs.entr_mean += delta / (t + 1 - sat)
+        obs.entr_sstd += delta * (entr - obs.entr_mean)
+    end
+    push!(obs.truncerrs, truncerr)
+end
+
 function mps_monitor!(obs::EntrCorrAverager{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
     """
     Update the mean and SST of entanglement entropy and correlation function in `obs`.
@@ -263,18 +299,18 @@ function mps_monitor!(obs::EntrCorrAverager{T}, psi::MPS, t::Int, truncerr::Real
     """
     sat = 2*obs.len + 1
     if t ==sat
-        obs.mean_entr = ent_entropy(psi, obs.b, obs.n)
-        obs.mean_corr .= correlation_vec(psi, obs.op, obs.op)
+        obs.entr_mean = ent_entropy(psi, obs.b, obs.n)
+        obs.corr_mean .= correlation_vec(psi, obs.op, obs.op)
     elseif t > sat
         entr = ent_entropy(psi, obs.b, obs.n)
         corr = correlation_vec(psi, obs.op, obs.op)
 
-        delta_entr = entr - obs.mean_entr
-        delta_corr = corr .- obs.mean_corr
-        obs.mean_entr += delta_entr / (t + 1 - sat)
-        obs.mean_corr .+= delta_corr ./ (t + 1 - sat)
-        obs.sstd_entr += delta_entr * (entr - obs.mean_entr)
-        obs.sstd_corr .+= delta_corr .* (corr .- obs.mean_corr)
+        delta_entr = entr - obs.entr_mean
+        delta_corr = corr .- obs.corr_mean
+        obs.entr_mean += delta_entr / (t + 1 - sat)
+        obs.corr_mean .+= delta_corr ./ (t + 1 - sat)
+        obs.entr_sstd += delta_entr * (entr - obs.entr_mean)
+        obs.corr_sstd .+= delta_corr .* (corr .- obs.corr_mean)
     end
     push!(obs.truncerrs, truncerr)
 end
@@ -285,7 +321,7 @@ let
     psi = MPS(ComplexF64, ss, "Up")
     obs = EntrCorrObserver{Float64}(L; n=1, op="Sz")
     truncerr = mps_evolve!(psi, 40, 0.5, 0.5, obs; cutoff=eps(Float64))
-    println("Entropy: ", sqrt.(obs.sstd_corr ./ (T - 2L)))
+    println("Entropy: ", sqrt.(obs.corr_sstd ./ (T - 2L)))
 
 end
 =#

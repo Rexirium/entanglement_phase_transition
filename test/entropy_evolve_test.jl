@@ -5,6 +5,10 @@ using Plots, LaTeXStrings
 
 include("../src/time_evolution.jl")
 
+MKL.set_num_threads(1)
+ITensors.BLAS.set_num_threads(1)
+ITensors.Strided.set_num_threads(1)
+
 let 
     L, T = 16, 100
     p, η = 0.5, 0.5
@@ -14,7 +18,7 @@ let
     psi = MPS(ss, "Up")
 
     obs = EntropyObserver{Float64}(b; n=1)
-    truncerr = mps_evolve!(psi, T, p, η, obs; cutoff=eps(Float64))
+    @timev mps_evolve!(psi, T, p, η, obs; cutoff=eps(Float64))
     
     plot(0:T, obs.truncerrs; lw = 1.5, c=:red, xaxis=L"t", yaxis="err", label=L"\epsilon_\mathrm{tot}", legend_position=:bottomright)
     pt = plot!(twinx(), 0:T, obs.maxbonds; lw=2, yaxis="max bond", label=L"D_\mathrm{max}", legend_position=:topright)

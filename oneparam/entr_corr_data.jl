@@ -64,10 +64,10 @@ let
                 cutoff=cutoff, restype=type),
             ps)
 
-        prob_mean_entropy = [res.mean_entropy for res in prob_results]
-        prob_std_entropy  = [res.std_entropy for res in prob_results]
-        prob_mean_corrs = hcat([res.mean_corrs for res in prob_results]...)
-        prob_std_corrs  = hcat([res.std_corrs for res in prob_results]...)
+        prob_mean_entropy = [res.entr_mean for res in prob_results]
+        prob_std_entropy  = [res.entr_std for res in prob_results]
+        prob_mean_corrs = hcat([res.corr_mean for res in prob_results]...)
+        prob_std_corrs  = hcat([res.corr_std for res in prob_results]...)
 
         prob_results = nothing  # free memory
         # Calculate eta scaling in parallel using pmap
@@ -76,10 +76,10 @@ let
                 cutoff=cutoff, restype=type),
             ηs)
 
-        eta_mean_entropy = [res.mean_entropy for res in eta_results]
-        eta_std_entropy  = [res.std_entropy for res in eta_results]
-        eta_mean_corrs = hcat([res.mean_corrs for res in eta_results]...)
-        eta_std_corrs  = hcat([res.std_corrs for res in eta_results]...)
+        eta_mean_entropy = [res.entr_mean for res in eta_results]
+        eta_std_entropy  = [res.entr_std for res in eta_results]
+        eta_mean_corrs = hcat([res.corr_mean for res in eta_results]...)
+        eta_std_corrs  = hcat([res.corr_std for res in eta_results]...)
 
         eta_results = nothing  # free memory
         # Save data to HDF5 file
