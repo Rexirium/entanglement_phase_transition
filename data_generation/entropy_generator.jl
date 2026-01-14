@@ -1,5 +1,4 @@
 using MKL
-using Statistics
 using HDF5
 using Distributed, SlurmClusterManager
 
@@ -14,6 +13,7 @@ end
 @everywhere begin
     using MKL
     MKL.set_num_threads(1)
+    using Statistics
     # include the entropy calculation code on all processes
     include("../src/simulation.jl")
     ITensors.BLAS.set_num_threads(1)
@@ -40,7 +40,7 @@ const param = vec([(p, η) for p in ps, η in ηs])
 
         entr_mean = mean(res.entropies)
         entr_std = stdm(res.entropies, entr_mean; corrected=false)
-        
+
         return (entr_mean, entr_std)
     end
 end

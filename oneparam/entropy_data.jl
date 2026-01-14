@@ -11,17 +11,32 @@ if nprocs() == 1
 end
 
 # make sure workers have required packages and the same MKL threading setting
-@everywhere using MKL
-@everywhere MKL.set_num_threads(1)
+@everywhere begin
+    using MKL
+    MKL.set_num_threads(1)
+    using Statistics
+    # include the entropy calculation code on all processes
+    include("../src/simulation.jl")
+    ITensors.BLAS.set_num_threads(1)
+    ITensors.Strided.set_num_threads(1)
+    
+    function entropy_mean_multi(lsize::Int, ttotal::Int, p::Real, η::Real; 
+        nsamp::Int=100, cutoff::Real=1e-12, restype=Float64)
+        res = EntropyResults{restype}(lsize ÷ 2, lsize; n=1, nsamp=nsamp)
+        calculation_mean_multi(lsize, ttotal, p, η, res; cutoff=cutoff)
 
-# include the entropy calculation code on all processes
-@everywhere include("../src/simulation.jl")
+        entr_mean = mean(res.entropies)
+        entr_std = stdm(res.entropies, entr_mean; corrected=false)
+        return entr_mean, entr_std
+    end
+
+end
 
 let
     # Parameters
     N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
     type = Float64
-    cutoff = 1e-12
+    cutoff = 1e-14
 
     p0::type, η0::type = 0.5, 0.5
     ps = collect(type, 0.0:0.05:1.0)
@@ -44,8 +59,8 @@ let
     for L in Ls
         # Calculate probability scaling in parallel using pmap
         prob_results = pmap(p ->
-            entropy_mean_multi(L, 4L, p, η0; numsamp=N,
-                cutoff=cutoff, retstd=true, restype=type),
+            entropy_mean_multi(L, 4L, p, η0; nsamp=N,
+                cutoff=cutoff, restype=type),
             ps)
 
         prob_mean = [r[1] for r in prob_results]
@@ -54,8 +69,8 @@ let
         prob_results = nothing  # free memory
         # Calculate eta scaling in parallel using pmap
         eta_results = pmap(η ->
-            entropy_mean_multi(L, 4L, p0, η; numsamp=N,
-                cutoff=cutoff, retstd=true, restype=type),
+            entropy_mean_multi(L, 4L, p0, η; nsamp=N,
+                cutoff=cutoff, restype=type),
             ηs)
 
         eta_mean = [r[1] for r in eta_results]

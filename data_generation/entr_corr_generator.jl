@@ -37,7 +37,7 @@ const param = vec([(p, η) for p in ps, η in ηs])
         p, η = params[idx]
         res = EntrCorrResults{type}(lsize ÷ 2, lsize; n=1, op="Sz", nsamp=N)
         calculation_mean_multi(lsize, 4lsize, p, η, res; cutoff=cutoff)
-        
+
         entr_mean = mean(res.entropies)
         entr_std = stdm(res.entropies, entr_mean; corrected=false)
         corr_mean = vec(mean(res.corrs, dims=2))

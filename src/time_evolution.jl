@@ -16,6 +16,19 @@ mutable struct EntropyObserver{T} <: AbstractObserver
     EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], T[], Int[])
 end
 
+mutable struct EntrCorrObserver{T} <: AbstractObserver
+    b::Int
+    len::Int
+    n::Real
+    op::String
+    entrs::Vector{T}
+    corrs::Vector{Vector{T}}
+    truncerrs::Vector{T}
+
+    EntrCorrObserver{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
+        new{T}(b, len, n, op, T[], Vector{T}[], T[])
+end
+
 mutable struct EntrCorrAverager{T} <: AbstractObserver
     b::Int
     len::Int
@@ -235,6 +248,12 @@ function mps_monitor!(obs::EntropyObserver{T}, psi::MPS, t::Int, truncerr::Real)
     push!(obs.entropies, ent_entropy(psi, obs.b, obs.n))
     push!(obs.truncerrs, truncerr)
     push!(obs.maxbonds, maxlinkdim(psi))
+end
+
+function mps_monitor!(obs::EntrCorrObserver{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
+    push!(obs.entrs, ent_entropy(psi, obs.b, obs.n))
+    push!(obs.corrs, correlation_vec(psi, obs.op, obs.op))
+    push!(obs.truncerrs, truncerr)
 end
 
 function mps_monitor!(obs::EntrCorrAverager{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
