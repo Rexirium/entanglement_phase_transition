@@ -29,7 +29,7 @@ const param = vec([(p, η) for p in ps, η in ηs])
 
 @everywhere begin
     const params = $param
-    function entrcorr_averager_wrapper(lsize, ttotal, idx)
+    function entrcorr_average_wrapper(lsize, ttotal, idx)
         p, η = params[idx]
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{type}, ss, "Up")
@@ -58,7 +58,7 @@ let
     for L in Ls
         T = 10L
         nparams = length(params)
-        averagers = pmap(idx -> entrcorr_averager_wrapper(L, T, idx), 1:nparams)
+        averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nparams)
 
         entr_means = type[]
         entr_stds = type[]
