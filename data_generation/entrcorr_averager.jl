@@ -29,7 +29,7 @@ const param = vec([(p, η) for p in ps, η in ηs])
 
 @everywhere begin
     const params = $param
-    function entrcorr_average_wrapper(lsize, ttotal, idx)
+    function entrcorr_average_wrapper(lsize::Int, ttotal::Int, idx::Int)
         p, η = params[idx]
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{type}, ss, "Up")
@@ -42,7 +42,7 @@ end
 
 let 
     # Model parameters
-    L1, dL, L2 = 4, 2, 18
+    L1, dL, L2 = 4, 2, 20
     Ls = collect(L1:dL:L2)
     nprob, neta = length(ps), length(ηs)
 
