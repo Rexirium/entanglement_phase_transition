@@ -57,7 +57,8 @@ mutable struct EntrCorrResults{T} <: AbstractResult
         new{T}(T, b, len, n, op, nsamp, Vector{T}(undef, nsamp), Matrix{T}(undef, len, nsamp))
 end
 
-function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; cutoff::Real=1e-12)
+function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
+    cutoff::Real=1e-14, maxdim::Int=2<<lsize)
     """
     Calculate the final properties of the MPS after time evolution. 
     """
@@ -65,7 +66,7 @@ function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res:
 
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{res.type}, ss, "Up")
-    mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
+    mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff, maxdim=maxdim)
 
     mps_results!(res, psi)
 end
@@ -77,7 +78,8 @@ function mps_results!(res::EntropySample{T}, psi::MPS) where T<:Real
     res.entropy = ent_entropy(psi, res.b, res.n)
 end
 
-function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; cutoff::Real=1e-12)
+function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
+    cutoff::Real=1e-14, maxdim::Int=2<<lsize)
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
@@ -86,12 +88,13 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::A
     
     for i in 1:res.nsamp 
         psi = MPS(Complex{res.type}, ss, "Up")
-        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
+        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff, maxdim=maxdim)
         mps_results!(res, psi, i)
     end
 end
 
-function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; cutoff::Real=1e-12)
+function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
+    cutoff::Real=1e-14, maxdim::Int=2<<lsize)
     """
     Calculate the mean entanglement entropy over multiple samples using multithreads. (non-Hermitian case)
     """

@@ -137,7 +137,7 @@ function apply!(G1::ITensor, psi::MPS, loc::Int)
     psi[loc] = A
 end
 
-function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-12)
+function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))
     """
     Apply two adjacent site gate `G2` to the MPS `psi` at sites `j1` and `j1+1` inplace.
     """
@@ -147,13 +147,14 @@ function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-12)
     A = (psi[j1] * psi[j2]) * G2
     noprime!(A)
     linds = uniqueinds(psi[j1], psi[j2])
-    psi[j1], S, psi[j2], spec = svd(A, linds; cutoff=cutoff)
+    psi[j1], S, psi[j2], spec = svd(A, linds; cutoff=cutoff, maxdim=maxdim)
     psi[j2] *= S
     set_ortho_lims!(psi, j2:j2)
     return spec.truncerr
 end
 
-function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e-12) where Tp<:Real
+function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; 
+    cutoff::Real=1e-14, maxdim::Int=2<<length(psi0)) where Tp<:Real
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
@@ -168,7 +169,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
@@ -185,7 +186,8 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
     return psi, truncerr
 end
 
-function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractObserver; cutoff::Real=1e-12) where Tp<:Real
+function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractObserver; 
+    cutoff::Real=1e-14, maxdim::Int=2<<length(psi0)) where Tp<:Real
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
@@ -200,7 +202,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
@@ -218,7 +220,8 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     return psi, truncerr
 end
 
-function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e-12) where Tp<:Real
+function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; 
+    cutoff::Real=1e-14, maxdim::Int=2<<length(psi)) where Tp<:Real
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
@@ -232,7 +235,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
@@ -249,7 +252,8 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
     return truncerr
 end
 
-function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractObserver; cutoff::Real=1e-12) where Tp<:Real
+function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractObserver; 
+    cutoff::Real=1e-14, maxdim::Int=2<<length(psi)) where Tp<:Real
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
