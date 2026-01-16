@@ -10,8 +10,8 @@ ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
 let 
-    L, T = 16, 100
-    p, η = 0.5, 0.5
+    L, T = 14, 140
+    p, η = 0.2, 0.8
     b = L ÷ 2
     
     ss = siteinds("S=1/2", L)

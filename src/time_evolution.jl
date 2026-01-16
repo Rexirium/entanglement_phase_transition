@@ -89,6 +89,25 @@ function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index; x::Real, λ::Rea
     return op([phiUp 0; 0 phiDn], s)
 end
 
+function proj_measure!(psi::MPS, loc::Int)
+    """Perform a projective measurement on the MPS `psi` at site `loc` with outcome `:Up` or `:Dn`."""
+    (loc <= 0 || loc > length(psi)) && return psi
+    # Orthogonalize the MPS at site `loc`
+    s = siteind(psi, loc)
+    projUp = op("ProjUp", s)
+    orthogonalize!(psi, loc)
+    # Calculate the probability of measuring "Up"
+    probUp = real(inner(prime(psi[loc], tags="Site"), projUp, psi[loc]))
+    samp = rand()
+    if samp < probUp
+        apply!(projUp, psi, loc)
+    else
+        projDn = op("ProjDn", s)
+        apply!(projDn, psi, loc)
+    end
+    normalize!(psi)
+end
+
 function weak_measure!(psi::MPS, loc::Int, para::Tuple{T, T}=(1.0, 1.0)) where T<:Real
     """Perform a weak measurement on the MPS `psi` at site `loc` with parameters `λ` and `Δ`."""
     (loc <= 0 || loc > length(psi)) && return psi
@@ -139,7 +158,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; cutoff::Real=1e
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
     """
-    psi = deepcopy(psi0)
+    psi = copy(psi0)
     T = promote_itensor_eltype(psi)
     sites = siteinds(psi)
     lsize = length(sites)
@@ -171,7 +190,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
     """
-    psi = deepcopy(psi0)
+    psi = copy(psi0)
     T = promote_itensor_eltype(psi)
     sites = siteinds(psi)
     lsize = length(sites)
@@ -194,7 +213,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
             # Normalize the MPS after applying the non Hermitian operator
             normalize!(psi)
         end
-        mps_measure!(obs, psi, t)
+        mps_monitor!(obs, psi, t, truncerr)
     end
     return psi, truncerr
 end
@@ -319,7 +338,7 @@ let
     L, T = 10, 100
     ss = siteinds("S=1/2", L)
     psi = MPS(ComplexF64, ss, "Up")
-    obs = EntrCorrObserver{Float64}(L; n=1, op="Sz")
+    obs = EntrCorrAverager{Float64}(L ÷ 2, L; n=1, op="Sz")
     truncerr = mps_evolve!(psi, 40, 0.5, 0.5, obs; cutoff=eps(Float64))
     println("Entropy: ", sqrt.(obs.corr_sstd ./ (T - 2L)))
 

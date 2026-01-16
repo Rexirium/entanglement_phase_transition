@@ -67,10 +67,10 @@ function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res:
     psi = MPS(Complex{res.type}, ss, "Up")
     mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
 
-    mps_measure!(res, psi)
+    mps_results!(res, psi)
 end
 
-function mps_measure!(res::EntropySample{T}, psi::MPS) where T<:Real
+function mps_results!(res::EntropySample{T}, psi::MPS) where T<:Real
     """
     Measure the entanglement entropy and store it in `res`.
     """
@@ -87,7 +87,7 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::A
     for i in 1:res.nsamp 
         psi = MPS(Complex{res.type}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        mps_measure!(res, psi, i)
+        mps_results!(res, psi, i)
     end
 end
 
@@ -101,20 +101,20 @@ function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{res.type}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
-        @inbounds mps_measure!(res, psi, i)
+        @inbounds mps_results!(res, psi, i)
         psi = nothing
         ss = nothing
     end
 end
 
-function mps_measure!(res::EntropyResults{T}, psi::MPS, i::Int) where T<:Real
+function mps_results!(res::EntropyResults{T}, psi::MPS, i::Int) where T<:Real
     """
     Measure the entanglement entropy and store it in `res`.
     """
     res.entropies[i] = ent_entropy(psi, res.b, res.n)
 end
 
-function mps_measure!(res::EntrCorrResults{T}, psi::MPS, i::Int) where T<:Real
+function mps_results!(res::EntrCorrResults{T}, psi::MPS, i::Int) where T<:Real
     """
     Measure the entanglement entropy and correlation function and store them in `res`.
     """
