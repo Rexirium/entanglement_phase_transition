@@ -61,7 +61,7 @@ mutable struct EntrCorrAverager{T} <: AbstractObserver
 
     EntrCorrAverager{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
         new{T}(b, len, n, op, zero(T), zero(T), 
-        Vector{T}(undef, len), Vector{T}(undef, len), zero(T))
+        Vector{T}(undef, len), zeros(T, len), zero(T))
 end
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)
