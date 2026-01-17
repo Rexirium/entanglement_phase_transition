@@ -42,10 +42,9 @@ mutable struct EntropyAverager{T} <: AbstractObserver
     n::Real
     entr_mean::T
     entr_sstd::T
-    truncerr::T
 
     EntropyAverager{T}(b::Int, len::Int; n::Real=1) where T<:Real = 
-        new{T}(b,len, n, zero(T), zero(T), zero(T))
+        new{T}(b,len, n, zero(T), zero(T))
 end
 
 mutable struct EntrCorrAverager{T} <: AbstractObserver
@@ -57,11 +56,10 @@ mutable struct EntrCorrAverager{T} <: AbstractObserver
     entr_sstd::T
     corr_mean::Vector{T}
     corr_sstd::Vector{T}
-    truncerr
 
     EntrCorrAverager{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
         new{T}(b, len, n, op, zero(T), zero(T), 
-        Vector{T}(undef, len), zeros(T, len), zero(T))
+        Vector{T}(undef, len), zeros(T, len))
 end
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)
@@ -312,7 +310,6 @@ function mps_monitor!(obs::EntropyAverager{T}, psi::MPS, t::Int, truncerr::Real)
         obs.entr_mean += delta / (t + 1 - sat)
         obs.entr_sstd += delta * (entr - obs.entr_mean)
     end
-    obs.truncerr = truncerr
 end
 
 function mps_monitor!(obs::EntrCorrAverager{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
@@ -335,7 +332,6 @@ function mps_monitor!(obs::EntrCorrAverager{T}, psi::MPS, t::Int, truncerr::Real
         obs.entr_sstd += delta_entr * (entr - obs.entr_mean)
         obs.corr_sstd .+= delta_corr .* (corr .- obs.corr_mean)
     end
-    obs.truncerr = truncerr
 end
 #=
 let 
