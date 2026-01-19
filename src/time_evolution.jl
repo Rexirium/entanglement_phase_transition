@@ -266,7 +266,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff)
+            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
