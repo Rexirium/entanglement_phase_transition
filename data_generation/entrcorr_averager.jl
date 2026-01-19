@@ -49,7 +49,6 @@ let
     h5open("data/entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
-        write(grp, "N", N)
         write(grp, "ps", ps)
         write(grp, "ηs", ηs)
         write(grp, "Ls", Ls)
