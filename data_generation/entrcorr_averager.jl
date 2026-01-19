@@ -76,7 +76,7 @@ let
         corr_means = reshape(hcat(corr_means...), L, nprob, neta)
         corr_stds  = reshape(hcat(corr_stds...), L, nprob, neta)
 
-        println("L=$L done with $N samples.")
+        println("L=$L done with $(10L) samples.")
         averagers = nothing  # free memory
 
         h5open("data/entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
