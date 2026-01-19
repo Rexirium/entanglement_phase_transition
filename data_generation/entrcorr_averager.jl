@@ -24,7 +24,7 @@ end
 # define global constants for parameters
 
 const ps = collect(type, 0.0:0.05:1.0)
-const ηs = collect(type, 0.0:0.05:1.0)
+const ηs = collect(type, 0.05:0.05:1.0)
 const param = vec([(p, η) for p in ps, η in ηs])
 
 @everywhere begin
@@ -56,7 +56,7 @@ let
     end
 
     for L in Ls
-        T = 10L
+        T = 12L
         nparams = length(params)
         averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nparams)
 
