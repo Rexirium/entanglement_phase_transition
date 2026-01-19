@@ -68,7 +68,7 @@ let
             push!(entr_means, avg.entr_mean)
             push!(entr_stds, sqrt(avg.entr_sstd / (T - 2L)))
             push!(corr_means, avg.corr_mean)
-            push!(corr_stds, sqrt.(avg.corr_std ./ (T - 2L)))
+            push!(corr_stds, sqrt.(avg.corr_sstd ./ (T - 2L)))
         end
 
         entr_means = reshape(entr_means, nprob, neta)
