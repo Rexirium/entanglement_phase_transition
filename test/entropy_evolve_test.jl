@@ -10,9 +10,9 @@ ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
 let 
-    L = 20
+    L = 24
     T = 12L
-    p, η = 0.6,0.4
+    p, η = 0.2, 0.1
     b = L ÷ 2
     
     ss = siteinds("S=1/2", L)
@@ -26,6 +26,8 @@ let
     turncerr_floor = (1e-14)*(T*L/2)
 
     println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
+    println("Truncation Error: ", obs.truncerrs[end])
+    println("Truncation Error Floor: ", turncerr_floor)
     
     pt = plot(0:T, obs.truncerrs; lw = 1.5, c=:red, xaxis=L"t", yaxis="err", label=L"\epsilon_\mathrm{tot}", legend_position=:bottomright)
     plot!(0:T, fill(turncerr_floor, T+1); lw=1.5, ls=:dash, c=:black, label="trunc err floor")

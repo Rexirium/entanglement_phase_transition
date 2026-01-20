@@ -111,11 +111,9 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})
     Calculate the reduced density matrix eigen values of multiple sites `xs` from other sites.
     """
     length(xs) == 1 && return reduced_density_eigen(psi, xs[1])
-
     a, b = xs[1], xs[end]
     # obtain the reduced density matrix
     orthogonalize!(psi, a)
-
     rho = psi[a]
     ir = linkind(psi, a)
     rho *= dag(prime(prime(psi[a], tags="Site"), ir))
@@ -130,7 +128,6 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})
     rho *= psi[b]
     il = linkind(psi, b-1)
     rho *= dag(prime(prime(psi[b], tags="Site"), il))
-
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
     ps = diag(D)
@@ -149,7 +146,6 @@ function zeroth_entropy(psi::MPS, b::Int)
     Calculate the zeroth order Renyi entropy of the MPS `psi` biparted after site `b`.
     """
     (b <= 0 || b >= length(psi)) && return 0.0
-    # SVD decomposition to obtain the Schmidt coefficients
     orthogonalize!(psi, b)
     truncate!(psi, b) 
     return log2(linkdim(psi, b))
