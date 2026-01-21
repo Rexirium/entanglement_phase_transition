@@ -15,24 +15,25 @@ function entrcorr_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) wh
     psi = MPS(Complex{T}, ss, "Up")
     avg = EntrCorrAverager{T}(lsize ÷ 2, lsize; n=1, op="Sx")
     # core calculation
-    truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=eps(Float64), maxdim=10*lsize)
+    truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=1e-14, maxdim=10*lsize)
     return avg, truncerr
 end
 
 let
-    L = 32
+    L = 24
     T = 12L
     p, η = 0.8, 0.2
+    
     @timev avg, truncerr = entrcorr_average_wrapper(L, T, (p, η))
 
     entr_std = sqrt(avg.entr_sstd / (T - 2L))
     corr_std = sqrt.(avg.corr_sstd ./ (T - 2L))
     
-    println("Entanglement Entropy at p=$p, η=$η : $(avg.entr_mean) ± $entr_std")
+    println("Entanglement Entropy at L = $L, p=$p, η=$η : $(avg.entr_mean) ± $entr_std")
     println("Truncation Error: ", truncerr)
     println("Truncation Error Ceiling: ", (1e-14)*(T*L/2))
 
     plot(0:(L-1), avg.corr_mean, yerror=corr_std;
         lw = 1.5, framestyle=:box, xlabel=L"r", ylabel=L"C(r)", label="Correlation Function", 
-        title="L=$L, p=$p, η=$η")
+        title=latexstring("L=$L, p=$p, η=$η"))
 end

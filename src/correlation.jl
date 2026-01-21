@@ -1,5 +1,3 @@
-using ITensors, ITensorMPS
-
 function correlation(psi::MPS, ops1::String, ops2::String, i::Int, j::Int)
     left, right = sort((i, j))
     idxs = siteinds(psi)[[left, right]]

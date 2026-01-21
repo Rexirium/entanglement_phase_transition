@@ -12,8 +12,8 @@ ITensors.Strided.set_num_threads(1)
 let 
     L = 24
     T = 12L
-    Dm, cutoff =100 + 5L, 1e-14
-    p, η = 0.9, 0.1
+    Dm, cutoff =10*L, 1e-14
+    p, η = 0.8, 0.2
     b = L ÷ 2
     
     ss = siteinds("S=1/2", L)
@@ -22,8 +22,8 @@ let
     obs = EntropyObserver{Float64}(b; n=1)
     @timev mps_evolve!(psi, T, p, η, obs; cutoff=cutoff, maxdim=Dm)
 
-    entr_mean = mean(obs.entropies[2L+1:end])
-    entr_std = stdm(obs.entropies[2L+1:end], entr_mean; corrected=false)
+    entr_mean = mean(obs.entropies[2L+2:end])
+    entr_std = stdm(obs.entropies[2L+2:end], entr_mean; corrected=false)
     truncerr_ceiling = (cutoff)*(T*L/2)
 
     println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
@@ -37,7 +37,7 @@ let
     perr = plot(0:T, obs.truncerrs; lw = 1.5, xaxis=L"t", label="truncation error", framestyle=:box)
     hline!([truncerr_ceiling], lw=1.5, l=:dash, label="trunc err ceiling")
 
-    #pe = plot(0:T, obs.entropies, lw = 1.5, framestyle=:box, xlabel=L"t", ylabel="entropy", label=L"S_\mathrm{vN}(t)")
+    pe = plot(0:T, obs.entropies, lw = 1.5, framestyle=:box, xlabel=L"t", ylabel="entropy", label=L"S_\mathrm{vN}(t)")
     
-    plot(pbond, perr, layout = (2,1), size=(600,800), left_margin=4Plots.mm)
+    plot(pe, perr, layout = (2,1), size=(600,800), left_margin=4Plots.mm)
 end

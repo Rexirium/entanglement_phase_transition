@@ -44,7 +44,7 @@ mutable struct EntropyAverager{T} <: AbstractObserver
     entr_sstd::T
 
     EntropyAverager{T}(b::Int, len::Int; n::Real=1) where T<:Real = 
-        new{T}(b,len, n, zero(T), zero(T))
+        new{T}(b, len, n, zero(T), zero(T))
 end
 
 mutable struct EntrCorrAverager{T} <: AbstractObserver
@@ -59,7 +59,7 @@ mutable struct EntrCorrAverager{T} <: AbstractObserver
 
     EntrCorrAverager{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
         new{T}(b, len, n, op, zero(T), zero(T), 
-        Vector{T}(undef, len), zeros(T, len))
+        zeros(T, len), zeros(T, len))
 end
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)
@@ -301,13 +301,10 @@ function mps_monitor!(obs::EntropyAverager{T}, psi::MPS, t::Int, truncerr::Real)
     Update the mean and SST of entanglement entropy in `obs`.
     Using Welford's algorithm.
     """
-    sat = 2*obs.len + 1
-    if t ==sat
-        obs.entr_mean = ent_entropy(psi, obs.b, obs.n)
-    elseif t > sat
+    if t > 2 * obs.len
         entr = ent_entropy(psi, obs.b, obs.n)
         delta = entr - obs.entr_mean
-        obs.entr_mean += delta / (t + 1 - sat)
+        obs.entr_mean += delta / (t - 2 * obs.len)
         obs.entr_sstd += delta * (entr - obs.entr_mean)
     end
 end
@@ -317,18 +314,14 @@ function mps_monitor!(obs::EntrCorrAverager{T}, psi::MPS, t::Int, truncerr::Real
     Update the mean and SST of entanglement entropy and correlation function in `obs`.
     Using Welford's algorithm.
     """
-    sat = 2*obs.len + 1
-    if t ==sat
-        obs.entr_mean = ent_entropy(psi, obs.b, obs.n)
-        obs.corr_mean .= correlation_vec(psi, obs.op, obs.op)
-    elseif t > sat
+    if t > 2 * obs.len
         entr = ent_entropy(psi, obs.b, obs.n)
         corr = correlation_vec(psi, obs.op, obs.op)
 
         delta_entr = entr - obs.entr_mean
         delta_corr = corr .- obs.corr_mean
-        obs.entr_mean += delta_entr / (t + 1 - sat)
-        obs.corr_mean .+= delta_corr ./ (t + 1 - sat)
+        obs.entr_mean += delta_entr / (t - 2 * obs.len)
+        obs.corr_mean .+= delta_corr ./ (t - 2 * obs.len)
         obs.entr_sstd += delta_entr * (entr - obs.entr_mean)
         obs.corr_sstd .+= delta_corr .* (corr .- obs.corr_mean)
     end
