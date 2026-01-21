@@ -30,7 +30,7 @@ let
     
     println("Entanglement Entropy at p=$p, η=$η : $(avg.entr_mean) ± $entr_std")
     println("Truncation Error: ", truncerr)
-    println("Truncation Error Floor: ", (1e-14)*(T*L/2))
+    println("Truncation Error Ceiling: ", (1e-14)*(T*L/2))
 
     plot(0:(L-1), avg.corr_mean, yerror=corr_std;
         lw = 1.5, framestyle=:box, xlabel=L"r", ylabel=L"C(r)", label="Correlation Function", 
