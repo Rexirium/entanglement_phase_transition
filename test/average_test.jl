@@ -31,23 +31,23 @@ function entropy_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) whe
 end
 
 let
-    L = 30
+    L = 32
     T = 12L
-    p, η = 0.8, 0.2
+    p, η = 0.7, 0.2
     
-    @timev entr_mean, entr_std, truncerr = entropy_average_wrapper(L, T, (p, η))
+    @timev avg, truncerr = entrcorr_average_wrapper(L, T, (p, η))
 
-    #entr_mean = avg.entr_mean
-    #corr_mean = avg.corr_mean
-    #entr_std = sqrt(avg.entr_sstd / (T - 2L))
-    #corr_std = sqrt.(avg.corr_sstd ./ (T - 2L))
+    entr_mean = avg.entr_mean
+    corr_mean = avg.corr_mean
+    entr_std = sqrt(avg.entr_sstd / (T - 2L))
+    corr_std = sqrt.(avg.corr_sstd ./ (T - 2L))
     
     println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
     println("Truncation Error: ", truncerr)
     println("Truncation Error Ceiling: ", (1e-14)*(T*L/2))
-    #=
+    
     plot(0:(L-1), corr_mean, yerror=corr_std;
         lw = 1.5, framestyle=:box, xlabel=L"r", ylabel=L"C(r)", label="Correlation Function", 
         title=latexstring("L=$L, p=$p, η=$η"))
-    =#
+    
 end

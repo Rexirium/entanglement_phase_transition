@@ -13,7 +13,7 @@ let
     L = 24
     T = 12L
     Dm, cutoff =10*L, 1e-14
-    p, η = 0.8, 0.2
+    p, η = 0.5, 0.2
     b = L ÷ 2
     
     ss = siteinds("S=1/2", L)
@@ -37,7 +37,7 @@ let
     perr = plot(0:T, obs.truncerrs; lw = 1.5, xaxis=L"t", label="truncation error", framestyle=:box)
     hline!([truncerr_ceiling], lw=1.5, l=:dash, label="trunc err ceiling")
 
-    pe = plot(0:T, obs.entropies, lw = 1.5, framestyle=:box, xlabel=L"t", ylabel="entropy", label=L"S_\mathrm{vN}(t)")
+    #pe = plot(0:T, obs.entropies, lw = 1.5, framestyle=:box, xlabel=L"t", ylabel="entropy", label=L"S_\mathrm{vN}(t)")
     
-    plot(pe, perr, layout = (2,1), size=(600,800), left_margin=4Plots.mm)
+    plot(pbond, perr, layout = (2,1), size=(600,800), left_margin=4Plots.mm)
 end
