@@ -17,7 +17,7 @@ let
     b = L ÷ 2
     
     ss = siteinds("S=1/2", L)
-    psi = MPS(ss, "Up")
+    psi = MPS(ComplexF64, ss, "Up")
 
     obs = EntropyObserver{Float64}(b; n=1)
     @timev mps_evolve!(psi, T, p, η, obs; cutoff=cutoff, maxdim=Dm)
