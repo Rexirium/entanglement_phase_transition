@@ -13,7 +13,7 @@ let
     L = 24
     T = 12L
     Dm, cutoff =10*L, 1e-14
-    p, η = 0.5, 0.2
+    p, η = 0.5, 0.3
     b = L ÷ 2
     
     ss = siteinds("S=1/2", L)
@@ -21,20 +21,25 @@ let
 
     obs = EntropyObserver{Float64}(b; n=1)
     @timev mps_evolve!(psi, T, p, η, obs; cutoff=cutoff, maxdim=Dm)
+    truncerr_ceiling = 1e3 * (cutoff)*(T*L/2)
+    tsteps = length(obs.entropies) - 1
 
-    entr_mean = mean(obs.entropies[2L+2:end])
-    entr_std = stdm(obs.entropies[2L+2:end], entr_mean; corrected=false)
-    truncerr_ceiling = (cutoff)*(T*L/2)
+    if tsteps < T
+        println("Evolution stopped early at t = $tsteps due to high truncation error.")
+    else
+        entr_mean = mean(obs.entropies[2L+2:end])
+        entr_std = stdm(obs.entropies[2L+2:end], entr_mean; corrected=false)
 
-    println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
-    println("Truncation Error: ", obs.truncerrs[end])
-    println("Truncation Error Ceiling: ", truncerr_ceiling)
+        println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
+        println("Truncation Error: ", obs.truncerrs[end])
+        println("Truncation Error Ceiling: ", truncerr_ceiling)
+    end
 
-    pbond = plot(0:T, obs.maxbonds; lw =2, yaxis=L"D_\mathrm{max}", 
+    pbond = plot(0:tsteps, obs.maxbonds; lw =2, yaxis=L"D_\mathrm{max}", 
         label="max bond", framestyle=:box, title=latexstring("L = $L, p=$p, η=$η"))
     hline!([Dm], lw=2, label="max bond limit")
 
-    perr = plot(0:T, obs.truncerrs; lw = 1.5, xaxis=L"t", label="truncation error", framestyle=:box)
+    perr = plot(0:tsteps, obs.truncerrs; lw = 1.5, xaxis=L"t", label="truncation error", framestyle=:box)
     hline!([truncerr_ceiling], lw=1.5, l=:dash, label="trunc err ceiling")
 
     #pe = plot(0:T, obs.entropies, lw = 1.5, framestyle=:box, xlabel=L"t", ylabel="entropy", label=L"S_\mathrm{vN}(t)")

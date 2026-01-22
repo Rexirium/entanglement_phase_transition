@@ -161,6 +161,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real;
     T = promote_itensor_eltype(psi)
     sites = siteinds(psi)
     lsize = length(sites)
+    truncerr_th = 1e3 * cutoff * (ttotal*lsize/2)
     
     truncerr = 0.0
     for t in 1:ttotal
@@ -180,6 +181,9 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real;
             # Normalize the MPS after applying the non Hermitian operator
             normalize!(psi)
         end
+        if truncerr > truncerr_th
+            break
+        end
     end
     return psi, truncerr
 end
@@ -194,6 +198,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     T = promote_itensor_eltype(psi)
     sites = siteinds(psi)
     lsize = length(sites)
+    truncerr_th = 1e3 * cutoff * (ttotal*lsize/2)
     
     truncerr = 0.0
     for t in 1:ttotal
@@ -214,6 +219,9 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
             normalize!(psi)
         end
         mps_monitor!(obs, psi, t, truncerr)
+        if truncerr > truncerr_th
+            break
+        end
     end
     return psi, truncerr
 end
@@ -227,6 +235,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real;
     sites = siteinds(psi)
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
+    truncerr_th = 1e3 * cutoff * (ttotal*lsize/2)
     
     truncerr = 0.0
     for t in 1:ttotal
@@ -246,6 +255,9 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real;
             # Normalize the MPS after applying the non Hermitian operator
             normalize!(psi)
         end
+        if truncerr > truncerr_th
+            break
+        end
     end
     return truncerr
 end
@@ -259,6 +271,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     sites = siteinds(psi)
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
+    truncerr_th = 1e3 * cutoff * (ttotal*lsize/2)
     
     truncerr = 0.0
     mps_monitor!(obs, psi, 0, truncerr)
@@ -280,6 +293,9 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
             normalize!(psi)
         end
         mps_monitor!(obs, psi, t, truncerr)
+        if truncerr > truncerr_th
+            break
+        end
     end
     return truncerr
 end
