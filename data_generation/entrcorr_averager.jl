@@ -29,13 +29,21 @@ const param = vec([(p, η) for p in ps, η in ηs])
 
 @everywhere begin
     const params = $param
+
     function entrcorr_average_wrapper(lsize::Int, ttotal::Int, idx::Int)
         p, η = params[idx]
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{type}, ss, "Up")
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
         # core calculation
-        mps_evolve!(psi, ttotal, p, η, avg; cutoff=cutoff)
+        truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=cutoff)
+        if truncerr > 1e3 * cutoff * (ttotal * lsize / 2)
+            avg.entr_mean = NaN
+            avg.entr_sstd = NaN
+            avg.corr_mean .= fill(NaN, lsize)
+            avg.corr_sstd .= fill(NaN, lsize)
+        end
+        
         return avg
     end
 end

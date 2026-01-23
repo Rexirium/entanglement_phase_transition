@@ -164,6 +164,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real;
     truncerr_th = 1e3 * cutoff * (ttotal*lsize/2)
     
     truncerr = 0.0
+    mps_monitor!(obs, psi, 0, truncerr)
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
@@ -201,6 +202,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     truncerr_th = 1e3 * cutoff * (ttotal*lsize/2)
     
     truncerr = 0.0
+    mps_monitor!(obs, psi, 0, truncerr)
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
