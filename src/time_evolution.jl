@@ -152,7 +152,7 @@ function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int
 end
 
 function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real; 
-    cutoff::Real=1e-14, maxdim::Int=2<<length(psi0)) where Tp<:Real
+    cutoff::Real=1e-14, maxdim::Int=2<<length(psi0), etol=nothing) where Tp<:Real
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
@@ -161,10 +161,8 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real;
     T = promote_itensor_eltype(psi)
     sites = siteinds(psi)
     lsize = length(sites)
-    truncerr_th = 1e3 * cutoff * (ttotal*lsize/2)
     
     truncerr = 0.0
-    mps_monitor!(obs, psi, 0, truncerr)
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
@@ -182,7 +180,8 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real;
             # Normalize the MPS after applying the non Hermitian operator
             normalize!(psi)
         end
-        if truncerr > truncerr_th
+        # break if truncation error exceeds etol
+        if ! isnothing(etol) && truncerr > etol
             break
         end
     end
@@ -190,7 +189,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real;
 end
 
 function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractObserver; 
-    cutoff::Real=1e-14, maxdim::Int=2<<length(psi0)) where Tp<:Real
+    cutoff::Real=1e-14, maxdim::Int=2<<length(psi0), etol=nothing) where Tp<:Real
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`.
@@ -199,7 +198,6 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     T = promote_itensor_eltype(psi)
     sites = siteinds(psi)
     lsize = length(sites)
-    truncerr_th = 1e3 * cutoff * (ttotal*lsize/2)
     
     truncerr = 0.0
     mps_monitor!(obs, psi, 0, truncerr)
@@ -221,7 +219,8 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
             normalize!(psi)
         end
         mps_monitor!(obs, psi, t, truncerr)
-        if truncerr > truncerr_th
+        # break if truncation error exceeds etol
+        if ! isnothing(etol) && truncerr > etol
             break
         end
     end
@@ -229,7 +228,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
 end
 
 function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; 
-    cutoff::Real=1e-14, maxdim::Int=2<<length(psi)) where Tp<:Real
+    cutoff::Real=1e-14, maxdim::Int=2<<length(psi), etol=nothing) where Tp<:Real
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
@@ -237,7 +236,6 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real;
     sites = siteinds(psi)
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
-    truncerr_th = 1e3 * cutoff * (ttotal*lsize/2)
     
     truncerr = 0.0
     for t in 1:ttotal
@@ -257,7 +255,8 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real;
             # Normalize the MPS after applying the non Hermitian operator
             normalize!(psi)
         end
-        if truncerr > truncerr_th
+        # break if truncation error exceeds etol
+        if ! isnothing(etol) && truncerr > etol
             break
         end
     end
@@ -265,7 +264,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real;
 end
 
 function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractObserver; 
-    cutoff::Real=1e-14, maxdim::Int=2<<length(psi)) where Tp<:Real
+    cutoff::Real=1e-14, maxdim::Int=2<<length(psi), etol=nothing) where Tp<:Real
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
@@ -273,7 +272,6 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     sites = siteinds(psi)
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
-    truncerr_th = 1e3 * cutoff * (ttotal*lsize/2)
     
     truncerr = 0.0
     mps_monitor!(obs, psi, 0, truncerr)
@@ -295,7 +293,8 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
             normalize!(psi)
         end
         mps_monitor!(obs, psi, t, truncerr)
-        if truncerr > truncerr_th
+        # break if truncation error exceeds etol
+        if ! isnothing(etol) && truncerr > etol
             break
         end
     end

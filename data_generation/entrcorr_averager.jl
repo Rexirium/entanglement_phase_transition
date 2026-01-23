@@ -36,8 +36,9 @@ const param = vec([(p, η) for p in ps, η in ηs])
         psi = MPS(Complex{type}, ss, "Up")
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
         # core calculation
-        truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=cutoff)
-        if truncerr > 1e3 * cutoff * (ttotal * lsize / 2)
+        threshold = 1e-10 * (ttotal * lsize)
+        truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=cutoff, maxdim=10*lsize, etol=threshold)
+        if truncerr > threshold
             avg.entr_mean = NaN
             avg.entr_sstd = NaN
             avg.corr_mean .= fill(NaN, lsize)

@@ -20,8 +20,8 @@ let
     psi = MPS(ComplexF64, ss, "Up")
 
     obs = EntropyObserver{Float64}(b; n=1)
-    @timev mps_evolve!(psi, T, p, η, obs; cutoff=cutoff, maxdim=Dm)
-    truncerr_ceiling = 1e3 * (cutoff)*(T*L/2)
+    truncerr_ceiling = 1e-10 * (T*L)
+    @timev mps_evolve!(psi, T, p, η, obs; cutoff=cutoff, maxdim=Dm, etol=truncerr_ceiling)
     tsteps = length(obs.entropies) - 1
 
     if tsteps < T

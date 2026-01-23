@@ -15,7 +15,7 @@ function entrcorr_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) wh
     psi = MPS(Complex{T}, ss, "Up")
     avg = EntrCorrAverager{T}(lsize ÷ 2, lsize; n=1, op="Sx")
     # core calculation
-    truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=1e-14, maxdim=10*lsize)
+    truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=1e-14, maxdim=10*lsize, etol=1e-10*(ttotal*lsize))
     return avg, truncerr
 end
 
@@ -25,7 +25,7 @@ function entropy_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) whe
     psi = MPS(Complex{T}, ss, "Up")
     avg = EntropyAverager{T}(lsize ÷ 2, lsize; n=1)
     # core calculation
-    truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=1e-14, maxdim=10*lsize)
+    truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=1e-14, maxdim=10*lsize, etol=1e-10*(ttotal*lsize))
     entr_std = sqrt(avg.entr_sstd / (ttotal - 2lsize))
     return avg.entr_mean, entr_std, truncerr
 end
