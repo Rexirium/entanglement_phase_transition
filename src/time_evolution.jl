@@ -42,9 +42,10 @@ mutable struct EntropyAverager{T} <: AbstractObserver
     n::Real
     entr_mean::T
     entr_sstd::T
+    accept::Bool
 
     EntropyAverager{T}(b::Int, len::Int; n::Real=1) where T<:Real = 
-        new{T}(b, len, n, zero(T), zero(T))
+        new{T}(b, len, n, zero(T), zero(T), true)
 end
 
 mutable struct EntrCorrAverager{T} <: AbstractObserver
@@ -56,10 +57,11 @@ mutable struct EntrCorrAverager{T} <: AbstractObserver
     entr_sstd::T
     corr_mean::Vector{T}
     corr_sstd::Vector{T}
+    accept::Bool
 
     EntrCorrAverager{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
         new{T}(b, len, n, op, zero(T), zero(T), 
-        zeros(T, len), zeros(T, len))
+        zeros(T, len), zeros(T, len), true)
 end
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)

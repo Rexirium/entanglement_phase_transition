@@ -39,19 +39,16 @@ const param = vec([(p, η) for p in ps, η in ηs])
         threshold = 1e-10 * (ttotal * lsize)
         truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=cutoff, maxdim=10*lsize, etol=threshold)
         if truncerr > threshold
-            avg.entr_mean = NaN
-            avg.entr_sstd = NaN
-            avg.corr_mean .= fill(NaN, lsize)
-            avg.corr_sstd .= fill(NaN, lsize)
+            avg.accept = false
         end
-        
+        psi = nothing  # free memory
         return avg
     end
 end
 
 let 
     # Model parameters
-    L1, dL, L2 = 4, 2, 20
+    L1, dL, L2 = 8, 4, 40
     Ls = collect(L1:dL:L2)
     nprob, neta = length(ps), length(ηs)
 
@@ -74,10 +71,17 @@ let
         corr_stds = Vector{type}[]
 
         for avg in averagers
-            push!(entr_means, avg.entr_mean)
-            push!(entr_stds, sqrt(avg.entr_sstd / (T - 2L)))
-            push!(corr_means, avg.corr_mean)
-            push!(corr_stds, sqrt.(avg.corr_sstd ./ (T - 2L)))
+            if avg.accept
+                push!(entr_means, avg.entr_mean)
+                push!(entr_stds, sqrt(avg.entr_sstd / (T - 2L)))
+                push!(corr_means, avg.corr_mean)
+                push!(corr_stds, sqrt.(avg.corr_sstd ./ (T - 2L)))
+            else
+                push!(entr_means, NaN)
+                push!(entr_stds, NaN)
+                push!(corr_means, fill(NaN, L))
+                push!(corr_stds, fill(NaN, L))
+            end
         end
 
         entr_means = reshape(entr_means, nprob, neta)
