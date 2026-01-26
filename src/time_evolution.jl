@@ -73,11 +73,11 @@ function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::Data
     return op(Q, s...)
 end
 
-function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::T) where T<:Real
+function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::Real)
     """
     Create a non-Hermitian operator for the given site index `s` with parameter `eta`.
     """
-    M = diagm(shuffle([1, eta]))
+    M = diagm(shuffle([one(eta), eta]))
     return op(M, s)
 end
 
@@ -164,7 +164,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real;
     sites = siteinds(psi)
     lsize = length(sites)
     
-    truncerr = 0.0
+    truncerr = zero(real(T))
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
@@ -201,7 +201,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     sites = siteinds(psi)
     lsize = length(sites)
     
-    truncerr = 0.0
+    truncerr = zero(real(T))
     mps_monitor!(obs, psi, 0, truncerr)
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
@@ -239,7 +239,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real;
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
     
-    truncerr = 0.0
+    truncerr = zero(real(T))
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
@@ -275,7 +275,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
     
-    truncerr = 0.0
+    truncerr = zero(real(T))
     mps_monitor!(obs, psi, 0, truncerr)
     for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
