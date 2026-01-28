@@ -2,7 +2,7 @@ include("time_evolution.jl")
 
 abstract type AbstractResult end
 
-mutable struct EntropySample{T} <: AbstractResult
+mutable struct EntropySample{T<:Real} <: AbstractResult
     """
     Store the entanglement entropy result after time evolution.
     """
@@ -13,7 +13,7 @@ mutable struct EntropySample{T} <: AbstractResult
     EntropySample{T}(b::Int; n = 1) where T<:Real = new{T}(T, b, n, zero(T))
 end
 
-mutable struct EntrCorrSample{T} <: AbstractResult
+mutable struct EntrCorrSample{T<:Real} <: AbstractResult
     """
     Store the entanglement entropy and correlation function results after time evolution.
     """
@@ -28,7 +28,7 @@ mutable struct EntrCorrSample{T} <: AbstractResult
         new{T}(T, b, len, n, op, zero(T), Vector{T}(undef, len))
 end
 
-mutable struct EntropyResults{T} <: AbstractResult
+mutable struct EntropyResults{T<:Real} <: AbstractResult
     """
     Store the mean and std of entanglement entropy over multiple samples after time evolution.
     """
@@ -41,7 +41,7 @@ mutable struct EntropyResults{T} <: AbstractResult
         new{T}(T, b, n, nsamp, Vector{T}(undef, nsamp))
 end
 
-mutable struct EntrCorrResults{T} <: AbstractResult
+mutable struct EntrCorrResults{T<:Real} <: AbstractResult
     """
     Store the mean and std of entanglement entropy and correlation function over multiple samples after time evolution.
     """
@@ -90,6 +90,7 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::A
         psi = MPS(Complex{res.type}, ss, "Up")
         mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff, maxdim=maxdim)
         mps_results!(res, psi, i)
+        psi = nothing
     end
 end
 
@@ -103,10 +104,9 @@ function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, 
     Threads.@threads for i in 1:res.nsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{res.type}, ss, "Up")
-        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff)
+        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff, maxdim=maxdim)
         @inbounds mps_results!(res, psi, i)
         psi = nothing
-        ss = nothing
     end
 end
 

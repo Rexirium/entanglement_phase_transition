@@ -1,4 +1,4 @@
-function ent_entropy(ps::NDTensors.Tensor, n::Real=1)
+function ent_entropy(ps::NDTensors.Tensor, n::Real=1)::Real
     """
     Calculate the n-th order Renyi entropy from the eigenvalues ps.
     """
@@ -12,7 +12,7 @@ function ent_entropy(ps::NDTensors.Tensor, n::Real=1)
     end
 end
 
-function schmidt_decomp(psi::MPS, b::Int)
+function schmidt_decomp(psi::MPS, b::Int)::NDTensors.Tensor
     """
     Perform Schmidt decomposition of the MPS `psi` biparted after site `b`.
     Returns the Schmidt coefficients as a vector.
@@ -23,7 +23,7 @@ function schmidt_decomp(psi::MPS, b::Int)
     _ , S, _ = ITensors.svd(psi[b], linds)
     schs = diag(S)
 
-    return schs[schs .> 0] # remove zero probabilities
+    return filter(!iszero, schs) # remove zero probabilities
 end
 
 function ent_entropy(psi::MPS, b::Int, n::Real=1)
@@ -92,7 +92,7 @@ function concurrence(psi::MPS, xs::Vector{<:Int})
     return sqrt(2 * abs(1 - trace))
 end
 
-function reduced_density_eigen(psi::MPS, x::Int)
+function reduced_density_eigen(psi::MPS, x::Int)::NDTensors.Tensor
     """
     Calculate the reduced density matrix eigen values of a region of a single sites `x` from other sites.
     """
@@ -103,10 +103,10 @@ function reduced_density_eigen(psi::MPS, x::Int)
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
     ps = diag(D)
-    return ps[ps.>0]  # remove zero probabilities
+    return filter(!iszero, ps)  # remove zero probabilities
 end
 
-function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})
+function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.Tensor
     """
     Calculate the reduced density matrix eigen values of multiple sites `xs` from other sites.
     """
@@ -131,7 +131,7 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
     ps = diag(D)
-    return ps[ps.>0]  # remove zero probabilities
+    return filter(!iszero, ps)  # remove zero probabilities
 end
 
 function von_neumann_entropy(psi::MPS, b::Int)

@@ -45,7 +45,7 @@ function correlation_vec(psi::MPS, ops1::String, ops2::String)
     w.r.t the center of MPS .
     """
     lsize = length(psi)
-    corrs = zeros(Float64, lsize)
+    corrs = zeros(real(promote_itensor_eltype(psi)), lsize)
     for dist in 0:(lsize - 1)
         # find symmetric sites
         left = 1 + (lsize - dist - 1) ÷ 2

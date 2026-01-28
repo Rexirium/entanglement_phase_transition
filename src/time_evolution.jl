@@ -3,14 +3,14 @@ using LinearAlgebra, Random
 include("entanglement.jl")
 include("correlation.jl")
 
-struct CalcResult{T}
+struct CalcResult{T<:Real}
     entr_mean::T
     entr_std::T
     corr_mean::Vector{T}
     corr_std::Vector{T}
 end
 
-mutable struct EntropyObserver{T} <: AbstractObserver
+mutable struct EntropyObserver{T<:Real} <: AbstractObserver
     """
     Observe and record the entanglement entropy at a specific bond `b` of the MPS during time evolution.
     """
@@ -23,7 +23,7 @@ mutable struct EntropyObserver{T} <: AbstractObserver
     EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], T[], Int[])
 end
 
-mutable struct EntrCorrObserver{T} <: AbstractObserver
+mutable struct EntrCorrObserver{T<:Real} <: AbstractObserver
     b::Int
     len::Int
     n::Real
@@ -36,7 +36,7 @@ mutable struct EntrCorrObserver{T} <: AbstractObserver
         new{T}(b, len, n, op, T[], Vector{T}[], T[])
 end
 
-mutable struct EntropyAverager{T} <: AbstractObserver
+mutable struct EntropyAverager{T<:Real} <: AbstractObserver
     b::Int
     len::Int
     n::Real
@@ -48,7 +48,7 @@ mutable struct EntropyAverager{T} <: AbstractObserver
         new{T}(b, len, n, zero(T), zero(T), true)
 end
 
-mutable struct EntrCorrAverager{T} <: AbstractObserver
+mutable struct EntrCorrAverager{T<:Real} <: AbstractObserver
     b::Int
     len::Int
     n::Real
@@ -183,7 +183,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real;
             normalize!(psi)
         end
         # break if truncation error exceeds etol
-        if ! isnothing(etol) && truncerr > etol
+        if !isnothing(etol) && truncerr > etol
             break
         end
     end
@@ -222,7 +222,7 @@ function mps_evolve(psi0::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
         end
         mps_monitor!(obs, psi, t, truncerr)
         # break if truncation error exceeds etol
-        if ! isnothing(etol) && truncerr > etol
+        if !isnothing(etol) && truncerr > etol
             break
         end
     end
@@ -258,7 +258,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real;
             normalize!(psi)
         end
         # break if truncation error exceeds etol
-        if ! isnothing(etol) && truncerr > etol
+        if !isnothing(etol) && truncerr > etol
             break
         end
     end
@@ -296,7 +296,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
         end
         mps_monitor!(obs, psi, t, truncerr)
         # break if truncation error exceeds etol
-        if ! isnothing(etol) && truncerr > etol
+        if !isnothing(etol) && truncerr > etol
             break
         end
     end
