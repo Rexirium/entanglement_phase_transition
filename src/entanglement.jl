@@ -1,4 +1,6 @@
-function ent_entropy(ps::NDTensors.Tensor, n::Real=1)::Real
+using NDTensors
+
+function ent_entropy(ps::NDTensors.DenseTensor, n::Real=1)::Real
     """
     Calculate the n-th order Renyi entropy from the eigenvalues ps.
     """
@@ -12,7 +14,7 @@ function ent_entropy(ps::NDTensors.Tensor, n::Real=1)::Real
     end
 end
 
-function schmidt_decomp(psi::MPS, b::Int)::NDTensors.Tensor
+function schmidt_decomp(psi::MPS, b::Int)::NDTensors.DenseTensor
     """
     Perform Schmidt decomposition of the MPS `psi` biparted after site `b`.
     Returns the Schmidt coefficients as a vector.
@@ -92,7 +94,7 @@ function concurrence(psi::MPS, xs::Vector{<:Int})
     return sqrt(2 * abs(1 - trace))
 end
 
-function reduced_density_eigen(psi::MPS, x::Int)::NDTensors.Tensor
+function reduced_density_eigen(psi::MPS, x::Int)::NDTensors.DenseTensor
     """
     Calculate the reduced density matrix eigen values of a region of a single sites `x` from other sites.
     """
@@ -106,7 +108,7 @@ function reduced_density_eigen(psi::MPS, x::Int)::NDTensors.Tensor
     return filter(!iszero, ps)  # remove zero probabilities
 end
 
-function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.Tensor
+function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.DenseTensor
     """
     Calculate the reduced density matrix eigen values of multiple sites `xs` from other sites.
     """
