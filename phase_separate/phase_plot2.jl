@@ -38,8 +38,8 @@ let
     entropy_datas = Array{type}(undef, nprob, neta, nL)
     entropy_error = Array{type}(undef, nprob, neta, nL)
     for (i,l) in enumerate(Ls)
-        entropy_datas[:, :, i] .= read(file, "L_$l/entr_means")
-        entropy_error[:, :, i] .= read(file, "L_$l/entr_stds")
+        @views entropy_datas[:, :, i] .= read(file, "L_$l/entr_means")
+        @veiws entropy_error[:, :, i] .= read(file, "L_$l/entr_stds")
     end
     close(file)
 
