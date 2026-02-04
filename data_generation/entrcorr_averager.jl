@@ -19,7 +19,7 @@ end
 
 @everywhere begin
     const type = Float64
-    const cutoff = 1e-14
+    const cutoff = eps(type)
 end
 # define global constants for parameters
 
