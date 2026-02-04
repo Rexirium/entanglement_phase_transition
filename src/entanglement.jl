@@ -25,7 +25,7 @@ function schmidt_decomp(psi::MPS, b::Int)::NDTensors.DenseTensor
     _ , S, _ = ITensors.svd(psi[b], linds)
     schs = diag(S)
 
-    return filter(!iszero, schs) # remove zero probabilities
+    return schs[schs .> 0.0] # remove zero probabilities
 end
 
 function ent_entropy(psi::MPS, b::Int, n::Real=1)
@@ -105,7 +105,7 @@ function reduced_density_eigen(psi::MPS, x::Int)::NDTensors.DenseTensor
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
     ps = diag(D)
-    return filter(!iszero, ps)  # remove zero probabilities
+    return ps[ps .> 0.0]  # remove zero probabilities
 end
 
 function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.DenseTensor
@@ -133,7 +133,7 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.DenseTens
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
     ps = diag(D)
-    return filter(!iszero, ps)  # remove zero probabilities
+    return ps[ps .> 0.0]  # remove zero probabilities
 end
 
 function von_neumann_entropy(psi::MPS, b::Int)
