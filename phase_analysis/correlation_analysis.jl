@@ -7,7 +7,7 @@ let
     L1, dL, L2 = 8, 4, 40
     nprob, neta = 21, 20
 
-    L0, p0, η0 = 40, 0.5, 0.30
+    L0, p0, η0 = 40, 0.4, 0.25
 
     file = h5open("data/entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
     ps = read(file, "params/ps")
