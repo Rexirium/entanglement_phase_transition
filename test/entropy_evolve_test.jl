@@ -12,7 +12,7 @@ ITensors.Strided.set_num_threads(1)
 let 
     L = 24
     T = 12L
-    Dm, cutoff =10*L, 1e-14
+    cutoff = eps(Float64)
     p, η = 0.5, 0.3
     b = L ÷ 2
     
@@ -20,8 +20,9 @@ let
     psi = MPS(ComplexF64, ss, "Up")
 
     obs = EntropyObserver{Float64}(b; n=1)
-    truncerr_ceiling = 1e-10 * (T*L)
-    @timev mps_evolve!(psi, T, p, η, obs; cutoff=cutoff, maxdim=Dm, etol=truncerr_ceiling)
+    Dm = 100 + 10*L
+    threshold = 1e-8 * (T*L)
+    @timev mps_evolve!(psi, T, p, η, obs; cutoff=cutoff, maxdim=Dm, etol=threshold)
     tsteps = length(obs.entropies) - 1
 
     if tsteps < T
@@ -32,7 +33,7 @@ let
 
         println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
         println("Truncation Error: ", obs.truncerrs[end])
-        println("Truncation Error Ceiling: ", truncerr_ceiling)
+        println("Truncation Error Ceiling: ", threshold)
     end
 
     pbond = plot(0:tsteps, obs.maxbonds; lw =2, yaxis=L"D_\mathrm{max}", 
@@ -40,7 +41,7 @@ let
     hline!([Dm], lw=2, label="max bond limit")
 
     perr = plot(0:tsteps, obs.truncerrs; lw = 1.5, xaxis=L"t", label="truncation error", framestyle=:box)
-    hline!([truncerr_ceiling], lw=1.5, l=:dash, label="trunc err ceiling")
+    hline!([threshold], lw=1.5, l=:dash, label="trunc err ceiling")
 
     #pe = plot(0:T, obs.entropies, lw = 1.5, framestyle=:box, xlabel=L"t", ylabel="entropy", label=L"S_\mathrm{vN}(t)")
     
