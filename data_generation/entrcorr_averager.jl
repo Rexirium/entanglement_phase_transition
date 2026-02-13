@@ -37,7 +37,8 @@ const param = vec([(p, η) for p in ps, η in ηs])
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
         # core calculation
         threshold = 1e-8 * (ttotal * lsize)
-        truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=cutoff, maxdim=10*lsize, etol=threshold)
+        maxbond = 100 + 10*lsize
+        truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
         if truncerr > threshold
             avg.accept = false
         end
