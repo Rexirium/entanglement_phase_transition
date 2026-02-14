@@ -5,7 +5,6 @@ using Plots, LaTeXStrings
 
 include("../src/time_evolution.jl")
 
-MKL.set_num_threads(1)
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
@@ -15,10 +14,12 @@ function entrcorr_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) wh
     psi = MPS(Complex{T}, ss, "Up")
     avg = EntrCorrAverager{T}(lsize ÷ 2, lsize; n=1, op="Sx")
     # core calculation
-    truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=1e-14, maxdim=10*lsize, etol=1e-10*(ttotal*lsize))
+    maxbond = 100 + 10*lsize
+    threshold = 1e-8 * (ttotal*lsize)
+    truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=1e-14, maxdim=maxbond, etol=threshold)
     return avg, truncerr
 end
-
+#=
 function entropy_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) where T<:Real
     p, η = param
     ss = siteinds("S=1/2", lsize)
@@ -31,11 +32,12 @@ function entropy_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) whe
     entr_std = sqrt(avg.entr_sstd / (ttotal - 2lsize))
     return avg.entr_mean, entr_std, truncerr
 end
+=#
 
 let
     L = 32
     T = 12L
-    p, η = 0.7, 0.2
+    p, η = 0.5, 0.3
     
     @timev avg, truncerr = entrcorr_average_wrapper(L, T, (p, η))
 
@@ -46,7 +48,7 @@ let
     
     println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
     println("Truncation Error: ", truncerr)
-    println("Truncation Error Ceiling: ", (1e-14)*(T*L/2))
+    println("Truncation Error Threshold: ", (1e-8)*(T*L))
     
     plot(0:(L-1), corr_mean, yerror=corr_std;
         lw = 1.5, framestyle=:box, xlabel=L"r", ylabel=L"C(r)", label="Correlation Function", 
