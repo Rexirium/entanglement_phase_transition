@@ -1,5 +1,12 @@
 include("time_evolution.jl")
 
+struct CalcResult{T<:Real}
+    entr_mean::T
+    entr_std::T
+    corr_mean::Vector{T}
+    corr_std::Vector{T}
+end
+
 abstract type AbstractResult end
 
 mutable struct EntropySample{T<:Real} <: AbstractResult

@@ -1,68 +1,29 @@
 using ITensors, ITensorMPS
 using LinearAlgebra, Random
+using SparseArrays
+
 include("entanglement.jl")
 include("correlation.jl")
+include("observers.jl")
 
-struct CalcResult{T<:Real}
-    entr_mean::T
-    entr_std::T
-    corr_mean::Vector{T}
-    corr_std::Vector{T}
+const CNOT13 = begin
+    X = sparse([0 1; 1 0])
+    Id = sparse(I, 4, 4)
+    blockdiag(Id, X, X)
 end
 
-mutable struct EntropyObserver{T<:Real} <: AbstractObserver
-    """
-    Observe and record the entanglement entropy at a specific bond `b` of the MPS during time evolution.
-    """
-    b::Int
-    n::Real
-    entropies::Vector{T}
-    truncerrs::Vector{T}
-    maxbonds::Vector{Int}
+abstract type AbstractDisentangler end
 
-    EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], T[], Int[])
+struct NHDisentangler{Tp <: Real} <: AbstractDisentangler
+    prob::Tp
+    eta::Tp
 end
 
-mutable struct EntrCorrObserver{T<:Real} <: AbstractObserver
-    b::Int
-    len::Int
-    n::Real
-    op::String
-    entrs::Vector{T}
-    corrs::Vector{Vector{T}}
-    truncerrs::Vector{T}
-
-    EntrCorrObserver{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
-        new{T}(b, len, n, op, T[], Vector{T}[], T[])
+struct NHCNOTdisentangler{Tp <: Real} <: AbstractDisentangler
+    prob::Tp
+    eta::Tp
 end
 
-mutable struct EntropyAverager{T<:Real} <: AbstractObserver
-    b::Int
-    len::Int
-    n::Real
-    entr_mean::T
-    entr_sstd::T
-    accept::Bool
-
-    EntropyAverager{T}(b::Int, len::Int; n::Real=1) where T<:Real = 
-        new{T}(b, len, n, zero(T), zero(T), true)
-end
-
-mutable struct EntrCorrAverager{T<:Real} <: AbstractObserver
-    b::Int
-    len::Int
-    n::Real
-    op::String
-    entr_mean::T
-    entr_sstd::T
-    corr_mean::Vector{T}
-    corr_sstd::Vector{T}
-    accept::Bool
-
-    EntrCorrAverager{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
-        new{T}(b, len, n, op, zero(T), zero(T), 
-        zeros(T, len), zeros(T, len), true)
-end
 
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)
     """
@@ -79,6 +40,15 @@ function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::Real)
     """
     M = diagm(shuffle([one(eta), eta]))
     return op(M, s)
+end
+
+function ITensors.op(::OpName"NHCNOT", ::SiteType"S=1/2", s::Index...; eta::Real)
+    """
+    Create a CNOT-based non-Hermitian operator for the given site indices `s1` and `s2` with parameter `eta`.
+    """
+    id = ones(typeof(eta), 2)
+    dd = kron(id, shuffle([one(eta), eta]), id)
+    return op(diagm(dd) * CNOT13, s...)
 end
 
 function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index; x::Real, λ::Real=1.0, Δ::Real=1.0)
@@ -153,6 +123,66 @@ function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int
     return spec.truncerr
 end
 
+function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))
+    """
+    Apply three adjacent site gate `G3` to the MPS `psi` at sites `j2-1`, `j2`, and `j2+1` inplace.
+    """
+    (j2 <= 1 || j2 >= length(psi)-1) && error("Wrong middle site for three-site gate application.")
+    orthogonalize!(psi, j2)
+    s = siteind(psi, j2)
+    j1, j3 = j2 - 1, j2 + 1
+    A = (psi[j1] * psi[j2] * psi[j3]) * G3
+    noprime!(A)
+    linds = uniqueinds(psi[j1], psi[j2])
+    psi[j1], S12, B, spec12 = svd(A, linds; cutoff=cutoff, maxdim=maxdim)
+    B *= S12
+    linds23 = (commonind(psi[j1], B), s)
+    psi[j2], S23, psi[j3], spec23 = svd(B, linds23; cutoff=cutoff, maxdim=maxdim)
+    psi[j2] *= S23
+    set_ortho_lims!(psi, j2:j2)
+    return spec12.truncerr + spec23.truncerr
+end
+
+function applyswap!(G1::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))
+    """
+    Apply a swap gate `G2` to the MPS `psi` at sites `j1` and `j2` inplace.
+    """
+    (j2 <= 1 || j2 >= length(psi)-1) && error("Wrong middle site for three-site gate application.")
+    j1, j3 = j2 - 1, j2 + 1
+    apply!(G1, psi, j2)
+    cnot = op("CNOT", siteind(psi, j1), siteind(psi, j3))
+    psiswap = swapbondsites(psi, j1; ortho = "left")
+    truncerr = apply2!(cnot, psiswap, j2; cutoff=cutoff, maxdim=maxdim)
+    psi = swapbondsites(psiswap, j1; ortho = "left")
+    return truncerr
+end
+
+function disentangle!(psi::MPS, disentangler::NHDisentangler)
+    """
+    Apply the disentangler to the MPS `psi` inplace.
+    """
+    for j in length(psi):-1:1
+        if rand() < disentangler.prob
+            M = op("NH", siteind(psi, j); eta=disentangler.eta)
+            apply!(M, psi, j)
+            normalize!(psi)
+        end
+    end
+end
+
+function disentangle!(psi::MPS, disentangler::NHCNOTdisentangler)
+    """
+    Apply the CNOT-based disentangler to the MPS `psi` inplace.
+    """
+    ss = siteinds(psi)
+    for j in (length(psi)-1):-1:2
+        if rand() < disentangler.prob
+            M = op("NHCNOT", ss[j-1 : j+1]...; eta=disentangler.eta)
+            apply3!(M, psi, j)
+            normalize!(psi)
+        end
+    end
+end
 
 function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; 
     cutoff::Real=1e-14, maxdim::Int=2<<length(psi), etol=nothing) where Tp<:Real
@@ -173,7 +203,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real;
             truncerr += err
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
-        for j in 1:lsize
+        for j in lsize:-1:1
             if rand(Tp) >= prob
                 continue
             end
@@ -210,7 +240,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
             truncerr += err
         end
         # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
-        for j in 1:lsize
+        for j in lsize:-1:1
             if rand(Tp) >= prob
                 continue
             end
@@ -228,48 +258,6 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     return truncerr
 end
 
-function mps_monitor!(obs::EntropyObserver{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
-    push!(obs.entropies, ent_entropy(psi, obs.b, obs.n))
-    push!(obs.truncerrs, truncerr)
-    push!(obs.maxbonds, maxlinkdim(psi))
-end
-
-function mps_monitor!(obs::EntrCorrObserver{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
-    push!(obs.entrs, ent_entropy(psi, obs.b, obs.n))
-    push!(obs.corrs, correlation_vec(psi, obs.op, obs.op))
-    push!(obs.truncerrs, truncerr)
-end
-
-function mps_monitor!(obs::EntropyAverager{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
-    """
-    Update the mean and SST of entanglement entropy in `obs`.
-    Using Welford's algorithm.
-    """
-    if t > 2 * obs.len
-        entr = ent_entropy(psi, obs.b, obs.n)
-        delta = entr - obs.entr_mean
-        obs.entr_mean += delta / (t - 2 * obs.len)
-        obs.entr_sstd += delta * (entr - obs.entr_mean)
-    end
-end
-
-function mps_monitor!(obs::EntrCorrAverager{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
-    """
-    Update the mean and SST of entanglement entropy and correlation function in `obs`.
-    Using Welford's algorithm.
-    """
-    if t > 2 * obs.len
-        entr = ent_entropy(psi, obs.b, obs.n)
-        corr = correlation_vec(psi, obs.op, obs.op)
-
-        delta_entr = entr - obs.entr_mean
-        delta_corr = corr .- obs.corr_mean
-        obs.entr_mean += delta_entr / (t - 2 * obs.len)
-        obs.corr_mean .+= delta_corr ./ (t - 2 * obs.len)
-        obs.entr_sstd += delta_entr * (entr - obs.entr_mean)
-        obs.corr_sstd .+= delta_corr .* (corr .- obs.corr_mean)
-    end
-end
 #=
 let 
     L, T = 10, 100

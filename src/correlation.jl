@@ -1,6 +1,6 @@
 function correlation(psi::MPS, ops1::String, ops2::String, i::Int, j::Int)
     """Compute the correlation function ⟨ ops1_i ops2_j ⟩ for MPS psi."""
-    left, right = sort((i, j))
+    left, right = minmax(i, j)
     idxs = siteinds(psi)[[left, right]]
     op1 = op(ops1, idxs[1])
     op2 = op(ops2, idxs[2])

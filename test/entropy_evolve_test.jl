@@ -10,10 +10,10 @@ ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
 let 
-    L = 24
+    L = 20
     T = 12L
     cutoff = eps(Float64)
-    p, η = 0.5, 0.3
+    p, η = 0.5, 0.1
     b = L ÷ 2
     
     ss = siteinds("S=1/2", L)
@@ -33,7 +33,7 @@ let
 
         println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
         println("Truncation Error: ", obs.truncerrs[end])
-        println("Truncation Error Ceiling: ", threshold)
+        println("Truncation Error Threshold: ", threshold)
     end
 
     pbond = plot(0:tsteps, obs.maxbonds; lw =2, yaxis=L"D_\mathrm{max}", 
