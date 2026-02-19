@@ -31,14 +31,14 @@ const param = vec([(p, η) for p in ps, η in ηs])
     const params = $param
 
     function entrcorr_average_wrapper(lsize::Int, ttotal::Int, idx::Int)
-        p, η = params[idx]
+        dent = NHDisentangler{type}(params[idx]...)
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{type}, ss, "Up")
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
         # core calculation
         threshold = 1e-8 * (ttotal * lsize)
-        maxbond = 15*lsize
-        truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
+        maxbond = 20*lsize
+        truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
         if truncerr > threshold
             avg.accept = false
         end
@@ -62,7 +62,7 @@ let
     end
 
     for L in Ls
-        T = 12L
+        T = 10L
         nparams = length(params)
         averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nparams)
 
