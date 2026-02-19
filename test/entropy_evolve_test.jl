@@ -16,13 +16,14 @@ let
     p, η = 0.5, 0.1
     b = L ÷ 2
     
+    dent = NHDisentangler{Float64}(p, η)
     ss = siteinds("S=1/2", L)
     psi = MPS(ComplexF64, ss, "Up")
 
     obs = EntropyObserver{Float64}(b; n=1)
     Dm = 100 + 10*L
     threshold = 1e-8 * (T*L)
-    @timev mps_evolve!(psi, T, p, η, obs; cutoff=cutoff, maxdim=Dm, etol=threshold)
+    @timev mps_evolve!(psi, T, dent, obs; cutoff=cutoff, maxdim=Dm, etol=threshold)
     tsteps = length(obs.entropies) - 1
 
     if tsteps < T

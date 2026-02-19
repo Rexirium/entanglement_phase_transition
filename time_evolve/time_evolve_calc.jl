@@ -41,10 +41,11 @@ let
         corr_distr = Matrix{type}(undef, L, nsamp)
         # Run multiple samples and average the results.
         Threads.@threads for j in 1:nsamp
+            dent = NHDisentangler{type}(ps[i], η0)
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
             obs = EntrCorrObserver{type}(b, L; n=1, op="Sx")
-            mps_evolve!(psi, T, ps[i], η0, obs; cutoff=1e-14)
+            mps_evolve!(psi, T, dent, obs; cutoff=1e-14)
 
             entr_distr[:, j] .= [ent_entropy(psi, x, 1) for x in 0:L]
             corr_distr[:, j] .= correlation_vec(psi, "Sx", "Sx")
@@ -53,7 +54,6 @@ let
             corr_evolv[:, :, j] .= hcat((obs.corrs)...)
 
             psi = nothing
-            ss =nothing
             obs = nothing
         end
 
@@ -85,10 +85,11 @@ let
         corr_distr = Matrix{type}(undef, L, nsamp)
         # Run multiple samples and average the results.
         Threads.@threads for j in 1:nsamp
+            dent = NHDisentangler{type}(p0, ηs[i])
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
             obs = EntrCorrObserver{type}(b, L; n=1, op="Sz")
-            mps_evolve!(psi, T, p0, ηs[i], obs; cutoff=1e-14)
+            mps_evolve!(psi, T, dent, obs; cutoff=1e-14)
 
             entr_distr[:, j] .= [ent_entropy(psi, x, 1) for x in 0:L]
 
@@ -97,7 +98,6 @@ let
             corr_evolv[:, :, j] .= hcat((obs.corrs)...)
 
             psi = nothing
-            ss =nothing
             obs = nothing
         end
 

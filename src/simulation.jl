@@ -69,11 +69,11 @@ function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res:
     """
     Calculate the final properties of the MPS after time evolution. 
     """
-    eta = (res.type)(eta)
-
+    dent = NHDisentangler{res.type}(prob, eta)
     ss = siteinds("S=1/2", lsize)
+
     psi = MPS(Complex{res.type}, ss, "Up")
-    mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff, maxdim=maxdim)
+    mps_evolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
 
     mps_results!(res, psi)
 end
@@ -90,12 +90,12 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::A
     """
     Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
     """
-    eta = (res.type)(eta)
+    dent = NHDisentangler{res.type}(prob, eta)
     ss = siteinds("S=1/2", lsize)
     
     for i in 1:res.nsamp 
         psi = MPS(Complex{res.type}, ss, "Up")
-        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff, maxdim=maxdim)
+        mps_evolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
         mps_results!(res, psi, i)
         psi = nothing
     end
@@ -106,12 +106,12 @@ function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, 
     """
     Calculate the mean entanglement entropy over multiple samples using multithreads. (non-Hermitian case)
     """
-    eta = (res.type)(eta)
+    dent = NHDisentangler{res.type}(prob, eta)
 
     Threads.@threads for i in 1:res.nsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{res.type}, ss, "Up")
-        mps_evolve!(psi, ttotal, prob, eta; cutoff=cutoff, maxdim=maxdim)
+        mps_evolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
         @inbounds mps_results!(res, psi, i)
         psi = nothing
     end

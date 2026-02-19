@@ -9,26 +9,26 @@ ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
 function entrcorr_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) where T<:Real
-    p, η = param
+    dent = NHDisentangler{T}(param...)
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{T}, ss, "Up")
     avg = EntrCorrAverager{T}(lsize ÷ 2, lsize; n=1, op="Sx")
     # core calculation
     maxbond = 100 + 10*lsize
     threshold = 1e-8 * (ttotal*lsize)
-    truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=1e-14, maxdim=maxbond, etol=threshold)
+    truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=1e-14, maxdim=maxbond, etol=threshold)
     return avg, truncerr
 end
 #=
 function entropy_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) where T<:Real
-    p, η = param
+    dent = NHDisentangler{T}(param...)
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{T}, ss, "Up")
     avg = EntropyAverager{T}(lsize ÷ 2, lsize; n=1)
     # core calculation
     maxbond = 100 + 10*lsize
     threshold = 1e-8 * (ttotal*lsize)
-    truncerr = mps_evolve!(psi, ttotal, p, η, avg; cutoff=eps(Float64), maxdim=maxbond, etol=threshold)
+    truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=eps(Float64), maxdim=maxbond, etol=threshold)
     entr_std = sqrt(avg.entr_sstd / (ttotal - 2lsize))
     return avg.entr_mean, entr_std, truncerr
 end

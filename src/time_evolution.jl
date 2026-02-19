@@ -70,10 +70,10 @@ function proj_measure!(psi::MPS, loc::Int)
     probUp = real(inner(prime(psi[loc], tags="Site"), projUp, psi[loc]))
     samp = rand()
     if samp < probUp
-        apply!(projUp, psi, loc)
+        apply1!(projUp, psi, loc)
     else
         projDn = op("ProjDn", s)
-        apply!(projDn, psi, loc)
+        apply1!(projDn, psi, loc)
     end
     normalize!(psi)
 end
@@ -94,11 +94,11 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{T, T}=(1.0, 1.0)) where T
     x = samp < probUp ? λ + Δ*randn(T) : -λ + Δ*randn(T)
     M = op("WM", s; x = x, λ = λ, Δ = Δ)
     # Apply the weak measurement operator
-    apply!(M, psi, loc)
+    apply1!(M, psi, loc)
     normalize!(psi)
 end
 
-function apply!(G1::ITensor, psi::MPS, loc::Int)
+function apply1!(G1::ITensor, psi::MPS, loc::Int)
     """
     Apply the gate `G1` to the MPS `psi` at site `loc` inplace.
     """
@@ -123,7 +123,7 @@ function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int
     return spec.truncerr
 end
 
-function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))
+function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi))
     """
     Apply three adjacent site gate `G3` to the MPS `psi` at sites `j2-1`, `j2`, and `j2+1` inplace.
     """
@@ -143,49 +143,35 @@ function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int
     return spec12.truncerr + spec23.truncerr
 end
 
-function applyswap!(G1::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))
+function disentangle!(psi::MPS, dent::NHDisentangler)
     """
-    Apply a swap gate `G2` to the MPS `psi` at sites `j1` and `j2` inplace.
-    """
-    (j2 <= 1 || j2 >= length(psi)-1) && error("Wrong middle site for three-site gate application.")
-    j1, j3 = j2 - 1, j2 + 1
-    apply!(G1, psi, j2)
-    cnot = op("CNOT", siteind(psi, j1), siteind(psi, j3))
-    psiswap = swapbondsites(psi, j1; ortho = "left")
-    truncerr = apply2!(cnot, psiswap, j2; cutoff=cutoff, maxdim=maxdim)
-    psi = swapbondsites(psiswap, j1; ortho = "left")
-    return truncerr
-end
-
-function disentangle!(psi::MPS, disentangler::NHDisentangler)
-    """
-    Apply the disentangler to the MPS `psi` inplace.
+    Apply the non-Hermitian disentangler to the MPS `psi` inplace.
     """
     for j in length(psi):-1:1
-        if rand() < disentangler.prob
-            M = op("NH", siteind(psi, j); eta=disentangler.eta)
-            apply!(M, psi, j)
+        if rand() < dent.prob
+            M = op("NH", siteind(psi, j); eta=dent.eta)
+            apply1!(M, psi, j)
             normalize!(psi)
         end
     end
 end
 
-function disentangle!(psi::MPS, disentangler::NHCNOTdisentangler)
+function disentangle!(psi::MPS, dent::NHCNOTdisentangler)
     """
-    Apply the CNOT-based disentangler to the MPS `psi` inplace.
+    Apply the CNOT-based non-Hermitian disentangler to the MPS `psi` inplace.
     """
     ss = siteinds(psi)
     for j in (length(psi)-1):-1:2
-        if rand() < disentangler.prob
-            M = op("NHCNOT", ss[j-1 : j+1]...; eta=disentangler.eta)
+        if rand() < dent.prob
+            M = op("NHCNOT", ss[j-1 : j+1]...; eta=dent.eta)
             apply3!(M, psi, j)
             normalize!(psi)
         end
     end
 end
 
-function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real; 
-    cutoff::Real=1e-14, maxdim::Int=2<<length(psi), etol=nothing) where Tp<:Real
+function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler; 
+    cutoff::Real=1e-14, maxdim::Int=2<<length(psi), etol=nothing)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
@@ -202,16 +188,8 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real;
             err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
-        # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
-        for j in lsize:-1:1
-            if rand(Tp) >= prob
-                continue
-            end
-            M = op("NH", sites[j]; eta=eta)
-            apply!(M, psi, j)
-            # Normalize the MPS after applying the non Hermitian operator
-            normalize!(psi)
-        end
+        # Apply non-Hermitian disentanglers
+        disentangle!(psi, dent)
         # break if truncation error exceeds etol
         if !isnothing(etol) && truncerr > etol
             break
@@ -220,8 +198,8 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real;
     return truncerr
 end
 
-function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractObserver; 
-    cutoff::Real=1e-14, maxdim::Int=2<<length(psi), etol=nothing) where Tp<:Real
+function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::AbstractObserver; 
+    cutoff::Real=1e-14, maxdim::Int=2<<length(psi), etol=nothing)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
@@ -239,16 +217,9 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
             err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
-        # Apply non-Hermitian operator to each site with probability `prob` and parameter `eta`
-        for j in lsize:-1:1
-            if rand(Tp) >= prob
-                continue
-            end
-            M = op("NH", sites[j]; eta=eta)
-            apply!(M, psi, j)
-            # Normalize the MPS after applying the non Hermitian operator
-            normalize!(psi)
-        end
+        # Apply non-Hermitian disentanglers
+        disentangle!(psi, dent)
+        # Monitor the MPS and truncation error
         mps_monitor!(obs, psi, t, truncerr)
         # break if truncation error exceeds etol
         if !isnothing(etol) && truncerr > etol
@@ -258,14 +229,12 @@ function mps_evolve!(psi::MPS, ttotal::Int, prob::Tp, eta::Real, obs::AbstractOb
     return truncerr
 end
 
-#=
+
 let 
     L, T = 10, 100
     ss = siteinds("S=1/2", L)
     psi = MPS(ComplexF64, ss, "Up")
-    obs = EntrCorrAverager{Float64}(L ÷ 2, L; n=1, op="Sz")
-    truncerr = mps_evolve!(psi, 40, 0.5, 0.5, obs; cutoff=eps(Float64))
-    println("Entropy: ", sqrt.(obs.corr_sstd ./ (T - 2L)))
+    dent = NHDisentangler{Float64}(0.5, 0.5)
+    @time mps_evolve!(psi, T, dent; cutoff=1e-14, maxdim=100)
 
 end
-=#
