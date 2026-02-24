@@ -67,7 +67,7 @@ function proj_measure!(psi::MPS, loc::Int)
     projUp = op("ProjUp", s)
     orthogonalize!(psi, loc)
     # Calculate the probability of measuring "Up"
-    probUp = real(inner(prime(psi[loc], tags="Site"), projUp, psi[loc]))
+    probUp = inner(prime(psi[loc], tags="Site"), projUp, psi[loc]).re
     samp = rand()
     if samp < probUp
         apply1!(projUp, psi, loc)
@@ -88,7 +88,7 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{T, T}=(1.0, 1.0)) where T
     proj = op("ProjUp", s)
     orthogonalize!(psi, loc)
     # Calculate the probability of measuring "Up"
-    probUp = real(inner(prime(psi[loc], tags="Site"), proj, psi[loc]))
+    probUp = inner(prime(psi[loc], tags="Site"), proj, psi[loc]).re
     samp = rand(T)
     # generate a random variable from a Gaussian distribution
     x = samp < probUp ? λ + Δ*randn(T) : -λ + Δ*randn(T)
