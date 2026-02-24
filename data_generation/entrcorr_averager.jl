@@ -34,7 +34,7 @@ const param = vec([(p, η) for p in ps, η in ηs])
         dent = NHDisentangler{type}(params[idx]...)
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{type}, ss, "Up")
-        avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sx")
+        avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
         # core calculation
         threshold = 1e-8 * (ttotal * lsize)
         maxbond = 20*lsize
