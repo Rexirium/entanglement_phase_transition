@@ -20,18 +20,14 @@ end
 @everywhere begin
     const type = Float64
     const cutoff = eps(type)
+    const ps = collect(type, 0.0:0.02:1.0)
+    const η0 = type(0.01)
 end
 # define global constants for parameters
 
-const ps = collect(type, 0.0:0.05:1.0)
-const ηs = collect(type, 0.05:0.05:1.0)
-const param = vec([(p, η) for p in ps, η in ηs])
-
 @everywhere begin
-    const params = $param
-
     function entrcorr_average_wrapper(lsize::Int, ttotal::Int, idx::Int)
-        dent = NHDisentangler{type}(params[idx]...)
+        dent = NHCNOTDisentangler{type}(ps[idx], η0)
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{type}, ss, "Up")
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sx")
@@ -39,7 +35,7 @@ const param = vec([(p, η) for p in ps, η in ηs])
         threshold = 1e-8 * (ttotal * lsize)
         maxbond = 20*lsize
         mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
-
+        
         psi = nothing  # free memory
         return avg
     end
@@ -49,49 +45,43 @@ let
     # Model parameters
     L1, dL, L2 = 8, 4, 40
     Ls = collect(L1:dL:L2)
-    nprob, neta = length(ps), length(ηs)
+    nprob = length(ps)
 
-    h5open("data/entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
+    h5open("data/entrcorr2_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "ps", ps)
-        write(grp, "ηs", ηs)
+        write(grp, "ηs", [η0])
         write(grp, "Ls", Ls)
     end
 
     for L in Ls
         T = 10L
-        nparams = length(params)
-        averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nparams)
+        averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nprob)
 
-        entr_means = type[]
-        entr_stds = type[]
-        corr_means = Vector{type}[]
-        corr_stds = Vector{type}[]
+        entr_means = Vector{type}(undef, nprob)
+        entr_stds = Vector{type}(undef, nprob)
+        corr_means = Matrix{type}(undef, L, nprob)
+        corr_stds = Matrix{type}(undef, L, nprob)
 
-        for avg in averagers
+        for (idx, avg) in enumerate(averagers)
             if avg.accept
-                push!(entr_means, avg.entr_mean)
-                push!(entr_stds, sqrt(avg.entr_sstd / (T - 2L)))
-                push!(corr_means, avg.corr_mean)
-                push!(corr_stds, sqrt.(avg.corr_sstd ./ (T - 2L)))
+                entr_means[idx] = avg.entr_mean
+                entr_stds[idx] = sqrt(avg.entr_sstd / (T - 2L))
+                corr_means[:, idx] = avg.corr_mean
+                corr_stds[:, idx] = sqrt.(avg.corr_sstd ./ (T - 2L))
             else
-                push!(entr_means, NaN)
-                push!(entr_stds, NaN)
-                push!(corr_means, fill(NaN, L))
-                push!(corr_stds, fill(NaN, L))
+                entr_means[idx] = NaN
+                entr_stds[idx] = NaN
+                corr_means[:, idx] .= NaN
+                corr_stds[:, idx] .= NaN
             end
         end
-
-        entr_means = reshape(entr_means, nprob, neta)
-        entr_stds  = reshape(entr_stds, nprob, neta)
-        corr_means = reshape(hcat(corr_means...), L, nprob, neta)
-        corr_stds  = reshape(hcat(corr_stds...), L, nprob, neta)
 
         println("L=$L done with $(8L) samples.")
         averagers = nothing  # free memory
 
-        h5open("data/entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
+        h5open("data/entrcorr2_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "r+") do file
             grpL = create_group(file, "L_$L")
             write(grpL, "entr_means", entr_means)
             write(grpL, "entr_stds", entr_stds)

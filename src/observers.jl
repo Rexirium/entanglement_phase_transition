@@ -7,8 +7,9 @@ mutable struct EntropyObserver{T<:Real} <: AbstractObserver
     entropies::Vector{T}
     truncerrs::Vector{T}
     maxbonds::Vector{Int}
+    accept::Bool
 
-    EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], T[], Int[])
+    EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], T[], Int[], true)
 end
 
 mutable struct EntrCorrObserver{T<:Real} <: AbstractObserver
@@ -19,9 +20,10 @@ mutable struct EntrCorrObserver{T<:Real} <: AbstractObserver
     entrs::Vector{T}
     corrs::Vector{Vector{T}}
     truncerrs::Vector{T}
+    accept::Bool
 
     EntrCorrObserver{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
-        new{T}(b, len, n, op, T[], Vector{T}[], T[])
+        new{T}(b, len, n, op, T[], Vector{T}[], T[], true)
 end
 
 mutable struct EntropyAverager{T<:Real} <: AbstractObserver

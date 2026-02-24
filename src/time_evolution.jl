@@ -195,6 +195,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler;
         truncerr += disentangle!(psi, dent)
         # break if truncation error exceeds etol
         if !isnothing(etol) && truncerr > etol
+            obs.accept = false
             break
         end
     end
@@ -226,6 +227,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::Abs
         mps_monitor!(obs, psi, t, truncerr)
         # break if truncation error exceeds etol
         if !isnothing(etol) && truncerr > etol
+            obs.accept = false
             break
         end
     end
