@@ -166,7 +166,8 @@ function disentangle!(psi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp<:Real
     for j in (length(psi)-1):-1:2
         if rand() < dent.prob
             M = op("NHCNOT", ss[j-1 : j+1]...; eta=dent.eta)
-            truncerr += apply3!(M, psi, j)
+            err += apply3!(M, psi, j)
+            truncerr += err
             normalize!(psi)
         end
     end
