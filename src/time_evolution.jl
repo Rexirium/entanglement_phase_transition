@@ -19,7 +19,7 @@ struct NHDisentangler{Tp <: Real} <: AbstractDisentangler
     eta::Tp
 end
 
-struct NHCNOTdisentangler{Tp <: Real} <: AbstractDisentangler
+struct NHCNOTDisentangler{Tp <: Real} <: AbstractDisentangler
     prob::Tp
     eta::Tp
 end
@@ -123,11 +123,11 @@ function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int
     return spec.truncerr
 end
 
-function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi))
+function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))
     """
     Apply three adjacent site gate `G3` to the MPS `psi` at sites `j2-1`, `j2`, and `j2+1` inplace.
     """
-    (j2 <= 1 || j2 >= length(psi)-1) && error("Wrong middle site for three-site gate application.")
+    (j2 <= 1 || j2 >= length(psi)) && error("Wrong middle site for three-site gate application.")
     orthogonalize!(psi, j2)
     s = siteind(psi, j2)
     j1, j3 = j2 - 1, j2 + 1
@@ -143,7 +143,7 @@ function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int
     return spec12.truncerr + spec23.truncerr
 end
 
-function disentangle!(psi::MPS, dent::NHDisentangler)
+function disentangle!(psi::MPS, dent::NHDisentangler{Tp}) where Tp<:Real
     """
     Apply the non-Hermitian disentangler to the MPS `psi` inplace.
     """
@@ -154,24 +154,27 @@ function disentangle!(psi::MPS, dent::NHDisentangler)
             normalize!(psi)
         end
     end
+    return zero(Tp)
 end
 
-function disentangle!(psi::MPS, dent::NHCNOTdisentangler)
+function disentangle!(psi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp<:Real
     """
     Apply the CNOT-based non-Hermitian disentangler to the MPS `psi` inplace.
     """
     ss = siteinds(psi)
+    truncerr = zero(Tp)
     for j in (length(psi)-1):-1:2
         if rand() < dent.prob
             M = op("NHCNOT", ss[j-1 : j+1]...; eta=dent.eta)
-            apply3!(M, psi, j)
+            truncerr += apply3!(M, psi, j)
             normalize!(psi)
         end
     end
+    return truncerr
 end
 
 function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler; 
-    cutoff::Real=1e-14, maxdim::Int=2<<length(psi), etol=nothing)
+    cutoff::Real=1e-14, maxdim::Int=1<<(length(psi) ÷ 2), etol=nothing)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
@@ -189,7 +192,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler;
             truncerr += err
         end
         # Apply non-Hermitian disentanglers
-        disentangle!(psi, dent)
+        truncerr += disentangle!(psi, dent)
         # break if truncation error exceeds etol
         if !isnothing(etol) && truncerr > etol
             break
@@ -199,7 +202,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler;
 end
 
 function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::AbstractObserver; 
-    cutoff::Real=1e-14, maxdim::Int=2<<length(psi), etol=nothing)
+    cutoff::Real=1e-14, maxdim::Int=1<<(length(psi) ÷ 2), etol=nothing)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
     and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
@@ -218,7 +221,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::Abs
             truncerr += err
         end
         # Apply non-Hermitian disentanglers
-        disentangle!(psi, dent)
+        truncerr += disentangle!(psi, dent)
         # Monitor the MPS and truncation error
         mps_monitor!(obs, psi, t, truncerr)
         # break if truncation error exceeds etol

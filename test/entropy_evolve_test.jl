@@ -10,10 +10,10 @@ ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
 let 
-    L = 20
+    L = 16
     T = 12L
     cutoff = eps(Float64)
-    p, η = 0.5, 0.1
+    p, η = 0.5, 0.01
     b = L ÷ 2
     
     dent = NHDisentangler{Float64}(p, η)
@@ -21,9 +21,9 @@ let
     psi = MPS(ComplexF64, ss, "Up")
 
     obs = EntropyObserver{Float64}(b; n=1)
-    Dm = 100 + 10*L
+    Dm = 20*L
     threshold = 1e-8 * (T*L)
-    @timev mps_evolve!(psi, T, dent, obs; cutoff=cutoff, maxdim=Dm, etol=threshold)
+    @timev mps_evolve!(psi, T, dent, obs; cutoff=cutoff, maxdim=Dm)
     tsteps = length(obs.entropies) - 1
 
     if tsteps < T
@@ -37,14 +37,15 @@ let
         println("Truncation Error Threshold: ", threshold)
     end
 
+    pe = plot(0:T, obs.entropies, lw = 1.5, framestyle=:box, xlabel=L"t", ylabel="entropy", 
+        title=latexstring("L = $L, p=$p, η=$η"), label=L"S_\mathrm{vN}(t)")
+
     pbond = plot(0:tsteps, obs.maxbonds; lw =2, yaxis=L"D_\mathrm{max}", 
-        label="max bond", framestyle=:box, title=latexstring("L = $L, p=$p, η=$η"))
-    hline!([Dm], lw=2, label="max bond limit")
+        label="max bond", framestyle=:box)
+    #hline!([Dm], lw=2, label="max bond limit")
 
     perr = plot(0:tsteps, obs.truncerrs; lw = 1.5, xaxis=L"t", label="truncation error", framestyle=:box)
-    hline!([threshold], lw=1.5, l=:dash, label="trunc err ceiling")
-
-    #pe = plot(0:T, obs.entropies, lw = 1.5, framestyle=:box, xlabel=L"t", ylabel="entropy", label=L"S_\mathrm{vN}(t)")
+    #hline!([threshold], lw=1.5, l=:dash, label="trunc err ceiling")
     
-    plot(pbond, perr, layout = (2,1), size=(600,800), left_margin=4Plots.mm)
+    plot(pe, pbond, layout = (2,1), size=(600,800), left_margin=4Plots.mm)
 end

@@ -9,7 +9,7 @@ ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
 function entrcorr_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) where T<:Real
-    dent = NHDisentangler{T}(param...)
+    dent = NHCNOTDisentangler{T}(param...)
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{T}, ss, "Up")
     avg = EntrCorrAverager{T}(lsize ÷ 2, lsize; n=1, op="Sx")
@@ -35,9 +35,9 @@ end
 =#
 
 let
-    L = 32
+    L = 20
     T = 12L
-    p, η = 0.5, 0.3
+    p, η = 0.5, 0.1
     
     @timev avg, truncerr = entrcorr_average_wrapper(L, T, (p, η))
 
