@@ -20,7 +20,7 @@ end
 @everywhere begin
     const type = Float64
     const cutoff = eps(type)
-    const ps = collect(type, 0.0:0.02:1.0)
+    const ps = collect(type, 0.0:0.01:1.0)
     const η0 = type(0.01)
 end
 # define global constants for parameters
