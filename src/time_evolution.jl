@@ -38,7 +38,7 @@ function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::Real)
     """
     Create a non-Hermitian operator for the given site index `s` with parameter `eta`.
     """
-    M = diagm(shuffle([one(eta), eta]))
+    M = diagm([one(eta), eta])
     return op(M, s)
 end
 
@@ -166,7 +166,7 @@ function disentangle!(psi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp<:Real
     for j in (length(psi)-1):-1:2
         if rand() < dent.prob
             M = op("NHCNOT", ss[j-1 : j+1]...; eta=dent.eta)
-            err += apply3!(M, psi, j)
+            err = apply3!(M, psi, j)
             truncerr += err
             normalize!(psi)
         end
