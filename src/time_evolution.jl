@@ -38,7 +38,7 @@ function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::Real)
     """
     Create a non-Hermitian operator for the given site index `s` with parameter `eta`.
     """
-    M = diagm([one(eta), eta])
+    M = diagm(shuffle([one(eta), eta]))
     return op(M, s)
 end
 

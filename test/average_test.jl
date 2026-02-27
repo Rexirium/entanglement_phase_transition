@@ -37,14 +37,15 @@ end
 let
     L = 20
     T = 12L
+    N = T - 2L
     p, η = 0.5, 0.1
     
     @timev avg, truncerr = entrcorr_average_wrapper(L, T, (p, η))
 
     entr_mean = avg.entr_mean
     corr_mean = avg.corr_mean
-    entr_std = sqrt(avg.entr_sstd / (T - 2L))
-    corr_std = sqrt.(avg.corr_sstd ./ (T - 2L))
+    entr_std = sqrt(avg.entr_sstd / (N*(N-1)))
+    corr_std = sqrt.(avg.corr_sstd ./ (N*(N-1)))
     
     println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
     println("Truncation Error: ", truncerr)

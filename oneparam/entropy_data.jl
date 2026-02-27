@@ -26,7 +26,7 @@ end
         calculation_mean_multi(lsize, ttotal, p, η, res; cutoff=cutoff)
 
         entr_mean = mean(res.entropies)
-        entr_std = stdm(res.entropies, entr_mean; corrected=false)
+        entr_std = stdm(res.entropies, entr_mean) / sqrt(nsamp)
         return entr_mean, entr_std
     end
 

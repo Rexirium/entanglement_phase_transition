@@ -38,10 +38,10 @@ const param = vec([(p, η) for p in ps, η in ηs])
         # core calculation
         threshold = 1e-8 * (ttotal * lsize)
         maxbond = 20*lsize
-        mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
+        truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
 
         psi = nothing  # free memory
-        return avg
+        return avg, truncerr
     end
 end
 
@@ -61,6 +61,7 @@ let
 
     for L in Ls
         T = 10L
+        N = T - 2L
         nparams = length(params)
         averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nparams)
 
@@ -68,25 +69,28 @@ let
         entr_stds = type[]
         corr_means = Vector{type}[]
         corr_stds = Vector{type}[]
+        truncerrs = type[]
 
-        for avg in averagers
+        for (avg, truncerr) in averagers
             if avg.accept
                 push!(entr_means, avg.entr_mean)
-                push!(entr_stds, sqrt(avg.entr_sstd / (T - 2L)))
+                push!(entr_stds, sqrt(avg.entr_sstd / (N*(N-1))))
                 push!(corr_means, avg.corr_mean)
-                push!(corr_stds, sqrt.(avg.corr_sstd ./ (T - 2L)))
+                push!(corr_stds, sqrt.(avg.corr_sstd ./ (N*(N-1))))
             else
                 push!(entr_means, NaN)
                 push!(entr_stds, NaN)
                 push!(corr_means, fill(NaN, L))
                 push!(corr_stds, fill(NaN, L))
             end
+            push!(truncerrs, truncerr)
         end
 
         entr_means = reshape(entr_means, nprob, neta)
         entr_stds  = reshape(entr_stds, nprob, neta)
         corr_means = reshape(hcat(corr_means...), L, nprob, neta)
         corr_stds  = reshape(hcat(corr_stds...), L, nprob, neta)
+        truncerrs = reshape(truncerrs, nprob, neta)
 
         println("L=$L done with $(8L) samples.")
         averagers = nothing  # free memory
@@ -97,6 +101,7 @@ let
             write(grpL, "entr_stds", entr_stds)
             write(grpL, "corr_means", corr_means)
             write(grpL, "corr_stds", corr_stds)
+            write(grpL, "truncerrs", truncerrs)
         end
     end   
 end

@@ -57,6 +57,7 @@ let
 
     for L in Ls
         T = 10L
+        N = T - 2L
         averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nprob)
 
         entr_means = Vector{type}(undef, nprob)
@@ -67,9 +68,9 @@ let
         for (idx, avg) in enumerate(averagers)
             if avg.accept
                 entr_means[idx] = avg.entr_mean
-                entr_stds[idx] = sqrt(avg.entr_sstd / (T - 2L))
+                entr_stds[idx] = sqrt(avg.entr_sstd / (N*(N-1)))
                 corr_means[:, idx] = avg.corr_mean
-                corr_stds[:, idx] = sqrt.(avg.corr_sstd ./ (T - 2L))
+                corr_stds[:, idx] = sqrt.(avg.corr_sstd ./ (N*(N-1)))
             else
                 entr_means[idx] = NaN
                 entr_stds[idx] = NaN

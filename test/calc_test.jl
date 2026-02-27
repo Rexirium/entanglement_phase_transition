@@ -15,10 +15,10 @@ let
     res = EntrCorrResults{Float64}(b, L; n=1, op="Sz", nsamp=N)
     @timev calculation_mean_multi(L, T, p, η, res; cutoff=eps(Float64))
     entr = mean(res.entropies)
-    entr_std = stdm(res.entropies, entr; corrected=false)
+    entr_std = stdm(res.entropies, entr) / sqrt(N)
     
     corr = mean(res.corrs, dims=2)
-    corr_std = stdm(res.corrs, corr; corrected=false, dims=2)
+    corr_std = stdm(res.corrs, corr; dims=2) / sqrt(N)
     println("Mean entropy: $entr ± $entr_std")
 
     dist = 0:(L-1)

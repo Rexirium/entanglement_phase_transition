@@ -23,7 +23,7 @@ function linregress(xs, ys, yerrs)
 end
 
 let 
-    L1, dL, L2 = 4, 2, 20
+    L1, dL, L2 = 8, 4, 40
     nprob, neta = 21, 20
 
     file = h5open("data/entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
@@ -39,7 +39,7 @@ let
     entropy_error = Array{type}(undef, nprob, neta, nL)
     for (i,l) in enumerate(Ls)
         @views entropy_datas[:, :, i] .= read(file, "L_$l/entr_means")
-        @veiws entropy_error[:, :, i] .= read(file, "L_$l/entr_stds")
+        @views entropy_error[:, :, i] .= read(file, "L_$l/entr_stds")
     end
     close(file)
 
@@ -58,7 +58,7 @@ let
                 indices[i, j] = index
             end
             =#
-            indices[i, j] = isnan(index) ? 0.0 : index
+            indices[i, j] = index
         end
     end
 
@@ -71,7 +71,7 @@ let
     indices_fine = [entropy_itp(p, η) for p in p_fine, η in η_fine]
 
     
-    heatmap(p_fine, η_fine, indices_fine'; 
+    heatmap(ps, ηs, indices'; 
             xlabel=L"p", ylabel=L"\eta",
             title="Entropy scaling index",
             titlefontsize=14,

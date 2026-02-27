@@ -37,7 +37,7 @@ const param = vec([(p, η) for p in ps, η in ηs])
         calculation_mean_multi(lsize, 4lsize, p, η, res; cutoff=cutoff)
 
         entr_mean = mean(res.entropies)
-        entr_std = stdm(res.entropies, entr_mean; corrected=false)
+        entr_std = stdm(res.entropies, entr_mean) / sqrt(N)
 
         return (entr_mean, entr_std)
     end

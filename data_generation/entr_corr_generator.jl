@@ -37,9 +37,9 @@ const param = vec([(p, η) for p in ps, η in ηs])
         calculation_mean_multi(lsize, 4lsize, p, η, res; cutoff=cutoff)
 
         entr_mean = mean(res.entropies)
-        entr_std = stdm(res.entropies, entr_mean; corrected=false)
+        entr_std = stdm(res.entropies, entr_mean) / sqrt(N)
         corr_mean = vec(mean(res.corrs, dims=2))
-        corr_std = vec(stdm(res.corrs, corr_mean; corrected=false, dims=2))
+        corr_std = vec(stdm(res.corrs, corr_mean; dims=2)) / sqrt(N)
 
         return CalcResult{type}(entr_mean, entr_std, corr_mean, corr_std)
     end
