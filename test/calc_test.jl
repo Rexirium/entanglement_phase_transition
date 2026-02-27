@@ -14,13 +14,13 @@ let
 
     res = EntrCorrResults{Float64}(b, L; n=1, op="Sz", nsamp=N)
     @timev calculation_mean_multi(L, T, p, η, res; cutoff=eps(Float64))
-    entr = mean(res.entropies)
-    entr_std = stdm(res.entropies, entr) / sqrt(N)
+    entr_mean = mean(res.entropies)
+    entr_sem = stdm(res.entropies, entr) / sqrt(N)
     
-    corr = mean(res.corrs, dims=2)
-    corr_std = stdm(res.corrs, corr; dims=2) / sqrt(N)
-    println("Mean entropy: $entr ± $entr_std")
+    corr_mean = mean(res.corrs, dims=2)
+    corr_sem = stdm(res.corrs, corr_mean; dims=2) / sqrt(N)
+    println("Mean entropy: $entr_mean ± $entr_sem")
 
     dist = 0:(L-1)
-    plot(dist, corr[:], yerror=corr_std[:], xlabel=L"r", ylabel=L"C(r)", title="Mean Correlation Function", legend=false)
+    plot(dist, corr_mean[:], yerror=corr_sem[:], xlabel=L"r", ylabel=L"C(r)", title="Mean Correlation Function", legend=false)
 end

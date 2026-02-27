@@ -12,9 +12,9 @@ function entrcorr_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) wh
     dent = NHCNOTDisentangler{T}(param...)
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{T}, ss, "Up")
-    avg = EntrCorrAverager{T}(lsize ÷ 2, lsize; n=1, op="Sx")
+    avg = EntrCorrAverager{T}(lsize ÷ 2, lsize; n=1, op="Sz")
     # core calculation
-    maxbond = 100 + 10*lsize
+    maxbond = 20 * lsize
     threshold = 1e-8 * (ttotal*lsize)
     truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=1e-14, maxdim=maxbond, etol=threshold)
     return avg, truncerr
@@ -26,11 +26,10 @@ function entropy_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) whe
     psi = MPS(Complex{T}, ss, "Up")
     avg = EntropyAverager{T}(lsize ÷ 2, lsize; n=1)
     # core calculation
-    maxbond = 100 + 10*lsize
+    maxbond = 20 * lsize
     threshold = 1e-8 * (ttotal*lsize)
-    truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=eps(Float64), maxdim=maxbond, etol=threshold)
-    entr_std = sqrt(avg.entr_sstd / (ttotal - 2lsize))
-    return avg.entr_mean, entr_std, truncerr
+    truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=1e-14, maxdim=maxbond, etol=threshold)
+    return avg, truncerr
 end
 =#
 
@@ -44,14 +43,14 @@ let
 
     entr_mean = avg.entr_mean
     corr_mean = avg.corr_mean
-    entr_std = sqrt(avg.entr_sstd / (N*(N-1)))
-    corr_std = sqrt.(avg.corr_sstd ./ (N*(N-1)))
+    entr_sem = sqrt(avg.entr_sstd / (N*(N-1)))
+    corr_sem = sqrt.(avg.corr_sstd ./ (N*(N-1)))
     
-    println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
+    println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_sem")
     println("Truncation Error: ", truncerr)
     println("Truncation Error Threshold: ", (1e-8)*(T*L))
     
-    plot(0:(L-1), corr_mean, yerror=corr_std;
+    plot(0:(L-1), corr_mean, yerror=corr_sem;
         lw = 1.5, framestyle=:box, xlabel=L"r", ylabel=L"C(r)", label="Correlation Function", 
         title=latexstring("L=$L, p=$p, η=$η"))
     

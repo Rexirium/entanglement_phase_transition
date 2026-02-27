@@ -30,9 +30,9 @@ let
         println("Evolution stopped early at t = $tsteps due to high truncation error.")
     else
         entr_mean = mean(obs.entropies[2L+2:end])
-        entr_std = stdm(obs.entropies[2L+2:end], entr_mean; corrected=false)
+        entr_sem = stdm(obs.entropies[2L+2:end], entr_mean) / (T - 2L)
 
-        println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_std")
+        println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_sem")
         println("Truncation Error: ", obs.truncerrs[end])
         println("Truncation Error Threshold: ", threshold)
     end
