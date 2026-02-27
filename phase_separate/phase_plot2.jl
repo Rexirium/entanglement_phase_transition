@@ -70,7 +70,7 @@ let
     η_fine = range(ηs[1], ηs[end], length=10*neta)
     indices_fine = [entropy_itp(p, η) for p in p_fine, η in η_fine]
 
-    
+    #=
     heatmap(ps, ηs, indices'; 
             xlabel=L"p", ylabel=L"\eta",
             title="Entropy scaling index",
@@ -79,18 +79,18 @@ let
             framestyle=:box, dpi=800
             )
     #savefig("phase_separate/entropy_scaling_index_modified.png")
-    #=
-    p0, η0 = 0.75, 0.0
+    =#
+    p0, η0 = 1.0, 0.2
     pidx = findfirst(x -> x == p0, ps)
     ηidx = findfirst(x -> x == η0, ηs)
-    data = abs.(entropy_datas[pidx, ηidx, :])
-    err = abs.(entropy_error[pidx, ηidx, :]./data)
+    data = abs.(entropy_datas[pidx, ηidx, :] )
+    stderr = abs.(entropy_error[pidx, ηidx, :]) ./ Ls
+    err = abs.(stderr ./ data)
     println(data)
     plot(log.(Ls), log.(data), 
         yerror=err,
          marker=:o, lw=2,
-         xlabel=L"L", ylabel="Entropy",
+         xlabel=L"\log L", ylabel=L"\log S_1",
          title="Entropy scaling at p=0.75, η=0.0",
          label="data")
-    =#
 end

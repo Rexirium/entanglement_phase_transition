@@ -89,10 +89,10 @@ function mps_monitor!(obs::EntrCorrAverager{T}, psi::MPS, t::Int, truncerr::Real
         corr = correlation_vec(psi, obs.op, obs.op)
 
         delta_entr = entr - obs.entr_mean
-        delta_corr = corr .- obs.corr_mean
+        delta_corr = corr - obs.corr_mean
         obs.entr_mean += delta_entr / (t - 2 * obs.len)
-        obs.corr_mean .+= delta_corr ./ (t - 2 * obs.len)
+        obs.corr_mean .+= delta_corr / (t - 2 * obs.len)
         obs.entr_sstd += delta_entr * (entr - obs.entr_mean)
-        obs.corr_sstd .+= delta_corr .* (corr .- obs.corr_mean)
+        obs.corr_sstd .+= delta_corr .* (corr - obs.corr_mean)
     end
 end
