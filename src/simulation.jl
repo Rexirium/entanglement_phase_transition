@@ -2,9 +2,9 @@ include("time_evolution.jl")
 
 struct CalcResult{T<:Real}
     entr_mean::T
-    entr_std::T
+    entr_sem::T
     corr_mean::Vector{T}
-    corr_std::Vector{T}
+    corr_sem::Vector{T}
 end
 
 abstract type AbstractResult end
