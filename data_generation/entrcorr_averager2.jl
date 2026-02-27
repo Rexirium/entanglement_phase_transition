@@ -34,10 +34,10 @@ end
         # core calculation
         threshold = 1e-8 * (ttotal * lsize)
         maxbond = 20*lsize
-        mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
+        truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
         
         psi = nothing  # free memory
-        return avg
+        return avg, truncerr
     end
 end
 
@@ -64,18 +64,21 @@ let
         entr_stds = Vector{type}(undef, nprob)
         corr_means = Matrix{type}(undef, L, nprob)
         corr_stds = Matrix{type}(undef, L, nprob)
+        truncerrs = Vector{type}(undef, nprob)
 
-        for (idx, avg) in enumerate(averagers)
+        for (idx, (avg, truncerr)) in enumerate(averagers)
             if avg.accept
                 entr_means[idx] = avg.entr_mean
                 entr_stds[idx] = sqrt(avg.entr_sstd / (N*(N-1)))
                 corr_means[:, idx] = avg.corr_mean
                 corr_stds[:, idx] = sqrt.(avg.corr_sstd ./ (N*(N-1)))
+                truncerrs[idx] = truncerr
             else
                 entr_means[idx] = NaN
                 entr_stds[idx] = NaN
                 corr_means[:, idx] .= NaN
                 corr_stds[:, idx] .= NaN
+                truncerrs[idx] = NaN
             end
         end
 
@@ -88,6 +91,7 @@ let
             write(grpL, "entr_stds", entr_stds)
             write(grpL, "corr_means", corr_means)
             write(grpL, "corr_stds", corr_stds)
+            write(grpL, "truncerrs", truncerrs)
         end
     end   
 end

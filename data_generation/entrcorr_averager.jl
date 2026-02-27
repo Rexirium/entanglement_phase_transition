@@ -77,13 +77,14 @@ let
                 push!(entr_stds, sqrt(avg.entr_sstd / (N*(N-1))))
                 push!(corr_means, avg.corr_mean)
                 push!(corr_stds, sqrt.(avg.corr_sstd ./ (N*(N-1))))
+                push!(truncerrs, truncerr)
             else
                 push!(entr_means, NaN)
                 push!(entr_stds, NaN)
                 push!(corr_means, fill(NaN, L))
                 push!(corr_stds, fill(NaN, L))
+                push!(truncerrs, NaN)
             end
-            push!(truncerrs, truncerr)
         end
 
         entr_means = reshape(entr_means, nprob, neta)
