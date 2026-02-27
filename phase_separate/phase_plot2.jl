@@ -84,8 +84,8 @@ let
     pidx = findfirst(x -> x == p0, ps)
     ηidx = findfirst(x -> x == η0, ηs)
     data = abs.(entropy_datas[pidx, ηidx, :] )
-    stderr = abs.(entropy_error[pidx, ηidx, :]) ./ Ls
-    err = abs.(stderr ./ data)
+    sem = abs.(entropy_error[pidx, ηidx, :]) ./ Ls
+    err = abs.(sem ./ data)
     println(data)
     plot(log.(Ls), log.(data), 
         yerror=err,

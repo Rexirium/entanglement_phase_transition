@@ -16,7 +16,7 @@ let
 
     grp = file["L_$(L0)"]
     corr_means = read(grp, "corr_means")
-    corr_stds = read(grp, "corr_stds")
+    corr_sems = read(grp, "corr_stds")
 
     close(file)
 
@@ -24,8 +24,8 @@ let
     idx_η = findfirst(η -> η==η0, ηs)
 
     corr_val = corr_means[:, idx_p, idx_η]
-    corr_std = corr_stds[:, idx_p, idx_η]
+    corr_sem = corr_sems[:, idx_p, idx_η]
 
-    plot(0:(L0-1), corr_val, yerror=corr_std)
+    plot(0:(L0-1), corr_val, yerror=corr_sem)
 
 end

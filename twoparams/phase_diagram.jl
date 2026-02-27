@@ -34,9 +34,9 @@ let
         interps = []
         for (k, l) in enumerate(Ls)
             means = entropy_datas[:, j, k]
-            stds = entropy_error[:, j, k]
-            push!(data_with_err, [ps, means, stds, l])
-            push!(fit_weights, 1.0 ./ (stds .^ 2))
+            sems = entropy_error[:, j, k]
+            push!(data_with_err, [ps, means, sems, l])
+            push!(fit_weights, 1.0 ./ (sems .^ 2))
             push!(interps, cubic_spline_interpolation(ps_knots, means))
         end
 
@@ -71,9 +71,9 @@ let
         interps = []
         for (k, l) in enumerate(Ls)
             means = entropy_datas[i, :, k]
-            stds = entropy_error[i, :, k]
-            push!(data_with_err, [ηs, means, stds, l])
-            push!(fit_weights, 1.0 ./ (stds .^ 2))
+            sems = entropy_error[i, :, k]
+            push!(data_with_err, [ηs, means, sems, l])
+            push!(fit_weights, 1.0 ./ (sems .^ 2))
             push!(interps, cubic_spline_interpolation(ηs_knots, means))
         end
 

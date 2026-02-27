@@ -28,9 +28,9 @@ let
     interps = []
     for l in Ls
         means = read(file, "L=$l/means")[idx_p0, :]
-        stds = read(file, "L=$l/stds")[idx_p0, :]
-        push!(data_with_err, [ηs, means, stds, l])
-        push!(fit_weights, 1.0 ./ (stds .^ 2))
+        sems = read(file, "L=$l/stds")[idx_p0, :]
+        push!(data_with_err, [ηs, means, sems, l])
+        push!(fit_weights, 1.0 ./ (sems .^ 2))
         push!(interps, cubic_spline_interpolation(ηs_knots, means))
     end
     close(file)
