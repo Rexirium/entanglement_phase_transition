@@ -15,11 +15,19 @@ end
 abstract type AbstractDisentangler end
 
 struct NHDisentangler{Tp <: Real} <: AbstractDisentangler
+    """
+    Store the parameters for the non-Hermitian disentangler. 
+    `prob` is the probability of applying the non-Hermitian operator, 
+    and `eta` is the parameter of the non-Hermitian operator.
+    """
     prob::Tp
     eta::Tp
 end
 
 struct NHCNOTDisentangler{Tp <: Real} <: AbstractDisentangler
+    """
+    Store the parameters for the CNOT-based non-Hermitian disentangler.
+    """
     prob::Tp
     eta::Tp
 end
@@ -177,8 +185,8 @@ end
 function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler; 
     cutoff::Real=1e-14, maxdim::Int=1<<(length(psi) ÷ 2), etol=nothing)
     """
-    Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
-    and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
+    Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator 
+    applied to pairs of sites, and a disentangler `dent` applied to each site. (inplace version)
     """
     sites = siteinds(psi)
     lsize = length(sites)
@@ -207,7 +215,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::Abs
     cutoff::Real=1e-14, maxdim::Int=1<<(length(psi) ÷ 2), etol=nothing)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
-    and a non-Hermitian operator applied to each site with probability `prob` and parameter `eta`. (inplace version)
+    and a disentangler `dent` applied to each site, with properties assigned in `obs` stored for each time step. (inplace version)
     """
     sites = siteinds(psi)
     lsize = length(sites)

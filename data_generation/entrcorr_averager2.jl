@@ -47,7 +47,7 @@ let
     Ls = collect(L1:dL:L2)
     nprob = length(ps)
 
-    h5open("data/entrcorr2_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "w") do file
+    h5open("data/nhcnot_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "ps", ps)
@@ -61,23 +61,23 @@ let
         averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nprob)
 
         entr_means = Vector{type}(undef, nprob)
-        entr_stds = Vector{type}(undef, nprob)
+        entr_sems = Vector{type}(undef, nprob)
         corr_means = Matrix{type}(undef, L, nprob)
-        corr_stds = Matrix{type}(undef, L, nprob)
+        corr_sems = Matrix{type}(undef, L, nprob)
         truncerrs = Vector{type}(undef, nprob)
 
         for (idx, (avg, truncerr)) in enumerate(averagers)
             if avg.accept
                 entr_means[idx] = avg.entr_mean
-                entr_stds[idx] = sqrt(avg.entr_sstd / (N*(N-1)))
+                entr_sems[idx] = sqrt(avg.entr_sstd / (N*(N-1)))
                 corr_means[:, idx] = avg.corr_mean
-                corr_stds[:, idx] = sqrt.(avg.corr_sstd ./ (N*(N-1)))
+                corr_sems[:, idx] = sqrt.(avg.corr_sstd ./ (N*(N-1)))
                 truncerrs[idx] = truncerr
             else
                 entr_means[idx] = NaN
-                entr_stds[idx] = NaN
+                entr_sems[idx] = NaN
                 corr_means[:, idx] .= NaN
-                corr_stds[:, idx] .= NaN
+                corr_sems[:, idx] .= NaN
                 truncerrs[idx] = NaN
             end
         end
@@ -85,12 +85,12 @@ let
         println("L=$L done with $(8L) samples.")
         averagers = nothing  # free memory
 
-        h5open("data/entrcorr2_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "r+") do file
+        h5open("data/nhcnot_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "r+") do file
             grpL = create_group(file, "L_$L")
             write(grpL, "entr_means", entr_means)
-            write(grpL, "entr_stds", entr_stds)
+            write(grpL, "entr_sems", entr_sems)
             write(grpL, "corr_means", corr_means)
-            write(grpL, "corr_stds", corr_stds)
+            write(grpL, "corr_sems", corr_sems)
             write(grpL, "truncerrs", truncerrs)
         end
     end   

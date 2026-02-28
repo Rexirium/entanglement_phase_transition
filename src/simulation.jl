@@ -37,7 +37,7 @@ end
 
 mutable struct EntropyResults{T<:Real} <: AbstractResult
     """
-    Store the mean and std of entanglement entropy over multiple samples after time evolution.
+    Store the values of entanglement entropy over multiple samples after time evolution.
     """
     type::DataType
     b::Int
@@ -50,7 +50,7 @@ end
 
 mutable struct EntrCorrResults{T<:Real} <: AbstractResult
     """
-    Store the mean and std of entanglement entropy and correlation function over multiple samples after time evolution.
+    Store the values of entanglement entropy and correlation function over multiple samples after time evolution.
     """
     type::DataType
     b::Int
@@ -65,7 +65,7 @@ mutable struct EntrCorrResults{T<:Real} <: AbstractResult
 end
 
 function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
-    cutoff::Real=1e-14, maxdim::Int=2<<lsize)
+    cutoff::Real=1e-14, maxdim::Int=1<<(lsize ÷ 2))
     """
     Calculate the final properties of the MPS after time evolution. 
     """
@@ -86,9 +86,9 @@ function mps_results!(res::EntropySample{T}, psi::MPS) where T<:Real
 end
 
 function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
-    cutoff::Real=1e-14, maxdim::Int=2<<lsize)
+    cutoff::Real=1e-14, maxdim::Int=1<<(lsize ÷ 2))
     """
-    Calculate the mean entanglement entropy over multiple samples. (non-Hermitian case)
+    Calculate the entanglement entropies over multiple samples. (non-Hermitian case)
     """
     dent = NHDisentangler{res.type}(prob, eta)
     ss = siteinds("S=1/2", lsize)
@@ -104,7 +104,7 @@ end
 function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
     cutoff::Real=1e-14, maxdim::Int=2<<lsize)
     """
-    Calculate the mean entanglement entropy over multiple samples using multithreads. (non-Hermitian case)
+    Calculate the entanglement entropies over multiple samples using multithreads. (non-Hermitian case)
     """
     dent = NHDisentangler{res.type}(prob, eta)
 

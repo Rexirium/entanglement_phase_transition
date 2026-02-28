@@ -26,7 +26,7 @@ end
 # define global constants for parameters
 
 const ps = collect(type, 0.0:0.05:1.0)
-const ηs = collect(type, 0.0:0.05:1.0)
+const ηs = prepend(collect(type, 0.05:0.05:1.0), type(0.01))
 const param = vec([(p, η) for p in ps, η in ηs])
 
 @everywhere begin
@@ -37,9 +37,9 @@ const param = vec([(p, η) for p in ps, η in ηs])
         calculation_mean_multi(lsize, 4lsize, p, η, res; cutoff=cutoff)
 
         entr_mean = mean(res.entropies)
-        entr_std = stdm(res.entropies, entr_mean) / sqrt(N)
+        entr_sem = stdm(res.entropies, entr_mean) / sqrt(N)
 
-        return (entr_mean, entr_std)
+        return (entr_mean, entr_sem)
     end
 end
 
@@ -49,7 +49,7 @@ let
     Ls = collect(L1:dL:L2)
     nprob, neta = length(ps), length(ηs)
 
-    h5open("data/entropy_data_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
+    h5open("data/nh_entropy_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "N", N)  
@@ -62,17 +62,17 @@ let
         results = pmap(idx -> entropy_mean_multi_wrapper(L, idx), 1:nprob*neta)
 
         data_means = reshape([r[1] for r in results], nprob, neta)
-        data_stds  = reshape([r[2] for r in results], nprob, neta)
+        data_sems  = reshape([r[2] for r in results], nprob, neta)
 
         println("L=$L done with $N samples.")
         results = nothing  # free memory
 
-        h5open("data/entropy_data_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
+        h5open("data/nh_entropy_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
             grpL = create_group(file, "L=$L")
             write(grpL, "means", data_means)
-            write(grpL, "stds", data_stds)
+            write(grpL, "sems", data_sems)
         end
         data_means = nothing
-        data_stds = nothing
+        data_sems = nothing
     end
 end

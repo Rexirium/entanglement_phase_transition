@@ -51,7 +51,7 @@ let
     Ls = collect(L1:dL:L2)
     nprob, neta = length(ps), length(ηs)
 
-    h5open("data/entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
+    h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "ps", ps)
@@ -66,42 +66,42 @@ let
         averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nparams)
 
         entr_means = type[]
-        entr_stds = type[]
+        entr_sems = type[]
         corr_means = Vector{type}[]
-        corr_stds = Vector{type}[]
+        corr_sems = Vector{type}[]
         truncerrs = type[]
 
         for (avg, truncerr) in averagers
             if avg.accept
                 push!(entr_means, avg.entr_mean)
-                push!(entr_stds, sqrt(avg.entr_sstd / (N*(N-1))))
+                push!(entr_sems, sqrt(avg.entr_sstd / (N*(N-1))))
                 push!(corr_means, avg.corr_mean)
-                push!(corr_stds, sqrt.(avg.corr_sstd ./ (N*(N-1))))
+                push!(corr_sems, sqrt.(avg.corr_sstd ./ (N*(N-1))))
                 push!(truncerrs, truncerr)
             else
                 push!(entr_means, NaN)
-                push!(entr_stds, NaN)
+                push!(entr_sems, NaN)
                 push!(corr_means, fill(NaN, L))
-                push!(corr_stds, fill(NaN, L))
+                push!(corr_sems, fill(NaN, L))
                 push!(truncerrs, NaN)
             end
         end
 
         entr_means = reshape(entr_means, nprob, neta)
-        entr_stds  = reshape(entr_stds, nprob, neta)
+        entr_sems  = reshape(entr_sems, nprob, neta)
         corr_means = reshape(hcat(corr_means...), L, nprob, neta)
-        corr_stds  = reshape(hcat(corr_stds...), L, nprob, neta)
+        corr_sems  = reshape(hcat(corr_sems...), L, nprob, neta)
         truncerrs = reshape(truncerrs, nprob, neta)
 
         println("L=$L done with $(8L) samples.")
         averagers = nothing  # free memory
 
-        h5open("data/entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
+        h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
             grpL = create_group(file, "L_$L")
             write(grpL, "entr_means", entr_means)
-            write(grpL, "entr_stds", entr_stds)
+            write(grpL, "entr_sems", entr_sems)
             write(grpL, "corr_means", corr_means)
-            write(grpL, "corr_stds", corr_stds)
+            write(grpL, "corr_sems", corr_sems)
             write(grpL, "truncerrs", truncerrs)
         end
     end   
