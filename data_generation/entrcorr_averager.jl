@@ -24,7 +24,7 @@ end
 # define global constants for parameters
 
 const ps = collect(type, 0.0:0.05:1.0)
-const ηs = prepend(collect(type, 0.05:0.05:1.0), type(0.01))
+const ηs = collect(type, 0.0:0.05:1.0)
 const param = vec([(p, η) for p in ps, η in ηs])
 
 @everywhere begin
