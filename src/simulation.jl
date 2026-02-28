@@ -102,7 +102,7 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::A
 end
 
 function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
-    cutoff::Real=1e-14, maxdim::Int=2<<lsize)
+    cutoff::Real=1e-14, maxdim::Int=1<<(lsize ÷ 2))
     """
     Calculate the entanglement entropies over multiple samples using multithreads. (non-Hermitian case)
     """
