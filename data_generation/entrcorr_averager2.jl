@@ -44,7 +44,7 @@ end
 
 let 
     # Model parameters
-    L1, dL, L2 = 8, 4, 40
+    L1, dL, L2 = 10, 2, 40
     Ls = L1:dL:L2
 
     h5open("data/nhcnot_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "w") do file
