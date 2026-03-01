@@ -86,7 +86,7 @@ let
         averagers = nothing  # free memory
 
         h5open("data/nhcnot_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "r+") do file
-            grpL = create_group(file, "L_$L")
+            grpL = create_group(file, "L=$L")
             write(grpL, "entr_means", entr_means)
             write(grpL, "entr_sems", entr_sems)
             write(grpL, "corr_means", corr_means)

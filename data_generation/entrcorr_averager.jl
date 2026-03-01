@@ -24,7 +24,7 @@ end
 # define global constants for parameters
 
 const nprob = 21
-const neta = 20
+const neta = 21
 const ps = LinRange{type}(0.0, 1.0, nprob)
 const ηs = LinRange{type}(0.0, 1.0, neta)
 const param = vec([(p, η) for p in ps, η in ηs])
@@ -38,7 +38,7 @@ const param = vec([(p, η) for p in ps, η in ηs])
         psi = MPS(Complex{type}, ss, "Up")
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
         # core calculation
-        threshold = 1e-8 * (ttotal * lsize)
+        threshold = 1e-6 * (ttotal * lsize)
         maxbond = 20*lsize
         truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
 
@@ -49,7 +49,7 @@ end
 
 let 
     # Model parameters
-    L1, dL, L2 = 8, 2, 40
+    L1, dL, L2 = 8, 4, 40
     Ls = L1:dL:L2
 
     h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
@@ -98,7 +98,7 @@ let
         averagers = nothing  # free memory
 
         h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
-            grpL = create_group(file, "L_$L")
+            grpL = create_group(file, "L=$L")
             write(grpL, "entr_means", entr_means)
             write(grpL, "entr_sems", entr_sems)
             write(grpL, "corr_means", corr_means)
