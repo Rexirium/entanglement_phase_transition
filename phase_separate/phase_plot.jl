@@ -4,23 +4,7 @@ using Interpolations
 using Plots, LaTeXStrings
 using HDF5
 
-function linregress(xs, ys)
-    n = length(xs)
-    A = [ones(n) xs]
-    coeffs = A \ ys
-    return coeffs[2]
-end
-
-function linregress(xs, ys, yerrs)
-    n = length(xs)
-    ws = normalize(1 ./(yerrs .^ 2), 1)
-    W = diagm(sqrt.(ws))
-    A = [ones(n) xs]
-    Aw = W * A
-    yw = W * ys
-    coeffs = Aw \ yw
-    return coeffs[2]
-end
+include("linear_regress.jl")
 
 let 
     L1, dL, L2 = 4, 2, 18
@@ -86,9 +70,9 @@ let
     println(data)
     plot(log.(Ls), log.(data), 
         yerror=err,
-         marker=:o, lw=2,
-         xlabel=L"L", ylabel="Entropy",
-         title="Entropy scaling at p=0.75, η=0.0",
-         label="data")
+        marker=:o, lw=2,
+        xlabel=L"L", ylabel="Entropy",
+        title="Entropy scaling at p=0.75, η=0.0",
+        label="data")
     =#
 end

@@ -23,8 +23,10 @@ end
 end
 # define global constants for parameters
 
-const ps = collect(type, 0.0:0.05:1.0)
-const ηs = collect(type, 0.0:0.05:1.0)
+const nprob = 21
+const neta = 20
+const ps = LinRange{type}(0.0, 1.0, nprob)
+const ηs = LinRange{type}(0.0, 1.0, neta)
 const param = vec([(p, η) for p in ps, η in ηs])
 
 @everywhere begin
@@ -47,23 +49,22 @@ end
 
 let 
     # Model parameters
-    L1, dL, L2 = 8, 4, 40
-    Ls = collect(L1:dL:L2)
-    nprob, neta = length(ps), length(ηs)
+    L1, dL, L2 = 8, 2, 40
+    Ls = L1:dL:L2
 
     h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
-        write(grp, "ps", ps)
-        write(grp, "ηs", ηs)
-        write(grp, "Ls", Ls)
+        write(grp, "ps", collect(ps))
+        write(grp, "ηs", collect(ηs))
+        write(grp, "Ls", collect(Ls))
     end
 
     for L in Ls
-        T = 10L
+        T = 12L
         N = T - 2L
-        nparams = length(params)
-        averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nparams)
+
+        averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1 : nprob*neta)
 
         entr_means = type[]
         entr_sems = type[]
@@ -76,7 +77,7 @@ let
                 push!(entr_means, avg.entr_mean)
                 push!(entr_sems, sqrt(avg.entr_sstd / (N*(N-1))))
                 push!(corr_means, avg.corr_mean)
-                push!(corr_sems, sqrt.(avg.corr_sstd ./ (N*(N-1))))
+                push!(corr_sems, sqrt.(avg.corr_sstd / (N*(N-1))))
                 push!(truncerrs, truncerr)
             else
                 push!(entr_means, NaN)
@@ -93,7 +94,7 @@ let
         corr_sems  = reshape(hcat(corr_sems...), L, nprob, neta)
         truncerrs = reshape(truncerrs, nprob, neta)
 
-        println("L=$L done with $(8L) samples.")
+        println("L=$L done with $N samples.")
         averagers = nothing  # free memory
 
         h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file

@@ -21,12 +21,14 @@ end
 @everywhere begin 
     const N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
     const type = Float64
-    const cutoff = 1e-12
+    const cutoff = 1e-14
 end
 # define global constants for parameters
 
-const ps = collect(type, 0.0:0.05:1.0)
-const ηs = collect(type, 0.0:0.05:1.0)
+const nprob = 21
+const neta = 20
+const ps = LinRange{type}(0.0, 1.0, nprob)
+const ηs = LinRange{type}(0.0, 1.0, neta)
 const param = vec([(p, η) for p in ps, η in ηs])
 
 @everywhere begin
@@ -45,21 +47,20 @@ end
 
 let 
     # Model parameters
-    L1, dL, L2 = 4, 2, 18
-    Ls = collect(L1:dL:L2)
-    nprob, neta = length(ps), length(ηs)
+    L1, dL, L2 = 4, 2, 20
+    Ls = L1:dL:L2
 
-    h5open("data/nh_entropy_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
+    h5open("data/nh_entropy_calc_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "N", N)  
-        write(grp, "ps", ps)  
-        write(grp, "ηs", ηs)    
-        write(grp, "Ls", Ls)
+        write(grp, "ps", collect(ps))  
+        write(grp, "ηs", collect(ηs))    
+        write(grp, "Ls", collect(Ls))
     end
     
     for L in Ls
-        results = pmap(idx -> entropy_mean_multi_wrapper(L, idx), 1:nprob*neta)
+        results = pmap(idx -> entropy_mean_multi_wrapper(L, idx), 1 : nprob*neta)
 
         data_means = reshape([r[1] for r in results], nprob, neta)
         data_sems  = reshape([r[2] for r in results], nprob, neta)
@@ -67,7 +68,7 @@ let
         println("L=$L done with $N samples.")
         results = nothing  # free memory
 
-        h5open("data/nh_entropy_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
+        h5open("data/nh_entropy_calc_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
             grpL = create_group(file, "L=$L")
             write(grpL, "means", data_means)
             write(grpL, "sems", data_sems)
