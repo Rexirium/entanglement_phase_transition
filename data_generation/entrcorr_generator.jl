@@ -51,6 +51,8 @@ let
     # Model parameters
     L1, dL, L2 = 4, 2, 18
     Ls = L1:dL:L2
+    nparam = length(params)
+    subs = CartesianIndices((nprob, neta))
 
     h5open("data/nh_entrcorr_calc_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
@@ -62,24 +64,22 @@ let
     end
     
     for L in Ls
-        results = pmap(idx -> calculation_multi_wrapper(L, idx), 1:nprob*neta)
+        results = pmap(idx -> calculation_multi_wrapper(L, idx), 1:nparam)
 
-        entr_means = type[]
-        entr_sems = type[]
-        corr_means = Vector{type}[]
-        corr_sems = Vector{type}[]
+        entr_means  = Matrix{type}(undef, nprob, neta)
+        entr_sems   = Matrix{type}(undef, nprob, neta)
+        corr_means  = Array{type, 3}(undef, L, nprob, neta)
+        corr_sems   = Array{type, 3}(undef, L, nprob, neta)
+        truncerrs   = Matrix{type}(undef, nprob, neta)
 
-        for r in results
-            push!(entr_means, r.entr_mean)
-            push!(entr_sems, r.entr_sem)
-            push!(corr_means, r.corr_mean)
-            push!(corr_sems, r.corr_sem)
+        for idx in 1:nparam
+            res = results[idx]
+            sub = subs[idx]
+            entr_means[sub] = res.entr_mean
+            entr_sems[sub] = res.entr_sem
+            corr_means[:, sub] = res.corr_mean
+            corr_sems[:, sub] = res.corr_sem
         end
-
-        entr_means = reshape(entr_means, nprob, neta)
-        entr_sems  = reshape(entr_sems, nprob, neta)
-        corr_means = reshape(hcat(corr_means...), L, nprob, neta)
-        corr_sems  = reshape(hcat(corr_sems...), L, nprob, neta)
 
         println("L=$L done with $N samples.")
         results = nothing  # free memory

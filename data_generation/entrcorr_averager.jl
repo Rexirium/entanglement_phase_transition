@@ -51,6 +51,8 @@ let
     # Model parameters
     L1, dL, L2 = 10, 2, 40
     Ls = L1:dL:L2
+    nparam = length(params)
+    subs = CartesianIndices((nprob, neta))
 
     h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
@@ -64,35 +66,32 @@ let
         T = 12L
         N = T - 2L
 
-        averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1 : nprob*neta)
+        averagers = pmap(idx -> entrcorr_average_wrapper(L, T, idx), 1:nparam)
 
-        entr_means = type[]
-        entr_sems = type[]
-        corr_means = Vector{type}[]
-        corr_sems = Vector{type}[]
-        truncerrs = type[]
+        entr_means  = Matrix{type}(undef, nprob, neta)
+        entr_sems   = Matrix{type}(undef, nprob, neta)
+        corr_means  = Array{type, 3}(undef, L, nprob, neta)
+        corr_sems   = Array{type, 3}(undef, L, nprob, neta)
+        truncerrs   = Matrix{type}(undef, nprob, neta)
 
-        for (avg, truncerr) in averagers
+        for idx in 1:nparam
+            avg, truncerr = averagers[idx]
+            sub = subs[idx]
+
             if avg.accept
-                push!(entr_means, avg.entr_mean)
-                push!(entr_sems, sqrt(avg.entr_sstd / (N*(N-1))))
-                push!(corr_means, avg.corr_mean)
-                push!(corr_sems, sqrt.(avg.corr_sstd / (N*(N-1))))
-                push!(truncerrs, truncerr)
+                entr_means[sub] = avg.entr_mean
+                entr_sems[sub] = sqrt(avg.entr_sstd / (N*(N-1)))
+                corr_means[:, sub] = avg.corr_mean
+                corr_sems[:, sub] = sqrt.(avg.corr_sstd / (N*(N-1)))
+                truncerrs[sub] = truncerr
             else
-                push!(entr_means, NaN)
-                push!(entr_sems, NaN)
-                push!(corr_means, fill(NaN, L))
-                push!(corr_sems, fill(NaN, L))
-                push!(truncerrs, NaN)
+                entr_means[sub] = NaN
+                entr_sems[sub] = NaN
+                corr_means[:, sub] .= NaN
+                corr_sems[:, sub] .= NaN
+                truncerrs[sub] = NaN
             end
         end
-
-        entr_means = reshape(entr_means, nprob, neta)
-        entr_sems  = reshape(entr_sems, nprob, neta)
-        corr_means = reshape(hcat(corr_means...), L, nprob, neta)
-        corr_sems  = reshape(hcat(corr_sems...), L, nprob, neta)
-        truncerrs = reshape(truncerrs, nprob, neta)
 
         println("L=$L done with $N samples.")
         averagers = nothing  # free memory

@@ -49,6 +49,7 @@ let
     # Model parameters
     L1, dL, L2 = 4, 2, 20
     Ls = L1:dL:L2
+    nparam = length(params)
 
     h5open("data/nh_entropy_calc_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
@@ -60,7 +61,7 @@ let
     end
     
     for L in Ls
-        results = pmap(idx -> entropy_mean_multi_wrapper(L, idx), 1 : nprob*neta)
+        results = pmap(idx -> entropy_mean_multi_wrapper(L, idx), 1:nparam)
 
         data_means = reshape([r[1] for r in results], nprob, neta)
         data_sems  = reshape([r[2] for r in results], nprob, neta)

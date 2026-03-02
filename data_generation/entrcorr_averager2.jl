@@ -58,7 +58,7 @@ let
     for L in Ls
         T = 12L
         N = T - 2L
-        averagers = pmap(idx -> entrcorr_average_wrapper(L, T, p), ps)
+        averagers = pmap(p -> entrcorr_average_wrapper(L, T, p), ps)
 
         entr_means = Vector{type}(undef, nprob)
         entr_sems = Vector{type}(undef, nprob)
