@@ -5,9 +5,9 @@ if nprocs() == 1
     addprocs(8)  # add worker processes if not already added
 end
 
-
-const xs = 0.1:0.1:2.0
-const ys = 0.1:0.1:2.0
+@everywhere const type = Float64
+const xs = LinRange{type}(0.1, 2.0, 20)
+const ys = LinRange{type}(0.1, 2.0, 20)
 const xy = vec([(x, y) for x in xs, y in ys])
 @everywhere const xys = $xy
 
