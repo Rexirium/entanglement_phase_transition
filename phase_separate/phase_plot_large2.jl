@@ -31,7 +31,7 @@ let
 
     for i in 1:nprob
         xs = log.(Ls .+ 1e-10)
-        ys = log.(abs.(entropy_datas[i, :] .+ 1e-10))
+        ys = log.(abs.(entropy_datas[i, :] .+ 0.5))
         yerrs = abs.(entropy_error[i, :] ./ entropy_datas[i, :])
         index = linregress(xs, ys)
             
@@ -41,7 +41,7 @@ let
             indices[i] = index
         end
             
-        #indices[i] = index
+        indices[i] = index
     end
 
     p_knots = range(ps[1], ps[end], length=nprob)
