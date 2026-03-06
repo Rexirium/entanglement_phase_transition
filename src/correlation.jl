@@ -51,7 +51,7 @@ function correlation_vec(psi::MPS, ops1::String, ops2::String)
         left = 1 + (lsize - dist - 1) ÷ 2
         right = left + dist
         # compute the correlation function for distance dist
-        corrs[dist+1] = correlation(psi, ops1, ops2, left, right)
+        @inbounds corrs[dist+1] = correlation(psi, ops1, ops2, left, right)
     end
     return corrs
 end

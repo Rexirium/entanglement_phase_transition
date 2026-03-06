@@ -66,7 +66,8 @@ let
         corr_sems = Matrix{type}(undef, L, nprob)
         truncerrs = Vector{type}(undef, nprob)
 
-        for (idx, (avg, truncerr)) in enumerate(averagers)
+        @inbounds for idx in eachindex(averagers)
+            avg, truncerr = averagers[idx]
             if avg.accept
                 entr_means[idx] = avg.entr_mean
                 entr_sems[idx] = sqrt(avg.entr_sstd / (N*(N-1)))

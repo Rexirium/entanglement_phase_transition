@@ -29,7 +29,7 @@ const nprob = 21
 const neta = 20
 const ps = LinRange{type}(0.0, 1.0, nprob)
 const ηs = LinRange{type}(0.0, 1.0, neta)
-const param = vec([(p, η) for p in ps, η in ηs])
+const param = [(p, η) for η in ηs for p in ps]
 
 @everywhere begin
     const params = $param
@@ -72,7 +72,7 @@ let
         corr_sems   = Array{type, 3}(undef, L, nprob, neta)
         truncerrs   = Matrix{type}(undef, nprob, neta)
 
-        for idx in 1:nparam
+       @inbounds for idx in eachindex(subs)
             res = results[idx]
             sub = subs[idx]
             entr_means[sub] = res.entr_mean

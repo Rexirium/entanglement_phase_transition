@@ -34,7 +34,7 @@ let
     corr_evolv_prob = Array{type, 3}(undef, L, T+1, nprob)
     corr_distr_prob = Matrix{type}(undef, L, nprob)
 
-    for i in 1:nprob
+    @inbounds for i in 1:nprob
         entr_evolv = Matrix{type}(undef, T+1, nsamp)
         entr_distr = Matrix{type}(undef, L+1, nsamp)
         corr_evolv = Array{type, 3}(undef, L, T+1, nsamp)
@@ -78,7 +78,7 @@ let
     corr_evolv_eta = Array{type, 3}(undef, L, T+1, neta)
     corr_distr_eta = Matrix{type}(undef, L, neta)
 
-    for i in 1:neta
+    @inbounds for i in 1:neta
         entr_evolv = Matrix{type}(undef, T+1, nsamp)
         entr_distr = Matrix{type}(undef, L+1, nsamp)
         corr_evolv = Array{type, 3}(undef, L, T+1, nsamp)

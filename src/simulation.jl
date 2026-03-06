@@ -96,7 +96,7 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::A
     for i in 1:res.nsamp 
         psi = MPS(Complex{res.type}, ss, "Up")
         mps_evolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
-        mps_results!(res, psi, i)
+        @inbounds mps_results!(res, psi, i)
         psi = nothing
     end
 end

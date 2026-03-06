@@ -29,7 +29,7 @@ const L1, dL, L2 = 10, 2, 40
 const ps = LinRange{type}(0.0, 1.0, nprob)
 const ηs = LinRange{type}(0.0, 1.0, neta)
 const Ls = L1:dL:L2
-const param = vec([(p, η, L) for p in ps, η in ηs, L in Ls])
+const param = [(p, η, L) for L in Ls for η in ηs for p in ps]
 
 @everywhere begin
     const params = $param
@@ -74,7 +74,7 @@ let
     averagers = pmap(entrcorr_average_wrapper, 1:nparam)
 
 
-    for idx in 1:nparam
+    @inbounds for idx in eachindex(1:nparam)
         avg, truncerr = averagers[idx]
         sub = subs[idx]
         L = Ls[sub[3]]

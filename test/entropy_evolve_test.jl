@@ -13,7 +13,7 @@ let
     L = 16
     T = 12L
     cutoff = eps(Float64)
-    p, η = 0.5, 0.01
+    p, η = 0.5, 0.1
     b = L ÷ 2
     
     dent = NHDisentangler{Float64}(p, η)

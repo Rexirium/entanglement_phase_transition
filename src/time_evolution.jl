@@ -193,7 +193,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler;
     T = promote_itensor_eltype(psi)
     
     truncerr = zero(real(T))
-    for t in 1:ttotal
+    @inbounds for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
@@ -223,7 +223,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::Abs
     
     truncerr = zero(real(T))
     mps_monitor!(obs, psi, 0, truncerr)
-    for t in 1:ttotal
+    @inbounds for t in 1:ttotal
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
