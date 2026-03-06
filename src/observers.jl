@@ -12,18 +12,17 @@ mutable struct EntropyObserver{T<:Real} <: AbstractObserver
     EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], T[], Int[], true)
 end
 
-mutable struct EntrCorrObserver{T<:Real} <: AbstractObserver
+mutable struct EntrCorrObserver{len, T<:Real} <: AbstractObserver
     b::Int
-    len::Int
     n::Real
     op::String
     entrs::Vector{T}
-    corrs::Vector{Vector{T}}
+    corrs::Vector{SVector{len, T}}
     truncerrs::Vector{T}
     accept::Bool
 
     EntrCorrObserver{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
-        new{T}(b, len, n, op, T[], Vector{T}[], T[], true)
+        new{len, T}(b, n, op, T[], SVector{len, T}[], T[], true)
 end
 
 mutable struct EntropyAverager{T<:Real} <: AbstractObserver
@@ -38,9 +37,8 @@ mutable struct EntropyAverager{T<:Real} <: AbstractObserver
         new{T}(b, len, n, zero(T), zero(T), true)
 end
 
-mutable struct EntrCorrAverager{T<:Real} <: AbstractObserver
+mutable struct EntrCorrAverager{len, T<:Real} <: AbstractObserver
     b::Int
-    len::Int
     n::Real
     op::String
     entr_mean::T
@@ -50,7 +48,7 @@ mutable struct EntrCorrAverager{T<:Real} <: AbstractObserver
     accept::Bool
 
     EntrCorrAverager{T}(b::Int, len::Int; n::Real=1, op::String="Sz") where T<:Real = 
-        new{T}(b, len, n, op, zero(T), zero(T), 
+        new{len, T}(b, n, op, zero(T), zero(T), 
         zeros(T, len), zeros(T, len), true)
 end
 
@@ -62,7 +60,7 @@ end
 
 function mps_monitor!(obs::EntrCorrObserver{T}, psi::MPS, t::Int, truncerr::Real) where T<:Real
     push!(obs.entrs, ent_entropy(psi, obs.b, obs.n))
-    push!(obs.corrs, correlation_vec(psi, obs.op, obs.op))
+    push!(obs.corrs, @SVector correlation_vec(psi, obs.op, obs.op))
     push!(obs.truncerrs, truncerr)
 end
 

@@ -1,10 +1,11 @@
 using ITensors, ITensorMPS
 using LinearAlgebra, Random
 using SparseArrays
+using StaticArrays
 
+include("observers.jl")
 include("entanglement.jl")
 include("correlation.jl")
-include("observers.jl")
 
 const CNOT13 = begin
     X = sparse([0 1; 1 0])
