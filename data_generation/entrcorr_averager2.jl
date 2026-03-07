@@ -71,8 +71,8 @@ let
             if avg.accept
                 entr_means[idx] = avg.entr_mean
                 entr_sems[idx] = sqrt(avg.entr_sstd / (N*(N-1)))
-                corr_means[:, idx] = avg.corr_mean
-                corr_sems[:, idx] = sqrt.(avg.corr_sstd / (N*(N-1)))
+                corr_means[:, idx] .= avg.corr_mean
+                corr_sems[:, idx] .= sqrt.(avg.corr_sstd / (N*(N-1)))
                 truncerrs[idx] = truncerr
             else
                 entr_means[idx] = NaN

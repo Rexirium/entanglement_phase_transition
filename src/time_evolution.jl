@@ -244,7 +244,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::Abs
     return truncerr
 end
 
-
+#=
 let 
     L, T = 10, 100
     ss = siteinds("S=1/2", L)
@@ -255,4 +255,5 @@ let
     @time mps_monitor!(obs, psi, 30, 0.0)
     @show obs.entr_mean
 end
+=#
 

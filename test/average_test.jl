@@ -34,7 +34,7 @@ end
 =#
 
 let
-    L = 20
+    L = 16
     T = 12L
     N = T - 2L
     p, η = 0.5, 0.1
@@ -44,7 +44,7 @@ let
     entr_mean = avg.entr_mean
     corr_mean = avg.corr_mean
     entr_sem = sqrt(avg.entr_sstd / (N*(N-1)))
-    corr_sem = sqrt.(avg.corr_sstd ./ (N*(N-1)))
+    corr_sem = sqrt.(avg.corr_sstd / (N*(N-1)))
     
     println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_sem")
     println("Truncation Error: ", truncerr)
