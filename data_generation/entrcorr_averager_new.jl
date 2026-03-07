@@ -69,7 +69,7 @@ let
     entr_sems   = Array{type, 3}(undef, nprob, neta, nL)
     corr_means  = zeros(type, L2, nprob, neta, nL)
     corr_sems   = zeros(type, L2, nprob, neta, nL)
-    truncerrs   = Array{typ, 3}(undef, nprob, neta, nL)
+    truncerrs   = Array{type, 3}(undef, nprob, neta, nL)
 
     averagers = pmap(entrcorr_average_wrapper, 1:nparam)
 
