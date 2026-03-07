@@ -38,7 +38,7 @@ const param = [(p, η) for η in ηs for p in ps]
         psi = MPS(Complex{type}, ss, "Up")
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
         # core calculation
-        threshold = 1e-7 * (ttotal * lsize)
+        threshold = 5e-7 * (ttotal * lsize)
         maxbond = 20*lsize
         truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
 

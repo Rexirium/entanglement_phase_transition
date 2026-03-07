@@ -1,4 +1,4 @@
-mutable struct EntropyObserver{lsize, T<:Real} <: AbstractObserver
+mutable struct EntropyObserver{T<:Real} <: AbstractObserver
     """
     Observe and record the entanglement entropy at a specific bond `b` of the MPS during time evolution.
     """
@@ -9,7 +9,7 @@ mutable struct EntropyObserver{lsize, T<:Real} <: AbstractObserver
     maxbonds::Vector{Int}
     accept::Bool
 
-    EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{lsize, T}(b, n, T[], T[], Int[], true)
+    EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], T[], Int[], true)
 end
 
 mutable struct EntrCorrObserver{lsize, T<:Real} <: AbstractObserver

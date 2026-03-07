@@ -42,7 +42,7 @@ const param = [(p, η, L) for L in Ls for η in ηs for p in ps]
         psi = MPS(Complex{type}, ss, "Up")
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
         # core calculation
-        threshold = 1e-7 * (ttotal * lsize)
+        threshold = 5e-7 * (ttotal * lsize)
         maxbond = 20*lsize
         truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
 
@@ -57,7 +57,7 @@ let
     nparam = length(params)
     subs = CartesianIndices((nprob, neta, nL))
 
-    h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
+    h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta)_new.h5", "w") do file
         write(file, "datatype", string(type))
         grp = create_group(file, "params")
         write(grp, "ps", collect(ps))
@@ -97,7 +97,7 @@ let
 
     averagers = nothing  # free memory
 
-    h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
+    h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta)_new.h5", "r+") do file
         grp = create_group(file, "results")
         dset1 = create_dataset(grp, "entr_means", datatype(type), dataspace(nprob, neta, nL), 
             chunk=(nprob, neta, 1), compress=3)

@@ -7,10 +7,10 @@ using HDF5
 include("linear_regress.jl")
 
 let
-    L1, dL, L2 = 8, 4, 40
-    nprob, neta = 21, 20
+    L1, dL, L2 = 10, 2, 40
+    nprob, neta = 21, 21
 
-    file = h5open("data/entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
+    file = h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
     type_str = read(file, "datatype")
     ps = read(file, "params/ps")
     ηs = read(file, "params/ηs")
@@ -22,8 +22,8 @@ let
     entropy_datas = Array{type}(undef, nprob, neta, nL)
     entropy_error = Array{type}(undef, nprob, neta, nL)
     for (i,l) in enumerate(Ls)
-        @views entropy_datas[:, :, i] .= read(file, "L_$l/entr_means")
-        @views entropy_error[:, :, i] .= read(file, "L_$l/entr_stds")
+        @views entropy_datas[:, :, i] .= read(file, "L=$l/entr_means")
+        @views entropy_error[:, :, i] .= read(file, "L=$l/entr_sems")
     end
     close(file)
 
@@ -42,7 +42,7 @@ let
                 indices[i, j] = index
             end
             
-            #indices[i, j] = index
+            indices[i, j] = index
         end
     end
 
