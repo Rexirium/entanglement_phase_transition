@@ -53,7 +53,7 @@ function correlation_vec(psi::MPS, ops1::String, ops2::String)
         # compute the correlation function for distance dist
         @inbounds corrs[dist+1] = correlation(psi, ops1, ops2, left, right)
     end
-    return corrs
+    return SVector{lsize}(corrs)
 end
 #=
 let 

@@ -3,9 +3,9 @@ using LinearAlgebra, Random
 using SparseArrays
 using StaticArrays
 
-include("observers.jl")
 include("entanglement.jl")
 include("correlation.jl")
+include("observers.jl")
 
 const CNOT13 = begin
     X = sparse([0 1; 1 0])
@@ -244,13 +244,15 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::Abs
     return truncerr
 end
 
-#=
+
 let 
     L, T = 10, 100
     ss = siteinds("S=1/2", L)
-    psi = MPS(ComplexF64, ss, "Up")
-    dent = NHDisentangler{Float64}(0.5, 0.5)
-    @time mps_evolve!(psi, T, dent; cutoff=1e-14, maxdim=100)
+    psi = randomMPS(ComplexF64, ss; linkdims=8)
 
+    obs = EntrCorrAverager{Float64}(L÷2, L; n=1, op="Sz")   
+
+    @time mps_monitor!(obs, psi, 30, 0.0)
+    @show obs.entr_mean
 end
-=#
+
