@@ -4,7 +4,7 @@ using Interpolations
 using Plots, LaTeXStrings
 using HDF5
 
-include("linear_regress.jl")
+include("../linear_regress.jl")
 
 let
     L1, dL, L2 = 10, 2, 40

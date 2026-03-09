@@ -1,7 +1,7 @@
+using LinearAlgebra, SparseArrays
 using ITensors, ITensorMPS
-using LinearAlgebra, Random
-using SparseArrays
 using StaticArrays
+using Random
 
 include("entanglement.jl")
 include("correlation.jl")
