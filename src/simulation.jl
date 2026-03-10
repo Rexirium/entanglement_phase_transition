@@ -20,19 +20,18 @@ mutable struct EntropySample{T<:Real} <: AbstractResult
     EntropySample{T}(b::Int; n = 1) where T<:Real = new{T}(T, b, n, zero(T))
 end
 
-mutable struct EntrCorrSample{T<:Real} <: AbstractResult
+mutable struct EntrCorrSample{lsize, T<:Real} <: AbstractResult
     """
     Store the entanglement entropy and correlation function results after time evolution.
     """
     type::DataType
     b::Int
-    len::Int
     n::Real
     op::String
     entropy::T
     corrs::Vector{T}
-    EntrCorrSample{T}(b::Int, len::Int; n = 1, op = "Sz") where T<:Real = 
-        new{T}(T, b, len, n, op, zero(T), Vector{T}(undef, len))
+    EntrCorrSample{T}(b::Int, lsize::Int; n = 1, op = "Sz") where T<:Real = 
+        new{lsize, T}(T, b, n, op, zero(T), Vector{T}(undef, lsize))
 end
 
 mutable struct EntropyResults{T<:Real} <: AbstractResult
@@ -48,20 +47,19 @@ mutable struct EntropyResults{T<:Real} <: AbstractResult
         new{T}(T, b, n, nsamp, Vector{T}(undef, nsamp))
 end
 
-mutable struct EntrCorrResults{T<:Real} <: AbstractResult
+mutable struct EntrCorrResults{lsize, T<:Real} <: AbstractResult
     """
     Store the values of entanglement entropy and correlation function over multiple samples after time evolution.
     """
     type::DataType
     b::Int
-    len::Int
     n::Real
     op::String
     nsamp::Int
     entropies::Vector{T}
     corrs::Matrix{T}
-    EntrCorrResults{T}(b::Int, len::Int; n=1, op="Sz", nsamp::Int=100) where T<:Real = 
-        new{T}(T, b, len, n, op, nsamp, Vector{T}(undef, nsamp), Matrix{T}(undef, len, nsamp))
+    EntrCorrResults{T}(b::Int, lsize::Int; n=1, op="Sz", nsamp::Int=100) where T<:Real = 
+        new{lsize, T}(T, b, n, op, nsamp, Vector{T}(undef, nsamp), Matrix{T}(undef, lsize, nsamp))
 end
 
 function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
@@ -83,6 +81,14 @@ function mps_results!(res::EntropySample{T}, psi::MPS) where T<:Real
     Measure the entanglement entropy and store it in `res`.
     """
     res.entropy = ent_entropy(psi, res.b, res.n)
+end
+
+function mps_results!(res::EntrCorrSample{T}, psi::MPS) where T<:Real
+    """
+    Measure the entanglement entropy and correlation function and store them in `res`.
+    """
+    res.entropy = ent_entropy(psi, res.b, res.n)
+    res.corrs .= correlation_vec(psi, res.op, res.op)
 end
 
 function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 

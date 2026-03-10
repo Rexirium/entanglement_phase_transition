@@ -20,15 +20,20 @@ end
 @everywhere begin
     const type = Float64
     const cutoff = eps(type)
-    const nprob = 21
-    const ps = LinRange{type}(0.0, 1.0, nprob)
     const η0 = type(0.01)
 end
 # define global constants for parameters
+const L1, dL, L2 = 10, 2, 40
+const nprob = 21
+const ps = LinRange{type}(0.0, 1.0, nprob)
+const Ls = L1:dL:L2
 
 @everywhere begin
-    function entrcorr_average_wrapper(lsize::Int, ttotal::Int, p::Real)
-        dent = NHCNOTDisentangler{type}(p, η0)
+
+    function entrcorr_average_wrapper(prob::Real, lsize::Int)
+        ttotal = 12lsize
+        dent = NHCNOTDisentangler{type}(prob, η0)
+
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{type}, ss, "Up")
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
@@ -43,9 +48,10 @@ end
 end
 
 let 
-    # Model parameters
-    L1, dL, L2 = 10, 2, 40
-    Ls = L1:dL:L2
+    nL = length(Ls)
+    params = [(p, L) for L in Ls for p in ps]
+    nparam = length(params)
+    subs = CartesianIndices((nprob, nL))
 
     h5open("data/nhcnot_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "w") do file
         write(file, "datatype", string(type))
@@ -55,44 +61,52 @@ let
         write(grp, "Ls", collect(Ls))
     end
 
-    for L in Ls
-        T = 12L
-        N = T - 2L
-        averagers = pmap(p -> entrcorr_average_wrapper(L, T, p), ps)
+    averagers = pmap(pl -> entrcorr_average_wrapper(pl...), params)
 
-        entr_means = Vector{type}(undef, nprob)
-        entr_sems = Vector{type}(undef, nprob)
-        corr_means = Matrix{type}(undef, L, nprob)
-        corr_sems = Matrix{type}(undef, L, nprob)
-        truncerrs = Vector{type}(undef, nprob)
+    entr_means = Matrix{type}(undef, nprob, nL)
+    entr_sems = Matrix{type}(undef, nprob, nL)
+    corr_means = zeros(type, L2, nprob, nL)
+    corr_sems = zeros(type, L2, nprob, nL)
+    truncerrs = Vector{type}(undef, nprob)
 
-        @inbounds for idx in eachindex(averagers)
-            avg, truncerr = averagers[idx]
-            if avg.accept
-                entr_means[idx] = avg.entr_mean
-                entr_sems[idx] = sqrt(avg.entr_sstd / (N*(N-1)))
-                corr_means[:, idx] .= avg.corr_mean
-                corr_sems[:, idx] .= sqrt.(avg.corr_sstd / (N*(N-1)))
-                truncerrs[idx] = truncerr
-            else
-                entr_means[idx] = NaN
-                entr_sems[idx] = NaN
-                corr_means[:, idx] .= NaN
-                corr_sems[:, idx] .= NaN
-                truncerrs[idx] = NaN
-            end
+    @inbounds for idx in eachindex(averagers)
+        avg, truncerr = averagers[idx]
+        sub = subs[idx]
+        L = Ls[sub[2]]
+        N = 10 * L
+
+        if avg.accept
+            entr_means[sub] = avg.entr_mean
+            entr_sems[sub] = sqrt(avg.entr_sstd / (N*(N-1)))
+            corr_means[1:L, sub] .= avg.corr_mean
+            corr_sems[1:L, sub] .= sqrt.(avg.corr_sstd / (N*(N-1)))
+            truncerrs[sub] = truncerr
+        else
+            entr_means[sub] = NaN
+            entr_sems[sub] = NaN
+            corr_means[1:L, sub] .= NaN
+            corr_sems[1:L, sub] .= NaN
+            truncerrs[sub] = NaN
         end
+    end
 
-        println("L=$L done with $N samples.")
-        averagers = nothing  # free memory
+    averagers = nothing  # free memory
 
-        h5open("data/nhcnot_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "r+") do file
-            grpL = create_group(file, "L=$L")
-            write(grpL, "entr_means", entr_means)
-            write(grpL, "entr_sems", entr_sems)
-            write(grpL, "corr_means", corr_means)
-            write(grpL, "corr_sems", corr_sems)
-            write(grpL, "truncerrs", truncerrs)
-        end
-    end   
+    h5open("data/nhcnot_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x1.h5", "r+") do file
+        grp = create_group(file, "results")
+        dset1 = create_dataset(grp, "entr_means", datatype(type), dataspace(nprob,  nL))
+        write(dset1, entr_means)
+
+        dset2 = create_dataset(grp, "entr_sems", datatype(type), dataspace(nprob, nL))
+        write(dset2, entr_sems)
+
+        dset3 = create_dataset(grp, "corr_means", datatype(type), dataspace(L2, nprob, nL))
+        write(dset3, corr_means)
+
+        dset4 = create_dataset(grp, "corr_sems", datatype(type), dataspace(L2, nprob, nL))
+        write(dset4, corr_sems)
+
+        dset5 = create_dataset(grp, "truncerrs", datatype(type), dataspace(nprob, nL))
+        write(dset5, truncerrs)
+    end
 end

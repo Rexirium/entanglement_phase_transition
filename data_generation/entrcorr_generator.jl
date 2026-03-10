@@ -27,16 +27,18 @@ end
 
 const nprob = 21
 const neta = 20
+const L1, dL, L2 = 4, 2, 18
 const ps = LinRange{type}(0.0, 1.0, nprob)
 const ηs = LinRange{type}(0.0, 1.0, neta)
-const param = [(p, η) for η in ηs for p in ps]
+const Ls = L1:dL:L2
+const param = [(p, η, L) for L in Ls for η in ηs for p in ps]
 
 @everywhere begin
     const params = $param
-    function calculation_multi_wrapper(lsize, idx)
-        p, η = params[idx]
+    function calculation_multi_wrapper(idx)
+        prob, eta, lsize = params[idx]
         res = EntrCorrResults{type}(lsize ÷ 2, lsize; n=1, op="Sz", nsamp=N)
-        calculation_mean_multi(lsize, 4lsize, p, η, res; cutoff=cutoff)
+        calculation_mean_multi(lsize, 4lsize, prob, eta, res; cutoff=cutoff)
 
         entr_mean = mean(res.entropies)
         entr_sem = stdm(res.entropies, entr_mean) / sqrt(N)
@@ -64,7 +66,7 @@ let
     end
     
     for L in Ls
-        results = pmap(idx -> calculation_multi_wrapper(L, idx), 1:nparam)
+        results = pmap(calculation_multi_wrapper, 1:nparam)
 
         entr_means  = Matrix{type}(undef, nprob, neta)
         entr_sems   = Matrix{type}(undef, nprob, neta)
