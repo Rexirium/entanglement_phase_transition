@@ -72,26 +72,34 @@ let
     corr_sems   = zeros(type, L, nprob, neta, nL)
     truncerrs   = Array{type, 3}(undef, nprob, neta, nL)
 
-       @inbounds for idx in eachindex(subs)
-            res = results[idx]
-            sub = subs[idx]
-            entr_means[sub] = res.entr_mean
-            entr_sems[sub] = res.entr_sem
-            corr_means[:, sub] = res.corr_mean
-            corr_sems[:, sub] = res.corr_sem
-        end
+    @inbounds for idx in eachindex(subs)
+        res = results[idx]
+        sub = subs[idx]
 
-        println("L=$L done with $N samples.")
-        results = nothing  # free memory
+        entr_means[sub] = res.entr_mean
+        entr_sems[sub] = res.entr_sem
+        corr_means[:, sub] .= res.corr_mean
+        corr_sems[:, sub] .= res.corr_sem
+    end
 
-        h5open("data/nh_entrcorr_calc_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
-            grpL = create_group(file, "L=$L")
-            grpe = create_group(grpL, "entropies")
-            write(grpe, "means", entr_means)
-            write(grpe, "sems", entr_sems)
+    results = nothing  # free memory
 
-            grpc = create_group(grpL, "correlations")
-            write(grpc, "means", corr_means)
-            write(grpc, "sems", corr_sems)
-        end
+    h5open("data/nh_entrcorr_calc_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
+        grp = create_group(file, "results")
+        dset1 = create_dataset(grp, "entr_means", datatype(type), dataspace(nprob, neta, nL), 
+            chunk=(nprob, neta, 1), compress=3)
+        write(dset1, entr_means)
+
+        dset2 = create_dataset(grp, "entr_sems", datatype(type), dataspace(nprob, neta, nL), 
+            chunk=(nprob, neta, 1), compress=3)
+        write(dset2, entr_sems)
+
+        dset3 = create_dataset(grp, "corr_means", datatype(type), dataspace(L2, nprob, neta, nL), 
+            chunk=(L2, nprob, neta, 1), compress=3)
+        write(dset3, corr_means)
+
+        dset4 = create_dataset(grp, "corr_sems", datatype(type), dataspace(L2, nprob, neta, nL),
+            chunk=(L2, nprob, neta, 1), compress=3)
+        write(dset4, corr_sems)
+    end
 end

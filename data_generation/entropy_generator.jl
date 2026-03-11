@@ -27,16 +27,18 @@ end
 
 const nprob = 21
 const neta = 20
+const L1, dL, L2 = 4, 2, 18
 const ps = LinRange{type}(0.0, 1.0, nprob)
 const ηs = LinRange{type}(0.0, 1.0, neta)
-const param = [(p, η) for η in ηs for p in ps]
+const Ls = L1:dL:L2
+const param = [(p, η, L) for L in Ls for η in ηs for p in ps]
 
 @everywhere begin
     const params = $param
-    function entropy_mean_multi_wrapper(lsize, idx)
-        p, η = params[idx]
+    function entropy_mean_multi_wrapper(idx)
+        prob, eta, lsize = params[idx]
         res = EntropyResults{type}(lsize ÷ 2, lsize; n=1, nsamp=N)
-        calculation_mean_multi(lsize, 4lsize, p, η, res; cutoff=cutoff)
+        calculation_mean_multi(lsize, 4lsize, prob, eta, res; cutoff=cutoff)
 
         entr_mean = mean(res.entropies)
         entr_sem = stdm(res.entropies, entr_mean) / sqrt(N)
@@ -47,8 +49,7 @@ end
 
 let 
     # Model parameters
-    L1, dL, L2 = 4, 2, 20
-    Ls = L1:dL:L2
+    nL = length(Ls)
     nparam = length(params)
 
     h5open("data/nh_entropy_calc_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
@@ -60,21 +61,22 @@ let
         write(grp, "Ls", collect(Ls))
     end
     
-    for L in Ls
-        results = pmap(idx -> entropy_mean_multi_wrapper(L, idx), 1:nparam)
+    results = pmap(entropy_mean_multi_wrapper, 1:nparam)
 
-        data_means = reshape([r[1] for r in results], nprob, neta)
-        data_sems  = reshape([r[2] for r in results], nprob, neta)
+    data_means = reshape([r[1] for r in results], nprob, neta, nL)
+    data_sems  = reshape([r[2] for r in results], nprob, neta, nL)
 
-        println("L=$L done with $N samples.")
-        results = nothing  # free memory
+    results = nothing  # free memory
 
-        h5open("data/nh_entropy_calc_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
-            grpL = create_group(file, "L=$L")
-            write(grpL, "means", data_means)
-            write(grpL, "sems", data_sems)
-        end
-        data_means = nothing
-        data_sems = nothing
+    h5open("data/nh_entropy_calc_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r+") do file
+        grp = create_group(file, "results")
+        dset1 = create_dataset(grp, "entr_means", datatype(type), dataspace(nprob, neta, nL), 
+            chunk=(nprob, neta, 1), compress=3)
+        dset2 = create_dataset(grp, "entr_sems", datatype(type), dataspace(nprob, neta, nL), 
+            chunk=(nprob, neta, 1), compress=3)
+            
+        write(dset1, data_means)
+        write(dset2, data_sems)
     end
+
 end
