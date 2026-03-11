@@ -73,7 +73,6 @@ let
 
     averagers = pmap(entrcorr_average_wrapper, 1:nparam)
 
-
     @inbounds for idx in eachindex(1:nparam)
         avg, truncerr = averagers[idx]
         sub = subs[idx]

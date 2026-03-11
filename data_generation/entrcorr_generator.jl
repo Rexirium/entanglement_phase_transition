@@ -51,10 +51,9 @@ end
 
 let 
     # Model parameters
-    L1, dL, L2 = 4, 2, 18
-    Ls = L1:dL:L2
+    nL = length(Ls)
     nparam = length(params)
-    subs = CartesianIndices((nprob, neta))
+    subs = CartesianIndices((nprob, neta, nL))
 
     h5open("data/nh_entrcorr_calc_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "w") do file
         write(file, "datatype", string(type))
@@ -65,14 +64,13 @@ let
         write(grp, "Ls", collect(Ls))
     end
     
-    for L in Ls
-        results = pmap(calculation_multi_wrapper, 1:nparam)
+    results = pmap(calculation_multi_wrapper, 1:nparam)
 
-        entr_means  = Matrix{type}(undef, nprob, neta)
-        entr_sems   = Matrix{type}(undef, nprob, neta)
-        corr_means  = Array{type, 3}(undef, L, nprob, neta)
-        corr_sems   = Array{type, 3}(undef, L, nprob, neta)
-        truncerrs   = Matrix{type}(undef, nprob, neta)
+    entr_means  = Array{type, 3}(undef, nprob, neta, nL)
+    entr_sems   = Array{type, 3}(undef, nprob, neta, nL)
+    corr_means  = zeros(type, L, nprob, neta, nL)
+    corr_sems   = zeros(type, L, nprob, neta, nL)
+    truncerrs   = Array{type, 3}(undef, nprob, neta, nL)
 
        @inbounds for idx in eachindex(subs)
             res = results[idx]
@@ -96,5 +94,4 @@ let
             write(grpc, "means", corr_means)
             write(grpc, "sems", corr_sems)
         end
-    end
 end

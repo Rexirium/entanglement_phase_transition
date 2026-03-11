@@ -76,14 +76,14 @@ function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res:
     mps_results!(res, psi)
 end
 
-function mps_results!(res::EntropySample{T}, psi::MPS) where T<:Real
+function mps_results!(res::EntropySample, psi::MPS)
     """
     Measure the entanglement entropy and store it in `res`.
     """
     res.entropy = ent_entropy(psi, res.b, res.n)
 end
 
-function mps_results!(res::EntrCorrSample{T}, psi::MPS) where T<:Real
+function mps_results!(res::EntrCorrSample, psi::MPS)
     """
     Measure the entanglement entropy and correlation function and store them in `res`.
     """
@@ -123,14 +123,14 @@ function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, 
     end
 end
 
-function mps_results!(res::EntropyResults{T}, psi::MPS, i::Int) where T<:Real
+function mps_results!(res::EntropyResults, psi::MPS, i::Int)
     """
     Measure the entanglement entropy and store it in `res`.
     """
     res.entropies[i] = ent_entropy(psi, res.b, res.n)
 end
 
-function mps_results!(res::EntrCorrResults{T}, psi::MPS, i::Int) where T<:Real
+function mps_results!(res::EntrCorrResults, psi::MPS, i::Int)
     """
     Measure the entanglement entropy and correlation function and store them in `res`.
     """
