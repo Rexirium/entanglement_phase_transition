@@ -20,11 +20,11 @@ end
 @everywhere begin
     const type = Float64
     const cutoff = eps(type)
-    const η0 = type(0.01)
+    const η0 = type(0.05)
 end
 # define global constants for parameters
 const L1, dL, L2 = 10, 2, 40
-const nprob = 21
+const nprob = 51
 const ps = LinRange{type}(0.0, 1.0, nprob)
 const Ls = L1:dL:L2
 
@@ -38,7 +38,7 @@ const Ls = L1:dL:L2
         psi = MPS(Complex{type}, ss, "Up")
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
         # core calculation
-        threshold = 1e-8 * (ttotal * lsize)
+        threshold = 5e-7 * (ttotal * lsize)
         maxbond = 20*lsize
         truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
         

@@ -19,7 +19,7 @@ let
     type = eval(Meta.parse(type_str))
 
     nL = length(Ls)
-    L0 = 40
+    L0 = 32
     L_list = [10, 16, 20, 24, 30, 36, 40]
     Lidx = findfirst(==(L0), Ls)
     Lidcs = indexin(L_list, Ls)
@@ -56,12 +56,13 @@ let
         entr_err[s, :] .= entr_sems[nprob + 1 - s, s, Lidcs]
         truncerr[s, :] .= truncerrs[nprob + 1 - s, s, Lidcs]
 
-        if iseven(s)
+        if isodd(s)
             push!(corr_data, corr_means[1:L0, nprob + 1 - s, s])
             push!(corr_err, corr_sems[1:L0, nprob + 1 - s, s])
             push!(points, (pathx[s], pathy[s]))
         end
     end
+    npt = length(points)
 
     # calculate the entropy indices at different p and η
     indices = zeros(type, nprob, neta)
@@ -83,11 +84,15 @@ let
 
     ############## Visualize ##################
     #=========================================#
-    set_theme!(Axis = (
+    sizetheme = Theme(Axis = (
         titlesize=18, 
         xlabelsize=18, 
         ylabelsize=18
     ))
+
+    fontsizetheme = merge(sizetheme, theme_latexfonts())
+
+    set_theme!(fontsizetheme)
 
     fig = Figure(backgroundcolor = RGBf(0.98, 0.98, 0.98),
         size=(800, 800))
@@ -99,7 +104,7 @@ let
         ylabel=L"\eta", 
         xticks=(0.0:0.25:1.0), 
         yticks=(0.0:0.3:0.9), 
-        title="entropy scale index", 
+        title="Entropy scale index", 
     )
 
     hm = heatmap!(ax1, ps, ηs, indices, 
@@ -107,11 +112,13 @@ let
         colorrange=(-0.1, 0.7)
     )
     lines!(ax1, pathx, pathy, linewidth = 2, color=:red)
-    Colorbar(ga[1, 2], hm)
+    scatter!(ax1, points, color=1:npt, marker=:diamond, markersize=12, colormap=:tab10)
+    Colorbar(ga[1, 2], hm, ticks=0.0:0.2:0.8)
 
     # error line for entropy alone the path in the heatmap
     ax2 = Axis(fig[1, 2], 
-        xlabel=L"p",  
+        xlabel=L"p", 
+        ylabel=L"S_\mathrm{vN}", 
         title="Entropy changes",
     )
 
@@ -123,29 +130,35 @@ let
     axislegend(ax2)
 
     # total truncation error
+    cg = cgrad(:viridis, nL_list, categorical=true)
     ax3 = Axis(fig[2, 1], 
         xlabel=L"p", 
+        ylabel=L"\epsilon", 
         limits=(nothing, nothing , 1e-18, 1e-1), 
         yscale = log10,
         title="Total truncation error",
     )
     for (i, l) in enumerate(L_list)
-        lines!(ax3, pathx, truncerr[:, i], linewidth=2, label=L"L = %$(l)")
+        lines!(ax3, pathx, truncerr[:, i], color = cg[i], label=L"L = %$(l)")
     end
     axislegend(ax3)
 
     ax4 = Axis(fig[2, 2], 
-        xlabel=L"r",
-        title=L"Correlation function at $L = %$(L0)$"     
+        xlabel=L"r", 
+        ylabel=L"C_z(r)", 
+        title="Correlation function at L = $L0", 
+        titlefont=:bold    
     )
 
     for (i, pt) in enumerate(points)
-        lines!(ax4, 0 : L0-1, corr_data[i], linewidth=1.5, label=L"p, \eta = %$(pt) ")
+        lines!(ax4, 0 : L0-1, corr_data[i], linewidth=1.5, label=L"p = %$(pt[1]),\; \eta = %$(pt[2]) ")
         errorbars!(ax4, 0 : L0-1, corr_data[i], corr_err[i], 
             whiskerwidth=10, linewidth=1)
     end
-
     axislegend(ax4)
     
-    save("figures/vis.png", fig)
+    rowgap!(fig.layout, 5)
+    colgap!(fig.layout, 5)
+    fig
+    #save("figures/nh_visual.png", fig)
 end
