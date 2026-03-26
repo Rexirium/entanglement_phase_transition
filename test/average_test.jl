@@ -1,6 +1,6 @@
 using MKL
 using Statistics
-using Plots, LaTeXStrings
+#using Plots, LaTeXStrings
 #MKL.set_num_threads(1)
 
 include("../src/time_evolution.jl")
@@ -49,9 +49,9 @@ let
     println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_sem")
     println("Truncation Error: ", truncerr)
     println("Truncation Error Threshold: ", (1e-8)*(T*L))
-    
+    #=
     plot(0:(L-1), corr_mean, yerror=corr_sem;
         lw = 1.5, framestyle=:box, xlabel=L"r", ylabel=L"C(r)", label="Correlation Function", 
         title=latexstring("L=$L, p=$p, η=$η"))
-    
+    =#
 end

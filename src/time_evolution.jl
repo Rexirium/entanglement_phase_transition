@@ -1,7 +1,8 @@
-using LinearAlgebra, SparseArrays
 using ITensors, ITensorMPS
-using StaticArrays
-using Random
+using LinearAlgebra: diagm, Diagonal
+using StaticArrays: SVector
+using Random: shuffle
+using SparseArrays: sparse, blockdiag
 
 include("entanglement.jl")
 include("correlation.jl")
