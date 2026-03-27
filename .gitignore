@@ -1,6 +1,6 @@
 .vscode/
 .github/
-Manifest.toml
+*.toml
 *.sh
 *.png
 *.out
