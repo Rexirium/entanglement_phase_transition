@@ -1,6 +1,7 @@
+using Distributed
+using SlurmClusterManager
 using MKL
 using HDF5
-using Distributed, SlurmClusterManager
 
 # add worker processes if none exist (use CPU-1 workers to avoid oversubscription)
 if nprocs() == 1
@@ -13,9 +14,14 @@ end
     MKL.set_num_threads(1)
     using Statistics
     # include the entropy calculation code on all processes
-    include("../src/simulation.jl")
+    using ITensors, ITensorMPS
     ITensors.BLAS.set_num_threads(1)
     ITensors.Strided.set_num_threads(1)
+
+    if !isdefined(Main, :RandomUnitary)
+        include("../src/RandomUnitary.jl")
+        using .RandomUnitary
+    end
 end
 
 @everywhere begin 
