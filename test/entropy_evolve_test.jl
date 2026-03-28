@@ -1,13 +1,14 @@
 using MKL
-using Statistics
-using Plots, LaTeXStrings
-#MKL.set_num_threads(1)
-
-include("../src/time_evolution.jl")
-
-MKL.set_num_threads(1)
+using ITensors, ITensorMPS
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
+using Statistics
+using CairoMakie
+
+if !isdefined(Main, :RandomUnitary)
+    include("../src/RandomUnitary.jl")
+    using .RandomUnitary
+end
 
 let 
     L = 16
@@ -21,7 +22,7 @@ let
     psi = MPS(ComplexF64, ss, "Up")
 
     obs = EntropyObserver{Float64}(b; n=1)
-    Dm = 20*L
+    Dm = 25*L
     threshold = 1e-8 * (T*L)
     @timev mps_evolve!(psi, T, dent, obs; cutoff=cutoff, maxdim=Dm)
     tsteps = length(obs.entropies) - 1
@@ -37,15 +38,37 @@ let
         println("Truncation Error Threshold: ", threshold)
     end
 
-    pe = plot(0:T, obs.entropies, lw = 1.5, framestyle=:box, xlabel=L"t", ylabel="entropy", 
-        title=latexstring("L = $L, p=$p, η=$η"), label=L"S_\mathrm{vN}(t)")
+    # 1. Initialize Figure with specified size
+    fig = Figure(size = (600, 800))
 
-    pbond = plot(0:tsteps, obs.maxbonds; lw =2, yaxis=L"D_\mathrm{max}", 
-        label="max bond", framestyle=:box)
-    #hline!([Dm], lw=2, label="max bond limit")
+    # 2. Top Plot: Entropies
+    ax_entropy = Axis(fig[1, 1],
+        xlabel = L"t",
+        ylabel = L"S",
+        title = L"L = %$L, p= %$p, \eta= %$η"
+    )
 
-    perr = plot(0:tsteps, obs.truncerrs; lw = 1.5, xaxis=L"t", label="truncation error", framestyle=:box)
-    #hline!([threshold], lw=1.5, l=:dash, label="trunc err ceiling")
-    
-    plot(pe, pbond, layout = (2,1), size=(600,800), left_margin=4Plots.mm)
+    lines!(ax_entropy, 0:T, obs.entropies, 
+        linewidth = 1.5, 
+        label = L"S_\mathrm{vN}(t)"
+    )
+    axislegend(ax_entropy, position = :rt) # rt = right-top
+
+    # 3. Bottom Plot: Max Bonds
+    ax_bond = Axis(fig[2, 1],
+        ylabel = L"D_\mathrm{max}",
+        xlabel = L"t", # Standard practice to add xlabel to the bottom plot
+    )
+
+    lines!(ax_bond, 0:tsteps, obs.maxbonds, 
+        linewidth = 2, 
+        label = "max bond"
+    )
+    axislegend(ax_bond, position = :rt)
+
+    # Optional: Tighten the layout to handle margins automatically
+    colgap!(fig.layout, 10)
+    rowgap!(fig.layout, 10)
+
+    display(fig)
 end

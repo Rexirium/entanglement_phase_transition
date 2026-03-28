@@ -1,10 +1,13 @@
 using MKL
 using Statistics
-using Plots, LaTeXStrings
-MKL.set_num_threads(1)
-include("../src/simulation.jl")
+using ITensors, ITensorMPS
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
+
+if !isdefined(Main, :RandomUnitary)
+    include("../src/RandomUnitary.jl")
+    using .RandomUnitary
+end
 
 let 
     L, T = 12, 48
@@ -21,6 +24,11 @@ let
     corr_sem = stdm(res.corrs, corr_mean; dims=2) / sqrt(N)
     println("Mean entropy: $entr_mean ± $entr_sem")
 
-    dist = 0:(L-1)
-    plot(dist, corr_mean[:], yerror=corr_sem[:], xlabel=L"r", ylabel=L"C(r)", title="Mean Correlation Function", legend=false)
+    fig = Figure()
+    dist = 0 : L - 1
+    ax = Axis(fig[1,1])
+
+    lines!(ax, dist, corr_mean)
+    errorbars!(ax, dist, corr_mean, corr_sem; whiskerwidth=10)
+    fig
 end

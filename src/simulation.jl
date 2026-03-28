@@ -9,31 +9,6 @@ end
 
 abstract type AbstractResult end
 
-mutable struct EntropySample{T<:Real} <: AbstractResult
-    """
-    Store the entanglement entropy result after time evolution.
-    """
-    type::DataType
-    b::Int
-    n::Real
-    entropy::T
-    EntropySample{T}(b::Int; n = 1) where T<:Real = new{T}(T, b, n, zero(T))
-end
-
-mutable struct EntrCorrSample{lsize, T<:Real} <: AbstractResult
-    """
-    Store the entanglement entropy and correlation function results after time evolution.
-    """
-    type::DataType
-    b::Int
-    n::Real
-    op::String
-    entropy::T
-    corrs::Vector{T}
-    EntrCorrSample{T}(b::Int, lsize::Int; n = 1, op = "Sz") where T<:Real = 
-        new{lsize, T}(T, b, n, op, zero(T), Vector{T}(undef, lsize))
-end
-
 mutable struct EntropyResults{T<:Real} <: AbstractResult
     """
     Store the values of entanglement entropy over multiple samples after time evolution.
@@ -60,35 +35,6 @@ mutable struct EntrCorrResults{lsize, T<:Real} <: AbstractResult
     corrs::Matrix{T}
     EntrCorrResults{T}(b::Int, lsize::Int; n=1, op="Sz", nsamp::Int=100) where T<:Real = 
         new{lsize, T}(T, b, n, op, nsamp, Vector{T}(undef, nsamp), Matrix{T}(undef, lsize, nsamp))
-end
-
-function calculation_sample(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
-    cutoff::Real=1e-14, maxdim::Int=1<<(lsize ÷ 2))
-    """
-    Calculate the final properties of the MPS after time evolution. 
-    """
-    dent = NHDisentangler{res.type}(prob, eta)
-    ss = siteinds("S=1/2", lsize)
-
-    psi = MPS(Complex{res.type}, ss, "Up")
-    mps_evolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
-
-    mps_results!(res, psi)
-end
-
-function mps_results!(res::EntropySample, psi::MPS)
-    """
-    Measure the entanglement entropy and store it in `res`.
-    """
-    res.entropy = ent_entropy(psi, res.b, res.n)
-end
-
-function mps_results!(res::EntrCorrSample, psi::MPS)
-    """
-    Measure the entanglement entropy and correlation function and store them in `res`.
-    """
-    res.entropy = ent_entropy(psi, res.b, res.n)
-    res.corrs .= correlation_vec(psi, res.op, res.op)
 end
 
 function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 

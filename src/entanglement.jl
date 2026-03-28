@@ -136,13 +136,6 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.Tensor
     return ps[ps .> 0.0]  # remove zero probabilities
 end
 
-function von_neumann_entropy(psi::MPS, b::Int)
-    """
-    Calculate the von Neumann entropy of the MPS `psi` biparted after site `b`.
-    """
-    return ent_entropy(psi, b, 1)
-end
-
 function zeroth_entropy(psi::MPS, b::Int)
     """
     Calculate the zeroth order Renyi entropy of the MPS `psi` biparted after site `b`.
@@ -153,32 +146,12 @@ function zeroth_entropy(psi::MPS, b::Int)
     return log2(linkdim(psi, b))
 end
 
-function renyi_entropy(psi::MPS, b::Int, n::Real)
-    """
-    Calculate the n-th order Renyi entropy of the MPS `psi` biparted after site `b`.
-    """
-    return ent_entropy(psi, b, n)
-end
-
-function von_neumann_entropy(psi::MPS, xs::Vector{<:Int})
-    """
-    Calculate the von Neumann entropy of a region of sites `xs` from other sites.
-    """
-    return ent_entropy(psi, xs, 1)
-end
 
 function zeroth_entropy(psi::MPS, xs::Vector{<:Int})
     """
     Calculate the zeroth order Renyi entropy of a region of sites `xs` from other sites.
     """
     return ent_entropy(psi, xs, 0)
-end
-
-function renyi_entropy(psi::MPS, xs::Vector{<:Int}, n::Real)
-    """
-    Calculate the n-th order Renyi entropy of a region of sites `xs` from other sites.
-    """
-    return ent_entropy(psi, xs, n)
 end
 
 function mutual_information(psi::MPS, as::Vector{<:Int}, bs::Vector{<:Int}, n::Real=1)

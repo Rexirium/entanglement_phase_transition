@@ -1,7 +1,7 @@
 using MKL
 using LinearAlgebra, NDTensors
 using Random
-using Plots, LaTeXStrings
+using CairoMakie
 
 X = [0 1; 1 0]
 Y = [0 -im; im 0]
@@ -66,8 +66,24 @@ let
         end
     end
 
-    scatter(points[:, 1], points[:, 2], points[:, 3], markersize=2,
-        xlabel=L"x", ylabel=L"y", zlabel=L"z", size=(800,600))
-    plot!(sphere=(0, 1), alpha=0.2, legend=false)
-    plot!(xs, ys, zs, lw=2, lc=:red, leg=false)
+    fig = Figure()
+    ax = Axis3(fig[1,1],
+        xlabel = L"x", 
+        ylabel = L"y", 
+        zlabel = L"z",
+        aspect = :data
+    )
+    scatter!(ax, points[:, 1], points[:, 2], points[:, 3], 
+        markersize = 2, color = :black)
+    
+    lines!(ax, xs, ys, zs, 
+        linewidth = 1, 
+        color = :red
+    )
+
+    mesh!(ax, Sphere(Point3f(0), 1.0), 
+        color = (:blue, 0.02), # Color and Alpha combined
+        transparency = true    # Necessary for alpha to render correctly in 3D
+    )
+    display(fig)
 end
