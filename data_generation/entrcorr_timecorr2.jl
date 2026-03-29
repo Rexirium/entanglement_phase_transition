@@ -29,7 +29,7 @@ end
     const η0 = type(0.02)
 end
 # define global constants for parameters
-const L1, dL, L2 = 6, 2, 20
+const L1, dL, L2 = 10, 2, 40
 const nprob = 51
 const ps = LinRange{type}(0.0, 1.0, nprob)
 const Ls = L1:dL:L2
