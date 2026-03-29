@@ -41,6 +41,7 @@ mutable struct EntrCorrAverager{lsize, T<:Real} <: AbstractObserver
     n::Real
     op::String
     entr_mean::T
+    entr_logm::T
     entr_sstd::T
     corr_mean::SVector{lsize, T}
     corr_sstd::SVector{lsize, T}
@@ -86,8 +87,10 @@ function mps_monitor!(obs::EntrCorrAverager{lsize}, psi::MPS, t::Int, truncerr::
         corr = correlation_vec(psi, obs.op, obs.op)
 
         delta_entr = entr - obs.entr_mean
+        delta_entrlog = log(entr) - obs.entr_logm
         delta_corr = corr - obs.corr_mean
         obs.entr_mean += delta_entr / (t - 2 * lsize)
+        obs.entr_logm += delta_entrlog / (t - 2 * lsize)
         obs.corr_mean += delta_corr / (t - 2 * lsize)
         obs.entr_sstd += delta_entr * (entr - obs.entr_mean)
         obs.corr_sstd += delta_corr .* (corr - obs.corr_mean)

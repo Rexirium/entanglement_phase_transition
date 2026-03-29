@@ -253,7 +253,7 @@ function mps_timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, dent::Abstract
     cutoff::Real=1e-14, maxdim::Int=1<<(length(psi) ÷ 2), etol=nothing)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
-    and a disentangler `dent` applied to each site, with properties assigned in `obs` stored for each time step. (inplace version)
+    and a disentangler `dent` applied to each site, with properties. (inplace version)
     """
     sites = siteinds(psi)
     lsize = length(sites)

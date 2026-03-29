@@ -26,7 +26,7 @@ end
 @everywhere begin
     const type = Float64
     const cutoff = eps(type)
-    const η0 = type(0.05)
+    const η0 = type(0.02)
 end
 # define global constants for parameters
 const L1, dL, L2 = 6, 2, 20
@@ -72,6 +72,7 @@ let
     averagers = pmap(pl -> entrcorr_average_wrapper(pl...), params)
 
     entr_means = Matrix{type}(undef, nprob, nL)
+    entr_logms = Matrix{type}(undef, nprob, nL)
     entr_sems = Matrix{type}(undef, nprob, nL)
     corr_means = zeros(type, L2, nprob, nL)
     corr_sems = zeros(type, L2, nprob, nL)
@@ -86,6 +87,7 @@ let
 
         if avg.accept
             entr_means[sub] = avg.entr_mean
+            entr_logms[sub] = exp(avg.entr_logm)
             entr_sems[sub] = sqrt(avg.entr_sstd / (N*(N-1)))
             corr_means[1:L, sub] .= avg.corr_mean
             corr_sems[1:L, sub] .= sqrt.(avg.corr_sstd / (N*(N-1)))
@@ -93,6 +95,7 @@ let
             truncerrs[sub] = truncerr
         else
             entr_means[sub] = NaN
+            entr_logms[sub] = NaN
             entr_sems[sub] = NaN
             corr_means[1:L, sub] .= NaN
             corr_sems[1:L, sub] .= NaN
@@ -107,6 +110,9 @@ let
         grp = create_group(file, "results")
         dset1 = create_dataset(grp, "entr_means", datatype(type), dataspace(nprob,  nL))
         write(dset1, entr_means)
+
+        dsetl = create_dataset(grp, "entr_logms", datatype(type), dataspace(nprob, nL))
+        write(dsetl, entr_logms)
 
         dset2 = create_dataset(grp, "entr_sems", datatype(type), dataspace(nprob, nL))
         write(dset2, entr_sems)
