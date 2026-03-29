@@ -77,7 +77,7 @@ let
     corr_means = zeros(type, L2, nprob, nL)
     corr_sems = zeros(type, L2, nprob, nL)
     timecorrs = zeros(type, 4L2, nprob, nL)
-    truncerrs = Vector{type}(undef, nprob)
+    truncerrs = Matrix{type}(undef, nprob, nL)
 
     @inbounds for idx in eachindex(averagers)
         avg, tcorr, truncerr = averagers[idx]
