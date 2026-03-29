@@ -1,11 +1,14 @@
 using MKL
 using HDF5
 using ITensors, ITensorMPS
-MKL.set_num_threads(1)
+# MKL.set_num_threads(1)
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 
-include("../src/time_evolution.jl")
+if !isdefined(Main, :RandomUnitary)
+    include("../src/RandomUnitary.jl")
+    using .RandomUnitary
+end
 
 let 
     # Parameters

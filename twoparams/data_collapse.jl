@@ -1,7 +1,10 @@
 using Interpolations
 using Optim
-using Base.Threads
-include("../src/simulation.jl")
+
+if !isdefined(Main, :RandomUnitary)
+    include("../src/RandomUnitary.jl")
+    using .RandomUnitary
+end
 
 function object_function(pc::Real, nu::Real, eta::Real, data, Ls, ps; numsamp = 100)
     """
@@ -35,7 +38,7 @@ function data_collapse(datas, Ls, ps, ηs, p0=0.5, nu0=1.0; numsamp=100)
     """
     neta = length(ηs)
     critical_params = zeros(neta, 2)
-    @threads for j in 1:neta
+    Threads.@threads for j in 1:neta
         data = datas[:,j,:]
         η = ηs[j]
         obj(pc_nu) = object_function(pc_nu[1], pc_nu[2], η, data, Ls, ps; numsamp=numsamp)
