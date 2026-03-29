@@ -17,7 +17,8 @@ include("simulation.jl")
 
 export ent_entropy, negativity, concurrence, zeroth_entropy, mutual_information, correlation, correlation_vec
 export AbstractObserver, EntropyObserver, EntropyAverager, EntrCorrObserver, EntrCorrAverager, mps_monitor!
-export AbstractDisentangler, NHDisentangler, NHCNOTDisentangler, disentangle!, mps_evolve!
+export AbstractDisentangler, NHDisentangler, NHCNOTDisentangler, disentangle!, mps_evolve!, mps_timecorrelation!
 export CalcResult, AbstractResult, EntropyResults, EntrCorrSample, mps_results!, calculation_mean, calculation_mean_multi
 
 end # RandomUnitary
+

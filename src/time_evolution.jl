@@ -67,7 +67,7 @@ function proj_measure!(psi::MPS, loc::Int)
     projUp = op("ProjUp", s)
     orthogonalize!(psi, loc)
     # Calculate the probability of measuring "Up"
-    probUp = inner(prime(psi[loc], tags="Site"), projUp, psi[loc]).re
+    probUp = real(inner(prime(psi[loc], tags="Site"), projUp, psi[loc]))
     samp = rand()
     if samp < probUp
         apply1!(projUp, psi, loc)
@@ -88,7 +88,7 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{T, T}=(1.0, 1.0)) where T
     proj = op("ProjUp", s)
     orthogonalize!(psi, loc)
     # Calculate the probability of measuring "Up"
-    probUp = inner(prime(psi[loc], tags="Site"), proj, psi[loc]).re
+    probUp = real(inner(prime(psi[loc], tags="Site"), proj, psi[loc]))
     samp = rand(T)
     # generate a random variable from a Gaussian distribution
     x = samp < probUp ? λ + Δ*randn(T) : -λ + Δ*randn(T)
@@ -103,8 +103,7 @@ function apply1!(G1::ITensor, psi::MPS, loc::Int)
     Apply the gate `G1` to the MPS `psi` at site `loc` inplace.
     """
     orthogonalize!(psi, loc)
-    A = noprime(psi[loc] * G1)
-    psi[loc] = A
+    psi[loc] = noprime(psi[loc] * G1)
 end
 
 function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))
@@ -141,6 +140,21 @@ function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int
     psi[j2] *= S23
     set_ortho_lims!(psi, j2:j2)
     return spec12.truncerr + spec23.truncerr
+end
+
+function myinner1(x::MPS, o::ITensor, y::MPS, loc::Int)
+    """Compute the inner product ⟨ x | o | y ⟩ for MPS `x` and `y`, and operator `o`."""
+    orthogonalize!(x, loc)
+    orthogonalize!(y, loc)
+    replaceinds!(x[loc], inds(x[loc], tags="Link"), inds(y[loc], tags="Link"))
+    return real(inner(prime(x[loc], tags="Site"), o, y[loc]))
+end
+
+function myinner2(x::MPS, o::ITensor, y::MPS, loc::Int)
+    """Compute the inner product ⟨ x | o | y ⟩ for MPS `x` and `y`, and operator `o`."""
+    orthogonalize!(y, loc)
+    apply1!(o, y, loc)
+    return real(inner(x, y))
 end
 
 function disentangle!(psi::MPS, dent::NHDisentangler{Tp}) where Tp<:Real
@@ -235,16 +249,58 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::Abs
     return truncerr
 end
 
-#=
-let 
-    L, T = 10, 100
-    ss = siteinds("S=1/2", L)
-    psi = randomMPS(ComplexF64, ss; linkdims=8)
+function mps_timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, dent::AbstractDisentangler, ops::Tuple, obs::AbstractObserver; 
+    cutoff::Real=1e-14, maxdim::Int=1<<(length(psi) ÷ 2))
+    """
+    Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
+    and a disentangler `dent` applied to each site, with properties assigned in `obs` stored for each time step. (inplace version)
+    """
+    sites = siteinds(psi)
+    lsize = length(sites)
+    T = promote_itensor_eltype(psi)
+    
+    truncerr = zero(real(T))
+    mps_monitor!(obs, psi, 0, truncerr)
+    @inbounds for t in 1 : tstart
+        # Apply random unitary operators to pairs of sites
+        for j in (iseven(t) + 1):2:lsize-1
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
+            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
+            truncerr += err
+        end
+        # Apply non-Hermitian disentanglers
+        truncerr += disentangle!(psi, dent)
+        # Monitor the MPS and truncation error
+        mps_monitor!(obs, psi, t, truncerr)
+    end
 
-    obs = EntrCorrAverager{Float64}(L÷2, L; n=1, op="Sz")   
+    op1 = op(ops[1], sites[ops[2]])
+    op2 = op(ops[3], sites[ops[4]])
 
-    @time mps_monitor!(obs, psi, 30, 0.0)
-    @show obs.entr_mean
+    phi = copy(psi)
+    apply1!(op2, phi, ops[4])
+    timecorrs = zeros(real(T), ttotal - tstart)
+    @inbounds for t in tstart + 1 : ttotal
+        # Compute the time correlation function ⟨ ops1_i(t) ops2_j(0) ⟩
+        orthogonalize!(psi, ops[2])
+        apply1!(op1, phi, ops[2])
+        timecorrs[t - tstart] = real(inner(phi, psi))
+        apply1!(op1, phi, ops[2]) # restore phi to the state
+        # Apply random unitary operators to pairs of sites
+        for j in (iseven(t) + 1):2:lsize-1
+            U = op("RdU", sites[j], sites[j+1]; eltype=T)
+            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
+            apply2!(U, phi, j; cutoff=cutoff, maxdim=maxdim)
+            truncerr += err
+        end
+        # Apply non-Hermitian disentanglers
+        truncerr += disentangle!(psi, dent)
+        disentangle!(phi, dent)
+        # Monitor the MPS and truncation error
+        mps_monitor!(obs, psi, t, truncerr)
+        
+    end
+    return timecorrs, truncerr
 end
-=#
+
 

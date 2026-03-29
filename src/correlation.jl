@@ -1,9 +1,8 @@
 function correlation(psi::MPS, ops1::String, ops2::String, i::Int, j::Int)
     """Compute the correlation function ⟨ ops1_i ops2_j ⟩ for MPS psi."""
     left, right = minmax(i, j)
-    idxs = siteinds(psi)[[left, right]]
-    op1 = op(ops1, idxs[1])
-    op2 = op(ops2, idxs[2])
+    op1 = op(ops1, siteind(psi, left))
+    op2 = op(ops2, siteind(psi, right))
     (left ≤ 0 || right > length(psi)) && error("The sites do not exist!")
     orthogonalize!(psi, left) # proper canonize the MPS s.t left environment is identity
     # Only contract tensors between left and right operators (inclusive)
