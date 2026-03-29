@@ -35,12 +35,11 @@ mutable struct EntrCorrResults{lsize, T<:Real} <: AbstractResult
         new{lsize, T}(T, b, n, op, nsamp, Vector{T}(undef, nsamp), Matrix{T}(undef, lsize, nsamp))
 end
 
-function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
+function calculation_mean(lsize::Int, ttotal::Int, dent::AbstractDisentangler, res::AbstractResult; 
     cutoff::Real=1e-14, maxdim::Int=1<<(lsize ÷ 2))
     """
     Calculate the entanglement entropies over multiple samples. (non-Hermitian case)
     """
-    dent = NHDisentangler{res.type}(prob, eta)
     ss = siteinds("S=1/2", lsize)
     
     for i in 1:res.nsamp 
@@ -51,12 +50,11 @@ function calculation_mean(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::A
     end
 end
 
-function calculation_mean_multi(lsize::Int, ttotal::Int, prob::Real, eta::Real, res::AbstractResult; 
+function calculation_mean_multi(lsize::Int, ttotal::Int, dent::AbstractDisentangler, res::AbstractResult; 
     cutoff::Real=1e-14, maxdim::Int=1<<(lsize ÷ 2))
     """
     Calculate the entanglement entropies over multiple samples using multithreads. (non-Hermitian case)
     """
-    dent = NHDisentangler{res.type}(prob, eta)
 
     Threads.@threads for i in 1:res.nsamp 
         ss = siteinds("S=1/2", lsize)

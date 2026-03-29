@@ -43,8 +43,9 @@ const param = [(p, η, L) for L in Ls for η in ηs for p in ps]
     const params = $param
     function entropy_mean_multi_wrapper(idx)
         prob, eta, lsize = params[idx]
+        dent = NHDisentangler{type}(prob, eta)
         res = EntropyResults{type}(lsize ÷ 2, lsize; n=1, nsamp=N)
-        calculation_mean_multi(lsize, 4lsize, prob, eta, res; cutoff=cutoff)
+        calculation_mean_multi(lsize, 4lsize, prob, dent; cutoff=cutoff)
 
         entr_mean = mean(res.entropies)
         entr_sem = stdm(res.entropies, entr_mean) / sqrt(N)

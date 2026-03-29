@@ -15,8 +15,9 @@ let
     p, η = 0.5, 0.5 
     N = length(ARGS) == 0 ? 100 : parse(Int, ARGS[1])
 
+    dent = NHDisentangler{Float64}(p, η)
     res = EntrCorrResults{Float64}(b, L; n=1, op="Sz", nsamp=N)
-    @timev calculation_mean_multi(L, T, p, η, res; cutoff=eps(Float64))
+    @timev calculation_mean_multi(L, T, dent, res; cutoff=eps(Float64))
     entr_mean = mean(res.entropies)
     entr_sem = stdm(res.entropies, entr) / sqrt(N)
     
