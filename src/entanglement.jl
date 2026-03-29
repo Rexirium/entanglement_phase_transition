@@ -1,5 +1,3 @@
-using NDTensors
-
 function ent_entropy(ps::NDTensors.Tensor, n::Real=1)::Real
     """
     Calculate the n-th order Renyi entropy from the eigenvalues ps.

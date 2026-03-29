@@ -1,5 +1,3 @@
-include("time_evolution.jl")
-
 struct CalcResult{T<:Real}
     entr_mean::T
     entr_sem::T
