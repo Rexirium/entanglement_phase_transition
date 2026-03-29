@@ -29,11 +29,12 @@ mutable struct EntropyAverager{lsize, T<:Real} <: AbstractObserver
     b::Int
     n::Real
     entr_mean::T
+    entr_logm::T
     entr_sstd::T
     accept::Bool
 
     EntropyAverager{T}(b::Int, lsize::Int; n::Real=1) where T<:Real = 
-        new{lsize, T}(b, n, zero(T), zero(T), true)
+        new{lsize, T}(b, n, zero(T), zero(T), zero(T), true)
 end
 
 mutable struct EntrCorrAverager{lsize, T<:Real} <: AbstractObserver
@@ -48,7 +49,7 @@ mutable struct EntrCorrAverager{lsize, T<:Real} <: AbstractObserver
     accept::Bool
 
     EntrCorrAverager{T}(b::Int, lsize::Int; n::Real=1, op::String="Sz") where T<:Real = 
-        new{lsize, T}(b, n, op, zero(T), zero(T), SVector{lsize}(zeros(T, lsize)), 
+        new{lsize, T}(b, n, op, zero(T), zero(T), zero(T), SVector{lsize}(zeros(T, lsize)), 
         SVector{lsize}(zeros(T, lsize)), true)
 end
 
@@ -72,7 +73,10 @@ function mps_monitor!(obs::EntropyAverager{lsize}, psi::MPS, t::Int, truncerr::R
     if t > 2 * lsize
         entr = ent_entropy(psi, obs.b, obs.n)
         delta = entr - obs.entr_mean
+        delta_log = log(entr) - obs.entr_logm
+
         obs.entr_mean += delta / (t - 2 * lsize)
+        obs.entr_logm += delta_log / (t - 2 * lsize)
         obs.entr_sstd += delta * (entr - obs.entr_mean)
     end
 end
@@ -87,10 +91,11 @@ function mps_monitor!(obs::EntrCorrAverager{lsize}, psi::MPS, t::Int, truncerr::
         corr = correlation_vec(psi, obs.op, obs.op)
 
         delta_entr = entr - obs.entr_mean
-        delta_entrlog = log(entr) - obs.entr_logm
+        delta_elog = log(entr) - obs.entr_logm
         delta_corr = corr - obs.corr_mean
+
         obs.entr_mean += delta_entr / (t - 2 * lsize)
-        obs.entr_logm += delta_entrlog / (t - 2 * lsize)
+        obs.entr_logm += delta_elog / (t - 2 * lsize)
         obs.corr_mean += delta_corr / (t - 2 * lsize)
         obs.entr_sstd += delta_entr * (entr - obs.entr_mean)
         obs.corr_sstd += delta_corr .* (corr - obs.corr_mean)
