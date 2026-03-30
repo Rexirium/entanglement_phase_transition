@@ -156,5 +156,3 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, dent::AbstractDise
     end
     return timecorrs, truncerr
 end
-
-
