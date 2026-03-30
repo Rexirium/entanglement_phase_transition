@@ -18,7 +18,7 @@ function entrcorr_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) wh
     # core calculation
     maxbond = 25 * lsize
     threshold = 1e-8 * (ttotal*lsize)
-    truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=1e-14, maxdim=maxbond, etol=threshold)
+    truncerr = timeevolve!(psi, ttotal, dent, avg; cutoff=1e-14, maxdim=maxbond, etol=threshold)
     return avg, truncerr
 end
 #=
@@ -30,7 +30,7 @@ function entropy_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) whe
     # core calculation
     maxbond = 20 * lsize
     threshold = 1e-8 * (ttotal*lsize)
-    truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=1e-14, maxdim=maxbond, etol=threshold)
+    truncerr = timeevolve!(psi, ttotal, dent, avg; cutoff=1e-14, maxdim=maxbond, etol=threshold)
     return avg, truncerr
 end
 =#

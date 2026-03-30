@@ -188,7 +188,7 @@ function disentangle!(psi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp<:Real
     return truncerr
 end
 
-function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler; 
+function timeevolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler; 
     cutoff::Real=1e-14, maxdim::Int=1<<(length(psi) ÷ 2), etol=nothing)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator 
@@ -217,7 +217,7 @@ function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler;
     return truncerr
 end
 
-function mps_evolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::AbstractObserver; 
+function timeevolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler, obs::AbstractObserver; 
     cutoff::Real=1e-14, maxdim::Int=1<<(length(psi) ÷ 2), etol=nothing)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,

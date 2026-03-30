@@ -24,7 +24,7 @@ let
     obs = EntropyObserver{Float64}(b; n=1)
     Dm = 25*L
     threshold = 1e-8 * (T*L)
-    @timev mps_evolve!(psi, T, dent, obs; cutoff=cutoff, maxdim=Dm)
+    @timev timeevolve!(psi, T, dent, obs; cutoff=cutoff, maxdim=Dm)
     tsteps = length(obs.entropies) - 1
 
     if tsteps < T

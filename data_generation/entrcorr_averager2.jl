@@ -46,7 +46,7 @@ const Ls = L1:dL:L2
         # core calculation
         threshold = 5e-7 * (ttotal * lsize)
         maxbond = 20*lsize
-        truncerr = mps_evolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
+        truncerr = timeevolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
         
         psi = nothing  # free memory
         return avg, truncerr

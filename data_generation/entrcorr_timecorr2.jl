@@ -47,7 +47,7 @@ const Ls = L1:dL:L2
         # core calculation
         threshold = 5e-7 * (ttotal * lsize)
         maxbond = 20lsize
-        timecorr, truncerr = mps_timecorrelation!(psi, ttotal, 8lsize, dent, ("Z", b, "Z", b), avg; 
+        timecorr, truncerr = timecorrelation!(psi, ttotal, 8lsize, dent, ("Z", b, "Z", b), avg; 
             cutoff=cutoff, maxdim=maxbond, etol=threshold)
         
         psi = nothing  # free memory

@@ -44,7 +44,7 @@ function calculation_mean(lsize::Int, ttotal::Int, dent::AbstractDisentangler, r
     
     for i in 1:res.nsamp 
         psi = MPS(Complex{res.type}, ss, "Up")
-        mps_evolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
+        timeevolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
         @inbounds mps_results!(res, psi, i)
         psi = nothing
     end
@@ -59,7 +59,7 @@ function calculation_mean_multi(lsize::Int, ttotal::Int, dent::AbstractDisentang
     Threads.@threads for i in 1:res.nsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{res.type}, ss, "Up")
-        mps_evolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
+        timeevolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
         @inbounds mps_results!(res, psi, i)
         psi = nothing
     end

@@ -48,7 +48,7 @@ let
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
             obs = EntrCorrObserver{type}(b, L; n=1, op="Sx")
-            mps_evolve!(psi, T, dent, obs; cutoff=1e-14)
+            timeevolve!(psi, T, dent, obs; cutoff=1e-14)
 
             entr_distr[:, j] .= [ent_entropy(psi, x, 1) for x in 0:L]
             corr_distr[:, j] .= correlation_vec(psi, "Sx", "Sx")
@@ -92,7 +92,7 @@ let
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
             obs = EntrCorrObserver{type}(b, L; n=1, op="Sz")
-            mps_evolve!(psi, T, dent, obs; cutoff=1e-14)
+            timeevolve!(psi, T, dent, obs; cutoff=1e-14)
 
             entr_distr[:, j] .= [ent_entropy(psi, x, 1) for x in 0:L]
 

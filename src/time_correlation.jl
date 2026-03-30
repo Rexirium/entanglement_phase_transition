@@ -33,7 +33,7 @@ function disentangle!(psi::MPS, phi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp
     return truncerr
 end
 
-function mps_timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, dent::AbstractDisentangler, ops::Tuple; 
+function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, dent::AbstractDisentangler, ops::Tuple; 
     cutoff::Real=1e-14, maxdim::Int=1<<(length(psi) ÷ 2), etol=nothing)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
@@ -93,7 +93,7 @@ function mps_timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, dent::Abstract
     return timecorrs, truncerr
 end
 
-function mps_timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, dent::AbstractDisentangler, ops::Tuple, obs::AbstractObserver; 
+function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, dent::AbstractDisentangler, ops::Tuple, obs::AbstractObserver; 
     cutoff::Real=1e-14, maxdim::Int=1<<(length(psi) ÷ 2), etol=nothing)
     """
     Evolve the MPS `psi0` for `ttotal` time steps with each time step a random unitary operator applied to pairs of sites,
