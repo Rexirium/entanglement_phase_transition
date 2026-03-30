@@ -1,7 +1,7 @@
 using MKL
 using LinearAlgebra
 using Interpolations
-using Plots, LaTeXStrings
+using CairoMakie
 using HDF5
 
 include("../linear_regress.jl")
@@ -51,28 +51,8 @@ let
     indices_fine = [entropy_itp(p) for p in p_fine]
 
     
-    plot(ps, indices; 
-            xlabel=L"p", ylabel="entropy scaling index",
-            title="Entropy scaling index at η=$(η0)",
-            titlefontsize=14,
-            marker=:o, lw=2,
-            framestyle=:box, dpi=800
-        )
-    #savefig("phase_separate/entropy_scaling_index_modified.png")
-    
-    #=
-    p0, η0 = 1.0, 0.2
-    pidx = findfirst(x -> x == p0, ps)
-    ηidx = findfirst(x -> x == η0, ηs)
-    data = abs.(entropy_datas[pidx, ηidx, :] )
-    sem = abs.(entropy_error[pidx, ηidx, :]) ./ Ls
-    err = abs.(sem ./ data)
-    println(data)
-    plot(log.(Ls), log.(data), 
-        yerror=err,
-        marker=:o, lw=2,
-        xlabel=L"\log L", ylabel=L"\log S_1",
-        title="Entropy scaling at p=0.75, η=0.0",
-        label="data")
-    =#
+    fig = Figure()
+    ax = Axis(fig[1, 1], title="Entropy Scaling Index", xlabel=L"p", ylabel="scaling index")
+    lines!(ax, ps, indices, linewidth=2)
+    fig
 end

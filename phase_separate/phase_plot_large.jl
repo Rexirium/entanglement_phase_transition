@@ -1,7 +1,7 @@
 using MKL
 using LinearAlgebra
 using Interpolations
-using Plots, LaTeXStrings
+using CairoMakie
 using HDF5
 
 include("../linear_regress.jl")
@@ -10,7 +10,7 @@ let
     L1, dL, L2 = 10, 2, 40
     nprob, neta = 21, 21
 
-    file = h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta).h5", "r")
+    file = h5open("data/nh_entrcorr_avg_L$(L1)_$(dL)_$(L2)_$(nprob)x$(neta)_old.h5", "r")
     type_str = read(file, "datatype")
     ps = read(file, "params/ps")
     ηs = read(file, "params/ηs")
@@ -55,29 +55,14 @@ let
     indices_fine = [entropy_itp(p, η) for p in p_fine, η in η_fine]
 
     
-    heatmap(ps, ηs, indices'; 
-            clims = (-0.2, 0.8),
-            xlabel=L"p", ylabel=L"\eta",
-            title="Entropy scaling index",
-            titlefontsize=14,
-            colorbar_title="index",
-            framestyle=:box, dpi=800
-            )
-    #savefig("phase_separate/entropy_scaling_index_modified.png")
+    fig = Figure()
+    ax = Axis(fig[1, 1], title="Entropy Scaling Index", 
+        xlabel=L"p", xticks=(0.0:0.25:1.0), 
+        ylabel=L"\eta", yticks=(0.0:0.3:0.9)
+    )
+
+    hm = heatmap!(ax, ps, ηs, indices, colorrange=(-0.1, 0.8), colormap=:plasma)
+    Colorbar(fig[1, 2], hm, label = "Scaling Index")
+    fig
     
-    #=
-    p0, η0 = 1.0, 0.2
-    pidx = findfirst(x -> x == p0, ps)
-    ηidx = findfirst(x -> x == η0, ηs)
-    data = abs.(entropy_datas[pidx, ηidx, :] )
-    sem = abs.(entropy_error[pidx, ηidx, :]) ./ Ls
-    err = abs.(sem ./ data)
-    println(data)
-    plot(log.(Ls), log.(data), 
-        yerror=err,
-        marker=:o, lw=2,
-        xlabel=L"\log L", ylabel=L"\log S_1",
-        title="Entropy scaling at p=0.75, η=0.0",
-        label="data")
-    =#
 end
