@@ -13,6 +13,7 @@ include("entanglement.jl")
 include("correlation.jl")
 include("observers.jl")
 include("time_evolution.jl")
+include("time_correlation.jl")
 include("simulation.jl")
 
 export ent_entropy, negativity, concurrence, zeroth_entropy, mutual_information, correlation, correlation_vec

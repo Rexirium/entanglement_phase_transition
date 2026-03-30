@@ -17,7 +17,7 @@ let
     type = eval(Meta.parse(type_str))
 
     nL = length(Ls)
-    L0 = 12
+    L0 = 20
     Lidx = findfirst(==(L0), Ls)
 
     plist = [0.16, 0.20, 0.24, 0.28]
@@ -38,7 +38,13 @@ let
     timecorrs = read(grp, "timecorrs")[:, :, Lidx]
     close(file)
 
-    fig = Figure(size=(600, 800))
+    set_theme!(Axis=(
+        xlabelsize=20,
+        ylabelsize=20,
+        xticklabelsize=18,
+        yticklabelsize=18,
+    ))
+    fig = Figure(size=(800, 1000))
 
     ax1 = Axis(fig[1, 1], title="Entanglement Entropy", xlabel=L"p", ylabel=L"S(L/2)")
     lines!(ax1, ps, entr_means[:, Lidx], label="mean")
@@ -52,6 +58,6 @@ let
         lines!(ax2, ts, timecorrs[1 : 4L0, s], label=L"p=%$(plist[i])")
     end
     axislegend(ax2)
-
-    display(fig)
+    fig
+    # save("correlation_analysis/timecorr.png", fig)
 end
