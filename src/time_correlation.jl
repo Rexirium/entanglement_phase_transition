@@ -1,4 +1,4 @@
-function disentangle!(psi::MPS, phi::MPS, dent::NHDisentangler{Tp}) where Tp<:Real
+function disentangle!(psi::MPS, phi::MPS, dent::NHDisentangler{Tp}) where Tp<:AbstractFloat
     """
     Apply the non-Hermitian disentangler to the MPS `psi` inplace, and apply the same operation to `phi`.
     """
@@ -14,7 +14,7 @@ function disentangle!(psi::MPS, phi::MPS, dent::NHDisentangler{Tp}) where Tp<:Re
     return zero(Tp)
 end
 
-function disentangle!(psi::MPS, phi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp<:Real
+function disentangle!(psi::MPS, phi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp<:AbstractFloat
     """
     Apply the CNOT-based non-Hermitian disentangler to the MPS `psi` inplace.
     """
@@ -31,6 +31,19 @@ function disentangle!(psi::MPS, phi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp
         end
     end
     return truncerr
+end
+
+function disentangle!(psi::MPS, phi::MPS, dent::PMDisentangler{Tp}) where Tp<:AbstractFloat
+    """
+    Apply the projective measurement disentangler to the MPS `psi` inplace, and apply the same operation to `phi`.
+    """
+    for j in length(psi):-1:1
+        if rand() < dent.probs[j]
+            proj_measure!(psi, j)
+            proj_measure!(phi, j)
+        end
+    end
+    return zero(Tp)
 end
 
 function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, dent::AbstractDisentangler, ops::Tuple; 

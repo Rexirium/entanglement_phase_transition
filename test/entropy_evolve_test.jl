@@ -14,15 +14,15 @@ let
     L = 16
     T = 12L
     cutoff = eps(Float64)
-    p, η = 0.5, 0.1
+    n = 10
     b = L ÷ 2
     
-    dent = NHDisentangler{Float64}(p, η)
+    dent = PMDisentangler{Float64}(L, n)
     ss = siteinds("S=1/2", L)
     psi = MPS(ComplexF64, ss, "Up")
 
     obs = EntropyObserver{Float64}(b; n=1)
-    Dm = 25*L
+    Dm = 20 * L
     threshold = 1e-8 * (T*L)
     @timev timeevolve!(psi, T, dent, obs; cutoff=cutoff, maxdim=Dm)
     tsteps = length(obs.entropies) - 1
@@ -33,7 +33,7 @@ let
         entr_mean = mean(obs.entropies[2L+2:end])
         entr_sem = stdm(obs.entropies[2L+2:end], entr_mean) / (T - 2L)
 
-        println("Entanglement Entropy at L = $L, p=$p, η=$η : $entr_mean ± $entr_sem")
+        println("Entanglement Entropy: $entr_mean ± $entr_sem")
         println("Truncation Error: ", obs.truncerrs[end])
         println("Truncation Error Threshold: ", threshold)
     end
@@ -45,7 +45,7 @@ let
     ax_entropy = Axis(fig[1, 1],
         xlabel = L"t",
         ylabel = L"S",
-        title = L"L = %$L, p= %$p, \eta= %$η"
+        title = L"n = %$n"
     )
 
     lines!(ax_entropy, 0:T, obs.entropies, 

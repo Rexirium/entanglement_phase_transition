@@ -39,20 +39,23 @@ function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index; x::Real, λ::Rea
 end
 
 function proj_measure!(psi::MPS, loc::Int)
-    """Perform a projective measurement on the MPS `psi` at site `loc` with outcome `:Up` or `:Dn`."""
     (loc <= 0 || loc > length(psi)) && return psi
     # Orthogonalize the MPS at site `loc`
-    s = siteind(psi, loc)
-    projUp = op("ProjUp", s)
     orthogonalize!(psi, loc)
     # Calculate the probability of measuring "Up"
-    probUp = real(inner(prime(psi[loc], tags="Site"), projUp, psi[loc]))
-    samp = rand()
-    if samp < probUp
-        apply1!(projUp, psi, loc)
+    s = siteind(psi, loc)
+    proj = ITensor(s)
+    proj[s => 1] = 1.0
+    Aup = psi[loc] * dag(proj)
+    probUp = real(scalar(dag(Aup) * Aup))
+    # Collapse the states
+    if rand() < probUp
+        psi[loc] = Aup * proj
     else
-        projDn = op("ProjDn", s)
-        apply1!(projDn, psi, loc)
+        proj = ITensor(s)
+        proj[s => 2] = 1.0
+        Adn = psi[loc] * dag(proj)
+        psi[loc] = Adn * proj
     end
     normalize!(psi)
 end
@@ -61,19 +64,20 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{T, T}=(1.0, 1.0)) where T
     """Perform a weak measurement on the MPS `psi` at site `loc` with parameters `λ` and `Δ`."""
     (loc <= 0 || loc > length(psi)) && return psi
     # Orthogonalize the MPS at site `loc`
+    orthogonalize!(psi, loc)
     s = siteind(psi, loc)
     λ, Δ = para
     
-    proj = op("ProjUp", s)
-    orthogonalize!(psi, loc)
+    proj = ITensor(s)
+    proj[s => 1] = 1.0
+    Aup = psi[loc] * dag(proj)
     # Calculate the probability of measuring "Up"
-    probUp = real(inner(prime(psi[loc], tags="Site"), proj, psi[loc]))
-    samp = rand(T)
+    probUp = real(scalar(dag(Aup) * Aup))
     # generate a random variable from a Gaussian distribution
-    x = samp < probUp ? λ + Δ*randn(T) : -λ + Δ*randn(T)
+    x = rand(T) < probUp ? λ + Δ*randn(T) : -λ + Δ*randn(T)
     M = op("WM", s; x = x, λ = λ, Δ = Δ)
     # Apply the weak measurement operator
-    apply1!(M, psi, loc)
+    psi[loc] = noprime(psi[loc] * M)
     normalize!(psi)
 end
 

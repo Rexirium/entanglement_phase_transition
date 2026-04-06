@@ -1,6 +1,6 @@
 abstract type AbstractDisentangler end
 
-struct NHDisentangler{Tp <: Real} <: AbstractDisentangler
+struct NHDisentangler{Tp <: AbstractFloat} <: AbstractDisentangler
     """
     Store the parameters for the non-Hermitian disentangler. 
     `prob` is the probability of applying the non-Hermitian operator, 
@@ -10,7 +10,7 @@ struct NHDisentangler{Tp <: Real} <: AbstractDisentangler
     eta::Tp
 end
 
-struct NHCNOTDisentangler{Tp <: Real} <: AbstractDisentangler
+struct NHCNOTDisentangler{Tp <: AbstractFloat} <: AbstractDisentangler
     """
     Store the parameters for the CNOT-based non-Hermitian disentangler.
     """
@@ -18,7 +18,18 @@ struct NHCNOTDisentangler{Tp <: Real} <: AbstractDisentangler
     eta::Tp
 end
 
-function disentangle!(psi::MPS, dent::NHDisentangler{Tp}) where Tp<:Real
+struct PMDisentangler{Tp <: AbstractFloat} <: AbstractDisentangler
+    """
+    Store the parameters for the projective measurement disentangler.
+    """
+    probs::Vector{Tp}
+
+    PMDisentangler{Tp}(lsize::Int, n::Real) where Tp<:AbstractFloat = new{Tp}(rand(Tp, lsize) .^ n)
+    PMDisentangler(n::Real, rxs::Vector{Tp}) where Tp<:AbstractFloat = new{Tp}(rxs .^ n)
+    PMDisentangler(probs::Tp, lsize::Int) where Tp<:AbstractFloat = new{Tp}(fill(probs, lsize))
+end
+
+function disentangle!(psi::MPS, dent::NHDisentangler{Tp}) where Tp<:AbstractFloat
     """
     Apply the non-Hermitian disentangler to the MPS `psi` inplace.
     """
@@ -32,7 +43,7 @@ function disentangle!(psi::MPS, dent::NHDisentangler{Tp}) where Tp<:Real
     return zero(Tp)
 end
 
-function disentangle!(psi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp<:Real
+function disentangle!(psi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp<:AbstractFloat
     """
     Apply the CNOT-based non-Hermitian disentangler to the MPS `psi` inplace.
     """
@@ -47,6 +58,18 @@ function disentangle!(psi::MPS, dent::NHCNOTDisentangler{Tp}) where Tp<:Real
         end
     end
     return truncerr
+end
+
+function disentangle!(psi::MPS, dent::PMDisentangler{Tp}) where Tp<:AbstractFloat
+    """
+    Apply the projective measurement disentangler to the MPS `psi` inplace.
+    """
+    for j in length(psi):-1:1
+        if rand() < dent.probs[j]
+            proj_measure!(psi, j)
+        end
+    end
+    return zero(Tp)
 end
 
 function timeevolve!(psi::MPS, ttotal::Int, dent::AbstractDisentangler; 
