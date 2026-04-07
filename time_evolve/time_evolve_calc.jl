@@ -47,7 +47,7 @@ let
             mnt = NHMonitor{type}(ps[i], η0)
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
-            obs = EntrCorrObserver{type}(b, L; n=1, op="Sx")
+            obs = EntrCorrObserver{type}(b; n=1, op="Sx")
             timeevolve!(psi, T, mnt, obs; cutoff=1e-14)
 
             entr_distr[:, j] .= [ent_entropy(psi, x, 1) for x in 0:L]
@@ -91,7 +91,7 @@ let
             mnt = NHMonitor{type}(p0, ηs[i])
             ss = siteinds("S=1/2", L)
             psi = MPS(Complex{type}, ss, "Up")
-            obs = EntrCorrObserver{type}(b, L; n=1, op="Sz")
+            obs = EntrCorrObserver{type}(b; n=1, op="Sz")
             timeevolve!(psi, T, mnt, obs; cutoff=1e-14)
 
             entr_distr[:, j] .= [ent_entropy(psi, x, 1) for x in 0:L]

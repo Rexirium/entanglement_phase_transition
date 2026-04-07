@@ -42,7 +42,7 @@ const Ls = L1:dL:L2
 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{type}, ss, "Up")
-        avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
+        avg = EntrCorrAverager{type}(lsize ÷ 2, 2lsize; n=1, op="Sz")
         # core calculation
         threshold = 5e-7 * (ttotal * lsize)
         maxbond = 20*lsize

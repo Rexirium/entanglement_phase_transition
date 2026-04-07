@@ -154,7 +154,7 @@ truncerrs = obs.truncerrs  # Truncation errors at each step
 
 ```julia
 # Create observer to track both entropy and correlations
-obs = EntrCorrObserver{Float64}(b, L; n=1, op="Sz")
+obs = EntrCorrObserver{Float64}(b; n=1, op="Sz")
 psi = MPS(ComplexF64, ss, "Up")
 timeevolve!(psi, ttotal, mnt, obs; cutoff=1e-14, maxdim=4096)
 

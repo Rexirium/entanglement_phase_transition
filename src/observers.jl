@@ -12,54 +12,56 @@ mutable struct EntropyObserver{T<:Real} <: AbstractObserver
     EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], T[], Int[], true)
 end
 
-mutable struct EntrCorrObserver{lsize, T<:Real} <: AbstractObserver
+mutable struct EntrCorrObserver{T<:Real} <: AbstractObserver
     b::Int
     n::Real
     op::String
     entrs::Vector{T}
-    corrs::Vector{SVector{lsize, T}}
+    corrs::Vector{Vector{T}}
     truncerrs::Vector{T}
     accept::Bool
 
-    EntrCorrObserver{T}(b::Int, lsize::Int; n::Real=1, op::String="Sz") where T<:Real = 
-        new{lsize, T}(b, n, op, T[], SVector{lsize, T}[], T[], true)
+    EntrCorrObserver{T}(b::Int; n::Real=1, op::String="Sz") where T<:Real = 
+        new{T}(b, n, op, T[], Vector{T}[], T[], true)
 end
 
-mutable struct EntropyAverager{lsize, T<:Real} <: AbstractObserver
+mutable struct EntropyAverager{T<:Real} <: AbstractObserver
     b::Int
     n::Real
+    tstart::Int
     entr_mean::T
     entr_logm::T
     entr_sstd::T
     accept::Bool
 
-    EntropyAverager{T}(b::Int, lsize::Int; n::Real=1) where T<:Real = 
-        new{lsize, T}(b, n, zero(T), zero(T), zero(T), true)
+    EntropyAverager{T}(b::Int, tstart::Int; n::Real=1) where T<:Real = 
+        new{T}(b, n, tstart, zero(T), zero(T), zero(T), true)
 end
 
-mutable struct EntrCorrAverager{lsize, T<:Real} <: AbstractObserver
+mutable struct EntrCorrAverager{T<:Real} <: AbstractObserver
     b::Int
     n::Real
     op::String
+    tstart::Int
     entr_mean::T
     entr_logm::T
     entr_sstd::T
-    corr_mean::SVector{lsize, T}
-    corr_sstd::SVector{lsize, T}
+    corr_mean::Vector{T}
+    corr_sstd::Vector{T}
     accept::Bool
 
-    EntrCorrAverager{T}(b::Int, lsize::Int; n::Real=1, op::String="Sz") where T<:Real = 
-        new{lsize, T}(b, n, op, zero(T), zero(T), zero(T), SVector{lsize}(zeros(T, lsize)), 
-        SVector{lsize}(zeros(T, lsize)), true)
+    EntrCorrAverager{T}(b::Int, tstart::Int; n::Real=1, op::String="Sz") where T<:Real = 
+        new{T}(b, n, op, tstart, zero(T), zero(T), zero(T), Vector{T}[], Vector{T}[], true)
 end
 
-mutable struct EntropyProfile{lsize, T <: Real} <: AbstractObserver
+mutable struct EntropyProfile{T <: Real} <: AbstractObserver
     n::Real
+    lsize::Int
     entr_distr::Vector{Vector{T}}
     truncerrs::Vector{T}
     accept::Bool
 
-    EntropyProfile{T}(lsize::Int; n::Real=1) where T<:Real = new{lsize, T}(n, Vector{T}[], T[], true)
+    EntropyProfile{T}(n::Real=1) where T<:Real = new{T}(n, Vector{T}[], T[], true)
 end
 
 function mps_record!(obs::EntropyObserver, psi::MPS, t::Int, truncerr::Real)
@@ -74,34 +76,35 @@ function mps_record!(obs::EntrCorrObserver, psi::MPS, t::Int, truncerr::Real)
     push!(obs.truncerrs, truncerr)
 end
 
-function mps_record!(obs::EntropyProfile{lsize}, psi::MPS, t::Int, truncerr::Real) where lsize
-    entr_distr = [ent_entropy(psi, x, obs.n) for x in 0:lsize]
+function mps_record!(obs::EntropyProfile, psi::MPS, t::Int, truncerr::Real)
+    entr_distr = [ent_entropy(psi, x, obs.n) for x in 0 : obs.lsize]
     push!(obs.entr_distr, entr_distr)
     push!(obs.truncerrs, truncerr)
 end
 
-function mps_record!(obs::EntropyAverager{lsize}, psi::MPS, t::Int, truncerr::Real) where lsize
+function mps_record!(obs::EntropyAverager, psi::MPS, t::Int, truncerr::Real)
     """
     Update the mean and SST of entanglement entropy in `obs`.
     Using Welford's algorithm.
     """
-    if t > 2 * lsize
+    if t > obs.tstart
         entr = ent_entropy(psi, obs.b, obs.n)
         delta = entr - obs.entr_mean
         delta_log = log(entr) - obs.entr_logm
 
-        obs.entr_mean += delta / (t - 2 * lsize)
-        obs.entr_logm += delta_log / (t - 2 * lsize)
+        obs.entr_mean += delta / (t - obs.tstart)
+        obs.entr_logm += delta_log / (t - obs.tstart)
         obs.entr_sstd += delta * (entr - obs.entr_mean)
     end
 end
 
-function mps_record!(obs::EntrCorrAverager{lsize}, psi::MPS, t::Int, truncerr::Real) where lsize
+function mps_record!(obs::EntrCorrAverager, psi::MPS, t::Int, truncerr::Real)
     """
     Update the mean and SST of entanglement entropy and correlation function in `obs`.
     Using Welford's algorithm.
     """
-    if t > 2 * lsize
+    tstart = obs.tstart
+    if t > tstart
         entr = ent_entropy(psi, obs.b, obs.n)
         corr = correlation_vec(psi, obs.op, obs.op)
 
@@ -109,9 +112,9 @@ function mps_record!(obs::EntrCorrAverager{lsize}, psi::MPS, t::Int, truncerr::R
         delta_elog = log(entr) - obs.entr_logm
         delta_corr = corr - obs.corr_mean
 
-        obs.entr_mean += delta_entr / (t - 2 * lsize)
-        obs.entr_logm += delta_elog / (t - 2 * lsize)
-        obs.corr_mean += delta_corr / (t - 2 * lsize)
+        obs.entr_mean += delta_entr / (t - tstart)
+        obs.entr_logm += delta_elog / (t - tstart)
+        obs.corr_mean += delta_corr / (t - tstart)
         obs.entr_sstd += delta_entr * (entr - obs.entr_mean)
         obs.corr_sstd += delta_corr .* (corr - obs.corr_mean)
     end

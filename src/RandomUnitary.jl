@@ -3,7 +3,6 @@ module RandomUnitary
 using ITensors, ITensorMPS
 #using ITensors: svd
 using LinearAlgebra: diagm, Diagonal, I
-using StaticArrays: SVector
 using Random: shuffle
 using SparseArrays: sparse, blockdiag
 

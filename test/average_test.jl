@@ -14,7 +14,7 @@ function entrcorr_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) wh
     mnt = NHMonitor{T}(param...)
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{T}, ss, "Up")
-    avg = EntrCorrAverager{T}(lsize ÷ 2, lsize; n=1, op="Sz")
+    avg = EntrCorrAverager{T}(lsize ÷ 2, 2lsize; n=1, op="Sz")
     # core calculation
     maxbond = 25 * lsize
     threshold = 1e-8 * (ttotal*lsize)
@@ -26,7 +26,7 @@ function entropy_average_wrapper(lsize::Int, ttotal::Int, param::Tuple{T,T}) whe
     mnt = NHMonitor{T}(param...)
     ss = siteinds("S=1/2", lsize)
     psi = MPS(Complex{T}, ss, "Up")
-    avg = EntropyAverager{T}(lsize ÷ 2, lsize; n=1)
+    avg = EntropyAverager{T}(lsize ÷ 2, 2lsize; n=1)
     # core calculation
     maxbond = 20 * lsize
     threshold = 1e-8 * (ttotal*lsize)
