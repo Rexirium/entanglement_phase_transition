@@ -39,14 +39,14 @@ const param = [(p, η) for η in ηs for p in ps]
     const params = $param
 
     function entrcorr_average_wrapper(lsize::Int, ttotal::Int, idx::Int)
-        dent = NHDisentangler{type}(params[idx]...)
+        mnt = NHMonitor{type}(params[idx]...)
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{type}, ss, "Up")
         avg = EntrCorrAverager{type}(lsize ÷ 2, lsize; n=1, op="Sz")
         # core calculation
         threshold = 5e-7 * (ttotal * lsize)
         maxbond = 20*lsize
-        truncerr = timeevolve!(psi, ttotal, dent, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
+        truncerr = timeevolve!(psi, ttotal, mnt, avg; cutoff=cutoff, maxdim=maxbond, etol=threshold)
 
         psi = nothing  # free memory
         return avg, truncerr

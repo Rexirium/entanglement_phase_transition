@@ -53,19 +53,34 @@ mutable struct EntrCorrAverager{lsize, T<:Real} <: AbstractObserver
         SVector{lsize}(zeros(T, lsize)), true)
 end
 
-function mps_monitor!(obs::EntropyObserver, psi::MPS, t::Int, truncerr::Real)
+mutable struct EntropyProfile{lsize, T <: Real} <: AbstractObserver
+    n::Real
+    entr_distr::Vector{Vector{T}}
+    truncerrs::Vector{T}
+    accept::Bool
+
+    EntropyProfile{T}(lsize::Int; n::Real=1) where T<:Real = new{lsize, T}(n, Vector{T}[], T[], true)
+end
+
+function mps_record!(obs::EntropyObserver, psi::MPS, t::Int, truncerr::Real)
     push!(obs.entropies, ent_entropy(psi, obs.b, obs.n))
     push!(obs.truncerrs, truncerr)
     push!(obs.maxbonds, maxlinkdim(psi))
 end
 
-function mps_monitor!(obs::EntrCorrObserver, psi::MPS, t::Int, truncerr::Real)
+function mps_record!(obs::EntrCorrObserver, psi::MPS, t::Int, truncerr::Real)
     push!(obs.entrs, ent_entropy(psi, obs.b, obs.n))
     push!(obs.corrs, correlation_vec(psi, obs.op, obs.op))
     push!(obs.truncerrs, truncerr)
 end
 
-function mps_monitor!(obs::EntropyAverager{lsize}, psi::MPS, t::Int, truncerr::Real) where lsize
+function mps_record!(obs::EntropyProfile{lsize}, psi::MPS, t::Int, truncerr::Real) where lsize
+    entr_distr = [ent_entropy(psi, x, obs.n) for x in 0:lsize]
+    push!(obs.entr_distr, entr_distr)
+    push!(obs.truncerrs, truncerr)
+end
+
+function mps_record!(obs::EntropyAverager{lsize}, psi::MPS, t::Int, truncerr::Real) where lsize
     """
     Update the mean and SST of entanglement entropy in `obs`.
     Using Welford's algorithm.
@@ -81,7 +96,7 @@ function mps_monitor!(obs::EntropyAverager{lsize}, psi::MPS, t::Int, truncerr::R
     end
 end
 
-function mps_monitor!(obs::EntrCorrAverager{lsize}, psi::MPS, t::Int, truncerr::Real) where lsize
+function mps_record!(obs::EntrCorrAverager{lsize}, psi::MPS, t::Int, truncerr::Real) where lsize
     """
     Update the mean and SST of entanglement entropy and correlation function in `obs`.
     Using Welford's algorithm.

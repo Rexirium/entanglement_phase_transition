@@ -35,7 +35,7 @@ mutable struct EntrCorrResults{lsize, T<:Real} <: AbstractResult
         new{lsize, T}(T, b, n, op, nsamp, Vector{T}(undef, nsamp), Matrix{T}(undef, lsize, nsamp))
 end
 
-function calculation_mean(lsize::Int, ttotal::Int, dent::AbstractDisentangler, res::AbstractResult; 
+function calculation_mean(lsize::Int, ttotal::Int, mnt::AbstractMonitor, res::AbstractResult; 
     cutoff::Real=1e-14, maxdim::Int=1<<(lsize ÷ 2))
     """
     Calculate the entanglement entropies over multiple samples. (non-Hermitian case)
@@ -44,13 +44,13 @@ function calculation_mean(lsize::Int, ttotal::Int, dent::AbstractDisentangler, r
     
     for i in 1:res.nsamp 
         psi = MPS(Complex{res.type}, ss, "Up")
-        timeevolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
+        timeevolve!(psi, ttotal, mnt; cutoff=cutoff, maxdim=maxdim)
         @inbounds mps_results!(res, psi, i)
         psi = nothing
     end
 end
 
-function calculation_mean_multi(lsize::Int, ttotal::Int, dent::AbstractDisentangler, res::AbstractResult; 
+function calculation_mean_multi(lsize::Int, ttotal::Int, mnt::AbstractMonitor, res::AbstractResult; 
     cutoff::Real=1e-14, maxdim::Int=1<<(lsize ÷ 2))
     """
     Calculate the entanglement entropies over multiple samples using multithreads. (non-Hermitian case)
@@ -59,7 +59,7 @@ function calculation_mean_multi(lsize::Int, ttotal::Int, dent::AbstractDisentang
     Threads.@threads for i in 1:res.nsamp 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{res.type}, ss, "Up")
-        timeevolve!(psi, ttotal, dent; cutoff=cutoff, maxdim=maxdim)
+        timeevolve!(psi, ttotal, mnt; cutoff=cutoff, maxdim=maxdim)
         @inbounds mps_results!(res, psi, i)
         psi = nothing
     end

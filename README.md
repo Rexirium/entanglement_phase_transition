@@ -127,23 +127,23 @@ corr_ij = correlation(psi, "Sz", "Sz", 2, 8)  # ⟨Sz_2 Sz_8⟩
 corr_vec = correlation_vec(psi, "Sx", "Sx")  # Returns vector of length L
 ```
 
-### Time Evolution with Non-Hermitian Disentangler
+### Time Evolution with Non-Hermitian Monitor
 
 ```julia
 # Define disentangler parameters: probability p and strength eta
 p = 0.5  # Probability of applying non-Hermitian operator
 η = 0.5  # Strength parameter
-dent = NHDisentangler{Float64}(p, η)
+mnt = NHMonitor{Float64}(p, η)
 
 # Evolve MPS for ttotal time steps
 ttotal = 4 * L
 psi = MPS(ComplexF64, ss, "Up")
-truncerr = timeevolve!(psi, ttotal, dent; cutoff=1e-14, maxdim=4096)
+truncerr = timeevolve!(psi, ttotal, mnt; cutoff=1e-14, maxdim=4096)
 
 # Re-initialize and evolve with observer to track entropy
 psi = MPS(ComplexF64, ss, "Up")
 obs = EntropyObserver{Float64}(b; n=1)  # Track entropy at bond b
-timeevolve!(psi, ttotal, dent, obs; cutoff=1e-14, maxdim=4096)
+timeevolve!(psi, ttotal, mnt, obs; cutoff=1e-14, maxdim=4096)
 
 # Access tracked observables
 entropies = obs.entropies  # Vector of entropies over time
@@ -156,7 +156,7 @@ truncerrs = obs.truncerrs  # Truncation errors at each step
 # Create observer to track both entropy and correlations
 obs = EntrCorrObserver{Float64}(b, L; n=1, op="Sz")
 psi = MPS(ComplexF64, ss, "Up")
-timeevolve!(psi, ttotal, dent, obs; cutoff=1e-14, maxdim=4096)
+timeevolve!(psi, ttotal, mnt, obs; cutoff=1e-14, maxdim=4096)
 
 # Access results
 entropies = obs.entrs  # Time-dependent entropies
@@ -171,11 +171,11 @@ N = 100
 res = EntropyResults{Float64}(b; n=1, nsamp=N)
 
 # Single-threaded calculation
-calculation_mean(L, ttotal, dent, res; cutoff=1e-14)
+calculation_mean(L, ttotal, mnt, res; cutoff=1e-14)
 
 # Multi-threaded calculation (recommended for large ensembles)
 res_mt = EntropyResults{Float64}(b; n=1, nsamp=N)
-calculation_mean_multi(L, ttotal, dent, res_mt; cutoff=1e-14)
+calculation_mean_multi(L, ttotal, mnt, res_mt; cutoff=1e-14)
 
 # Access ensemble results
 entr_mean = mean(res.entropies)
@@ -187,7 +187,7 @@ entr_std = std(res.entropies)
 ```julia
 # Track both entropy and correlations in ensemble
 res_corr = EntrCorrResults{Float64}(b, L; n=1, op="Sz", nsamp=N)
-calculation_mean_multi(L, ttotal, dent, res_corr; cutoff=1e-14)
+calculation_mean_multi(L, ttotal, mnt, res_corr; cutoff=1e-14)
 
 # Access results
 entr_mean = mean(res_corr.entropies)
@@ -203,7 +203,7 @@ ttotal = 4*L  # Evolution time
 ops = ("Sz", 3, "Sz", L-2)  # ⟨Sz_3(t) Sz_{L-2}(0)⟩
 
 psi = MPS(ComplexF64, ss, "Up")
-timecorrs, truncerr = timecorrelation!(psi, ttotal, tstart, dent, ops; cutoff=1e-14)
+timecorrs, truncerr = timecorrelation!(psi, ttotal, tstart, mnt, ops; cutoff=1e-14)
 
 # timecorrs contains correlation values for times tstart+1 to ttotal
 ```

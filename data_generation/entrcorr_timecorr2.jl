@@ -39,7 +39,7 @@ const Ls = L1:dL:L2
     function entrcorr_average_wrapper(prob::Real, lsize::Int)
         ttotal = 12lsize
         b = lsize ÷ 2
-        dent = NHCNOTDisentangler{type}(prob, η0)
+        mnt = NHCNOTMonitor{type}(prob, η0)
 
         ss = siteinds("S=1/2", lsize)
         psi = MPS(Complex{type}, ss, "Up")
@@ -47,7 +47,7 @@ const Ls = L1:dL:L2
         # core calculation
         threshold = 5e-7 * (ttotal * lsize)
         maxbond = 20lsize
-        timecorr, truncerr = timecorrelation!(psi, ttotal, 8lsize, dent, ("Z", b, "Z", b), avg; 
+        timecorr, truncerr = timecorrelation!(psi, ttotal, 8lsize, mnt, ("Z", b, "Z", b), avg; 
             cutoff=cutoff, maxdim=maxbond, etol=threshold)
         
         psi = nothing  # free memory

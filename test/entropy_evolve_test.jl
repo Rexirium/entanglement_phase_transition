@@ -14,17 +14,17 @@ let
     L = 16
     T = 12L
     cutoff = eps(Float64)
-    n = 10
+    n = 1
     b = L ÷ 2
     
-    dent = PMDisentangler{Float64}(L, n)
+    mnt = PMMonitor{Float64}(L, n)
     ss = siteinds("S=1/2", L)
     psi = MPS(ComplexF64, ss, "Up")
 
     obs = EntropyObserver{Float64}(b; n=1)
     Dm = 20 * L
     threshold = 1e-8 * (T*L)
-    @timev timeevolve!(psi, T, dent, obs; cutoff=cutoff, maxdim=Dm)
+    @timev timeevolve!(psi, T, mnt, obs; cutoff=cutoff, maxdim=Dm)
     tsteps = length(obs.entropies) - 1
 
     if tsteps < T
