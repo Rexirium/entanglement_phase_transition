@@ -59,5 +59,5 @@ let
     end
     axislegend(ax2)
     fig
-    # save("correlation_analysis/timecorr.png", fig)
+    # save("figures/timecorr.png", fig)
 end
