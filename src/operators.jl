@@ -33,8 +33,8 @@ end
 function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index; x::Real, λ::Real=1.0, Δ::Real=1.0)
     """Create a weak measurement operator for the given site index `s` with parameters `x`, `λ`, and `Δ`."""
     # Assuming `x` is a random variable from a Gaussian distribution
-    phiUp = exp(-(x-λ)*(x-λ) / (4*Δ*Δ))
-    phiDn = exp(-(x+λ)*(x+λ) / (4*Δ*Δ))
+    phiUp = exp(-((x - λ) / (2*Δ)) ^ 2)
+    phiDn = exp(-((x + λ) / (2*Δ)) ^ 2)
     return op([phiUp 0; 0 phiDn], s)
 end
 
