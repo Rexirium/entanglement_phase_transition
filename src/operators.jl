@@ -1,9 +1,3 @@
-const CNOT13 = begin
-    X = sparse([0 1; 1 0])
-    Id = sparse(I, 4, 4)
-    blockdiag(Id, X, X)
-end
-
 function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::DataType=ComplexF64)
     """
     Create a random unitary operator for the given site indices `s`.
@@ -19,15 +13,6 @@ function ITensors.op(::OpName"NH", ::SiteType"S=1/2", s::Index; eta::Real)
     """
     M = diagm(shuffle([one(eta), eta]))
     return op(M, s)
-end
-
-function ITensors.op(::OpName"NHCNOT", ::SiteType"S=1/2", s::Index...; eta::Real)
-    """
-    Create a CNOT-based non-Hermitian operator for the given site indices `s1` and `s2` with parameter `eta`.
-    """
-    id = ones(typeof(eta), 2)
-    dd = kron(id, shuffle([one(eta), eta]), id)
-    return op(diagm(dd) * CNOT13, s...)
 end
 
 function ITensors.op(::OpName"WM", ::SiteType"S=1/2", s::Index; x::Real, λ::Real=1.0, Δ::Real=1.0)
