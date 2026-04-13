@@ -7,6 +7,17 @@ if !isdefined(Main, :RandomUnitary)
     using .RandomUnitary
 end
 
+function calculation_wrapper(lsize::Int, n::Real; nsamp::Int=100)
+    corr_ops = ("Z", lsize ÷ 2, "Z", lsize ÷ 2)
+    for i in 1:nsamp
+        ss = siteinds("S=1/2", lsize)
+        psi = MPS(ComplexF64, ss, "Up")
+        mnt = PMMonitor{Float64}(lsize, n)
+        tcorr, _ = timecorrelation!(psi, 4lsize, 2lsize, mnt, corr_ops)
+
+    end
+end
+
 let 
     L, T = 16, 64
     ss = siteinds("S=1/2", L)
