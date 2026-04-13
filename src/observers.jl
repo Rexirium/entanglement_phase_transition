@@ -5,11 +5,9 @@ mutable struct EntropyObserver{T<:Real} <: AbstractObserver
     b::Int
     n::Real
     entropies::Vector{T}
-    truncerrs::Vector{T}
-    maxbonds::Vector{Int}
     accept::Bool
 
-    EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], T[], Int[], true)
+    EntropyObserver{T}(b::Int; n::Real=1) where T<:Real = new{T}(b, n, T[], true)
 end
 
 mutable struct EntrCorrObserver{T<:Real} <: AbstractObserver
@@ -18,11 +16,10 @@ mutable struct EntrCorrObserver{T<:Real} <: AbstractObserver
     op::String
     entrs::Vector{T}
     corrs::Vector{Vector{T}}
-    truncerrs::Vector{T}
     accept::Bool
 
     EntrCorrObserver{T}(b::Int; n::Real=1, op::String="Sz") where T<:Real = 
-        new{T}(b, n, op, T[], Vector{T}[], T[], true)
+        new{T}(b, n, op, T[], Vector{T}[], true)
 end
 
 mutable struct EntropyAverager{T<:Real} <: AbstractObserver
@@ -59,27 +56,26 @@ mutable struct EntropyProfile{T <: Real} <: AbstractObserver
     lsize::Int
     entr_distr::Vector{Vector{T}}
     truncerrs::Vector{T}
+    maxbonds::Vector{Int}
     accept::Bool
 
-    EntropyProfile{T}(n::Real=1) where T<:Real = new{T}(n, Vector{T}[], T[], true)
+    EntropyProfile{T}(n::Real=1) where T<:Real = new{T}(n, Vector{T}[], T[], Int[], true)
 end
 
 function mps_record!(obs::EntropyObserver, psi::MPS, t::Int, truncerr::Real)
     push!(obs.entropies, ent_entropy(psi, obs.b, obs.n))
-    push!(obs.truncerrs, truncerr)
-    push!(obs.maxbonds, maxlinkdim(psi))
 end
 
 function mps_record!(obs::EntrCorrObserver, psi::MPS, t::Int, truncerr::Real)
     push!(obs.entrs, ent_entropy(psi, obs.b, obs.n))
     push!(obs.corrs, correlation_vec(psi, obs.op, obs.op))
-    push!(obs.truncerrs, truncerr)
 end
 
 function mps_record!(obs::EntropyProfile, psi::MPS, t::Int, truncerr::Real)
     entr_distr = [ent_entropy(psi, x, obs.n) for x in 0 : obs.lsize]
     push!(obs.entr_distr, entr_distr)
     push!(obs.truncerrs, truncerr)
+    push!(obs.maxbonds, maxlinkdim(psi))
 end
 
 function mps_record!(obs::EntropyAverager, psi::MPS, t::Int, truncerr::Real)

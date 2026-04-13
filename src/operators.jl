@@ -36,13 +36,16 @@ function proj_measure!(psi::MPS, loc::Int)
     # Collapse the states
     if rand() < probUp
         psi[loc] = Aup * proj
+        normalize!(psi)
+        return true
     else
         proj = ITensor(s)
         proj[s => 2] = 1.0
         Adn = psi[loc] * dag(proj)
         psi[loc] = Adn * proj
+        normalize!(psi)
+        return false
     end
-    normalize!(psi)
 end
 
 function weak_measure!(psi::MPS, loc::Int, para::Tuple{T, T}=(1.0, 1.0)) where T<:Real
@@ -64,6 +67,7 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{T, T}=(1.0, 1.0)) where T
     # Apply the weak measurement operator
     psi[loc] = noprime(psi[loc] * M)
     normalize!(psi)
+    return x
 end
 
 function apply1!(G1::ITensor, psi::MPS, loc::Int)
@@ -89,7 +93,7 @@ function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int
     set_ortho_lims!(psi, j2:j2)
     return spec.truncerr
 end
-
+#=
 function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))
     """
     Apply three adjacent site gate `G3` to the MPS `psi` at sites `j2-1`, `j2`, and `j2+1` inplace.
@@ -109,3 +113,4 @@ function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int
     set_ortho_lims!(psi, j2:j2)
     return spec12.truncerr + spec23.truncerr
 end
+=#

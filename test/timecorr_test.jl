@@ -1,5 +1,6 @@
 using MKL
 using ITensors, ITensorMPS
+using Statistics
 ITensors.BLAS.set_num_threads(1)
 ITensors.Strided.set_num_threads(1)
 if !isdefined(Main, :RandomUnitary)
@@ -9,22 +10,29 @@ end
 
 function calculation_wrapper(lsize::Int, n::Real; nsamp::Int=100)
     corr_ops = ("Z", lsize ÷ 2, "Z", lsize ÷ 2)
-    for i in 1:nsamp
+    entropies = Matrix{Float64}(undef, 4lsize + 1, nsamp)
+    timecorrs = Matrix{Float64}(undef, 2lsize + 1, nsamp)
+    Threads.@threads for i in 1:nsamp
         ss = siteinds("S=1/2", lsize)
         psi = MPS(ComplexF64, ss, "Up")
         mnt = PMMonitor{Float64}(lsize, n)
-        tcorr, _ = timecorrelation!(psi, 4lsize, 2lsize, mnt, corr_ops)
+        obs = EntropyObserver{Float64}(lsize ÷ 2)
+        tcorr, _ = timecorrelation!(psi, 4lsize, 2lsize, mnt, corr_ops, obs; maxdim = lsize * lsize)
 
+        entropies[:, i] = obs.entropies
+        timecorrs[:, i] = tcorr
     end
+    entropy_mean = mean(entropies, dims=2)
+    entropy_sems = stdm(entropies, entropy_mean; dims=2) / sqrt(nsamp)
+    timecorr_mean = mean(timecorrs, dims=2)
+    timecorr_sems = stdm(timecorrs, timecorr_mean; dims=2) / sqrt(nsamp)
+
+    return entropy_mean[:, 1], entropy_sems[:, 1], timecorr_mean[:, 1], timecorr_sems[:, 1]
 end
 
 let 
-    L, T = 16, 64
-    ss = siteinds("S=1/2", L)
-    psi = MPS(ComplexF64, ss, "Up")
-    mnt = PMMonitor{Float64}(L, 20)
-    obs = EntropyObserver{Float64}(L ÷ 2; n=1)
-
-    @time timecorr, truncerr = timecorrelation!(psi, T, 2L, mnt, ("Z", 5, "Z", 5); cutoff=1e-14, maxdim=10*L)
-    @show timecorr
+    L = 12
+    n = 7
+    @time res = calculation_wrapper(L, n)
+    @show res[3]
 end
