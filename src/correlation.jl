@@ -1,3 +1,12 @@
+function expected(psi::MPS, opstr::String, i::Int)
+    """Compute the expectation value ⟨ opstr_i ⟩ for MPS psi."""
+    opm = op(opstr, siteind(psi, i))
+    orthogonalize!(psi, i) # proper canonize the MPS s.t left environment is identity
+    C = noprime(psi[i] * opm)
+    C *= dag(psi[i])
+    return real(scalar(C))
+end
+
 function correlation(psi::MPS, ops1::String, ops2::String, i::Int, j::Int)
     """Compute the correlation function ⟨ ops1_i ops2_j ⟩ for MPS psi."""
     left, right = minmax(i, j)
