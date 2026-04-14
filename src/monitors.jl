@@ -17,7 +17,7 @@ struct PMMonitor{Tp <: AbstractFloat} <: AbstractMonitor
     probs::Vector{Tp}
 
     PMMonitor{Tp}(lsize::Int, n::Real) where Tp<:AbstractFloat = new{Tp}(rand(Tp, lsize) .^ n)
-    PMMonitor(n::Real, rxs::Vector{Tp}) where Tp<:AbstractFloat = new{Tp}(rxs .^ n)
+    PMMonitor(rxs::Vector{Tp}, n::Real) where Tp<:AbstractFloat = new{Tp}(rxs .^ n)
     PMMonitor(prob::Tp, lsize::Int) where Tp<:AbstractFloat = new{Tp}(fill(prob, lsize))
 end
 

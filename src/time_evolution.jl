@@ -16,7 +16,7 @@ function timeevolve!(psi::MPS, ttotal::Int, mnt::AbstractMonitor;
             err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
-        # Apply non-Hermitian disentanglers
+        # Apply monitor layer to disentangle the MPS
         truncerr += monitor!(psi, mnt)
         # break if truncation error exceeds etol
         if !isnothing(etol) && truncerr > etol
@@ -46,7 +46,7 @@ function timeevolve!(psi::MPS, ttotal::Int, mnt::AbstractMonitor, obs::AbstractO
             err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
-        # Apply non-Hermitian disentanglers
+        # Apply monitor layer to disentangle the MPS
         truncerr += monitor!(psi, mnt)
         # Monitor the MPS and truncation error
         mps_record!(obs, psi, t, truncerr)

@@ -1,7 +1,10 @@
-function ent_entropy(ps::NDTensors.Tensor, n::Real=1)::Real
+function ent_entropy(ps::NDTensors.Tensor{T}, n::Real=1)::Real where T<:Real
     """
     Calculate the n-th order Renyi entropy from the eigenvalues ps.
     """
+    ps = ps[ps .> zero(T)]  # remove zero probabilities
+    length(ps) <= 1 && return zero(T)
+
     if n == 0
         return log2(length(ps))
     elseif n == 1
@@ -23,7 +26,7 @@ function schmidt_decomp(psi::MPS, b::Int)::NDTensors.Tensor
     _ , S, _ = ITensors.svd(psi[b], linds)
     schs = diag(S)
 
-    return schs[schs .> 0.0] # remove zero probabilities
+    return schs
 end
 
 function ent_entropy(psi::MPS, b::Int, n::Real=1)
@@ -103,7 +106,7 @@ function reduced_density_eigen(psi::MPS, x::Int)::NDTensors.Tensor
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
     ps = diag(D)
-    return ps[ps .> 0.0]  # remove zero probabilities
+    return ps
 end
 
 function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.Tensor
@@ -131,7 +134,7 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.Tensor
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
     ps = diag(D)
-    return ps[ps .> 0.0]  # remove zero probabilities
+    return ps
 end
 
 function zeroth_entropy(psi::MPS, b::Int)

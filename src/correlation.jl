@@ -1,9 +1,9 @@
-function expected(psi::MPS, opstr::String, i::Int)
-    """Compute the expectation value ⟨ opstr_i ⟩ for MPS psi."""
-    opm = op(opstr, siteind(psi, i))
-    orthogonalize!(psi, i) # proper canonize the MPS s.t left environment is identity
-    C = noprime(psi[i] * opm)
-    C *= dag(psi[i])
+function expected(psi::MPS, opstr::String, loc::Int)
+    """Compute the expectation value ⟨ opstr_loc ⟩ for MPS psi."""
+    opm = op(opstr, siteind(psi, loc))
+    orthogonalize!(psi, loc) # proper canonize the MPS s.t left environment is identity
+    C = noprime(psi[loc] * opm)
+    C *= dag(psi[loc])
     return real(scalar(C))
 end
 

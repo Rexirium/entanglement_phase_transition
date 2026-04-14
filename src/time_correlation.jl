@@ -21,7 +21,7 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
             err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
-        # Apply non-Hermitian disentanglers
+        # Apply monitor layer to disentangle the MPS
         truncerr += monitor!(psi, mnt)
        
         # break if truncation error exceeds etol
@@ -35,7 +35,7 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
     # Compute the time correlation function ⟨ ops1_i(t) ops2_j(0) ⟩
     orthogonalize!(psi, ops[2])
     apply1!(op1, phi, ops[2])
-    timecorrs[1] = real(inner(phi, psi))
+    timecorrs[1] = real(inner(psi, phi))
     phi[ops[2]] = noprime(phi[ops[2]] * op1) # restore phi to the state
     
     @inbounds for t in tstart + 1 : ttotal
@@ -46,12 +46,12 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
             apply2!(U, phi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
-        # Apply non-Hermitian disentanglers
+        # Apply monitor layer to disentangle the MPS
         truncerr += monitor!(psi, phi, mnt)
         # Compute the time correlation function ⟨ ops1_i(t) ops2_j(0) ⟩
         orthogonalize!(psi, ops[2])
         apply1!(op1, phi, ops[2])
-        timecorrs[t - tstart + 1] = real(inner(phi, psi))
+        timecorrs[t - tstart + 1] = real(inner(psi, phi))
         phi[ops[2]] = noprime(phi[ops[2]] * op1) # restore phi to the state
         
         if !isnothing(etol) && truncerr > etol
@@ -85,7 +85,7 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
             err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
-        # Apply non-Hermitian disentanglers
+        # Apply monitor layer to disentangle the MPS
         truncerr += monitor!(psi, mnt)
         # Monitor the MPS and truncation error
         mps_record!(obs, psi, t, truncerr)
@@ -101,7 +101,7 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
     # Compute the time correlation function ⟨ op1_i(t) op2_j(0) ⟩
     orthogonalize!(psi, ops[2])
     apply1!(op1, phi, ops[2])
-    timecorrs[1] = real(inner(phi, psi))
+    timecorrs[1] = real(inner(psi, phi))
     phi[ops[2]] = noprime(phi[ops[2]] * op1) # restore phi to the state
     
     @inbounds for t in tstart + 1 : ttotal
@@ -112,14 +112,14 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
             apply2!(U, phi, j; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
-        # Apply non-Hermitian disentanglers
+        # Apply monitor layer to disentangle the MPS
         truncerr += monitor!(psi, phi, mnt)
         # Monitor the MPS and truncation error
         mps_record!(obs, psi, t, truncerr)
         # Compute the time correlation function ⟨ op1_i(t) op2_j(0) ⟩
         orthogonalize!(psi, ops[2])
         apply1!(op1, phi, ops[2])
-        timecorrs[t - tstart + 1] = real(inner(phi, psi))
+        timecorrs[t - tstart + 1] = real(inner(psi, phi))
         phi[ops[2]] = noprime(phi[ops[2]] * op1) # restore phi to the state
         
         if !isnothing(etol) && truncerr > etol
