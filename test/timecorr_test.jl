@@ -32,7 +32,7 @@ function calculation_wrapper(lsize::Int, n::Real; nsamp::Int=100)
 
     entropies = Matrix{Float64}(undef, ttotal + 1, nsamp)
     expectvals = Matrix{Float64}(undef, ttotal + 1, nsamp)
-    timecorrs = Matrix{Float64}(undef, lsize + 1, nsamp)
+    timecorrs = Matrix{Float64}(undef, 2lsize + 1, nsamp)
     spatcorrs = Matrix{Float64}(undef, lsize, nsamp)
 
     Threads.@threads for i in 1:nsamp
@@ -40,12 +40,12 @@ function calculation_wrapper(lsize::Int, n::Real; nsamp::Int=100)
         psi = MPS(ComplexF64, ss, "Up")
         mnt = PMMonitor{Float64}(lsize, n)
         obs = MyObserver{Float64}(lsize ÷ 2, n, "Z")
-        tcorr, _ = timecorrelation!(psi, ttotal, ttotal - lsize, mnt, corr_ops, obs; maxdim = lsize * lsize)
+        tcorr, _ = timecorrelation!(psi, ttotal, ttotal - 2lsize, mnt, corr_ops, obs; maxdim = lsize * lsize)
 
         entropies[:, i] = obs.entropies
         expectvals[:, i] = obs.expvals
-        timecorrs[:, i] = tcorr
-        spatcorrs[:, i] = correlation_vec(psi, "Z", "Z")
+        timecorrs[:, i] = abs2.(tcorr)
+        spatcorrs[:, i] = abs2.(correlation_vec(psi, "Z", "Z"))
     end
     entropy_mean = mean(entropies, dims=2)[:, 1]
     entropy_sems = stdm(entropies, entropy_mean; dims=2)[:, 1] / sqrt(nsamp)
@@ -60,31 +60,31 @@ function calculation_wrapper(lsize::Int, n::Real; nsamp::Int=100)
 end
 
 let 
-    L = 16
-    n = 9
+    L = 12
+    n = 6
     T = 8L
     @time res = calculation_wrapper(L, n)
     
     fig = Figure(size=(1000, 800))
     ax1 = Axis(fig[1, 1], xlabel=L"t", ylabel=L"S(L/2)", title="Entanglement Entropy, L = $L")
-    lines!(ax1, 0:T, res[1], linewidth=1.5, label="n = $n")
-    errorbars!(ax1, 0:T, res[1], res[2], linewidth=1.5)
+    lines!(ax1, 0 : T, res[1], linewidth=1.5, label="n = $n")
+    errorbars!(ax1, 0 : T, res[1], res[2], linewidth=1.5)
     axislegend(ax1, position=:rt)
 
     ax2 = Axis(fig[1, 2], xlabel=L"t", ylabel=L"⟨Z_{L/2}⟩", title="Expectation Value")
-    lines!(ax2, 0:T, res[3], linewidth=1.5, label="n = $n")
-    errorbars!(ax2, 0:T, res[3], res[4], linewidth=1.5)
+    lines!(ax2, 0 : T, res[3], linewidth=1.5, label="n = $n")
+    errorbars!(ax2, 0 : T, res[3], res[4], linewidth=1.5)
     axislegend(ax2, position=:rt)
 
     ax3 = Axis(fig[2, 1], xlabel=L"t", ylabel=L"C(t=8L, t'=7L)", title="Time Correlation")
-    lines!(ax3, 0:L, res[5], linewidth=1.5, label="n = $n")
-    errorbars!(ax3, 0:L, res[5], res[6], linewidth=1.5)
+    lines!(ax3, 0 : 2L, res[5], linewidth=1.5, label="n = $n")
+    errorbars!(ax3, 0 : 2L, res[5], res[6], linewidth=1.5)
     axislegend(ax3, position=:rt)
 
     ax4 = Axis(fig[2, 2], xlabel=L"r", ylabel=L"C(r)", title="Spatial Correlation")
-    lines!(ax4, 0:(L-1), res[7], linewidth=1.5, label="n = $n")
-    errorbars!(ax4, 0:(L-1), res[7], res[8], linewidth=1.5)
+    lines!(ax4, 0 : (L-1), res[7], linewidth=1.5, label="n = $n")
+    errorbars!(ax4, 0 : (L-1), res[7], res[8], linewidth=1.5)
     axislegend(ax4, position=:rt)
     fig
-    save("figures/timecorr_results.png", fig)
+    # save("figures/timecorr_results_$L.png", fig)
 end
