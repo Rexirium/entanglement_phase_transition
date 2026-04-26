@@ -29,21 +29,57 @@ function proj_measure!(psi::MPS, loc::Int)
     orthogonalize!(psi, loc)
     # Calculate the probability of measuring "Up"
     s = siteind(psi, loc)
-    proj = ITensor(s)
-    proj[s => 1] = 1.0
-    Aup = psi[loc] * dag(proj)
-    probUp = real(scalar(dag(Aup) * Aup))
+    proj = ITensor(s', s)
+    proj[s'=>1, s=>1] = 1.0
+
+    Aup = noprime(psi[loc] * proj)
+    probUp = real(scalar(Aup * dag(psi[loc])))
     # Collapse the states
     if rand() < probUp
-        psi[loc] = Aup * proj
+        psi[loc] = Aup
         normalize!(psi)
         return true
     else
-        proj = ITensor(s)
-        proj[s => 2] = 1.0
-        Adn = psi[loc] * dag(proj)
-        psi[loc] = Adn * proj
+        proj[s'=>1, s=>1] = 0.0
+        proj[s'=>2, s=>2] = 1.0
+
+        psi[loc] *= proj
+        noprime!(psi[loc])
         normalize!(psi)
+        return false
+    end
+end
+
+function proj_measure!(psi::MPS, phi::MPS, loc::Int)
+    (loc <= 0 || loc > length(psi)) && return psi
+    # Orthogonalize the MPS at site `loc`
+    orthogonalize!(psi, loc)
+    orthogonalize!(phi, loc)
+    # Calculate the probability of measuring "Up"
+    s = siteind(psi, loc)
+    proj = ITensor(s', s)
+    proj[s'=>1, s=>1] = 1.0
+
+    Aup = noprime(psi[loc] * proj)
+    probUp = real(scalar(Aup * dag(psi[loc])))
+    # Collapse the states
+    if rand() < probUp
+        psi[loc] = Aup
+        normalize!(psi)
+        phi[loc] *= proj
+        noprime!(phi[loc])
+        normalize!(phi)
+        return true
+    else
+        proj[s'=>1, s=>1] = 0.0
+        proj[s'=>2, s=>2] = 1.0
+
+        psi[loc] *= proj
+        noprime!(psi[loc])
+        normalize!(psi)
+        phi[loc] *= proj
+        noprime!(phi[loc])
+        normalize!(phi)
         return false
     end
 end
@@ -65,7 +101,8 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{T, T}=(1.0, 1.0)) where T
     x = rand(T) < probUp ? λ + Δ*randn(T) : -λ + Δ*randn(T)
     M = op("WM", s; x = x, λ = λ, Δ = Δ)
     # Apply the weak measurement operator
-    psi[loc] = noprime(psi[loc] * M)
+    psi[loc] *= M
+    noprime!(psi[loc])
     normalize!(psi)
     return x
 end
@@ -75,7 +112,8 @@ function apply1!(G1::ITensor, psi::MPS, loc::Int)
     Apply the gate `G1` to the MPS `psi` at site `loc` inplace.
     """
     orthogonalize!(psi, loc)
-    psi[loc] = noprime(psi[loc] * G1)
+    psi[loc] *= G1
+    noprime!(psi[loc])
 end
 
 function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))

@@ -69,8 +69,7 @@ function monitor!(psi::MPS, phi::MPS, mnt::PMMonitor{Tp}) where Tp<:AbstractFloa
     """
     for j in length(psi):-1:1
         if rand() < mnt.probs[j]
-            proj_measure!(psi, j)
-            proj_measure!(phi, j)
+            proj_measure!(psi, phi, j)
         end
     end
     return zero(Tp)

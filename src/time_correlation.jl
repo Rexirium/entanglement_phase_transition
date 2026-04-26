@@ -8,8 +8,9 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
 
-    op1 = op(ops[1], sites[ops[2]])
-    op2 = op(ops[3], sites[ops[4]])
+    j1, j2 = ops[2], ops[4]
+    op1 = op(ops[1], sites[j1])
+    op2 = op(ops[3], sites[j2])
     
     truncerr = zero(real(T))
     timecorrs = zeros(real(T), ttotal - tstart + 1)
@@ -31,12 +32,12 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
     end
 
     phi = copy(psi)
-    apply1!(op2, phi, ops[4])
+    apply1!(op2, phi, j2)
     # Compute the time correlation function ⟨ ops1_i(t) ops2_j(0) ⟩
-    orthogonalize!(psi, ops[2])
-    apply1!(op1, phi, ops[2])
+    orthogonalize!(psi, j1)
+    apply1!(op1, phi, j1)
     timecorrs[1] = real(inner(psi, phi))
-    phi[ops[2]] = noprime(phi[ops[2]] * op1) # restore phi to the state
+    phi[j1] = noprime(phi[j1] * op1) # restore phi to the state
     
     @inbounds for t in tstart + 1 : ttotal
         # Apply random unitary operators to pairs of sites
@@ -49,10 +50,11 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
         # Apply monitor layer to disentangle the MPS
         truncerr += monitor!(psi, phi, mnt)
         # Compute the time correlation function ⟨ ops1_i(t) ops2_j(0) ⟩
-        orthogonalize!(psi, ops[2])
-        apply1!(op1, phi, ops[2])
+        orthogonalize!(psi, j1)
+        apply1!(op1, phi, j1)
         timecorrs[t - tstart + 1] = real(inner(psi, phi))
-        phi[ops[2]] = noprime(phi[ops[2]] * op1) # restore phi to the state
+        phi[j1] *= op1
+        noprime!(phi[j1]) # restore phi to the state
         
         if !isnothing(etol) && truncerr > etol
             return timecorrs, truncerr
@@ -70,9 +72,10 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
     sites = siteinds(psi)
     lsize = length(sites)
     T = promote_itensor_eltype(psi)
-
-    op1 = op(ops[1], sites[ops[2]])
-    op2 = op(ops[3], sites[ops[4]])
+    
+    j1, j2 = ops[2], ops[4]
+    op1 = op(ops[1], sites[j1])
+    op2 = op(ops[3], sites[j2])
     
     truncerr = zero(real(T))
     timecorrs = zeros(real(T), ttotal - tstart + 1)
@@ -97,12 +100,12 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
     end
 
     phi = copy(psi)
-    apply1!(op2, phi, ops[4])
+    apply1!(op2, phi, j2)
     # Compute the time correlation function ⟨ op1_i(t) op2_j(0) ⟩
-    orthogonalize!(psi, ops[2])
-    apply1!(op1, phi, ops[2])
+    orthogonalize!(psi, j1)
+    apply1!(op1, phi, j1)
     timecorrs[1] = real(inner(psi, phi))
-    phi[ops[2]] = noprime(phi[ops[2]] * op1) # restore phi to the state
+    phi[j1] = noprime(phi[j1] * op1) # restore phi to the state
     
     @inbounds for t in tstart + 1 : ttotal
         # Apply random unitary operators to pairs of sites
@@ -117,10 +120,11 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
         # Monitor the MPS and truncation error
         mps_record!(obs, psi, t, truncerr)
         # Compute the time correlation function ⟨ op1_i(t) op2_j(0) ⟩
-        orthogonalize!(psi, ops[2])
-        apply1!(op1, phi, ops[2])
+        orthogonalize!(psi, j1)
+        apply1!(op1, phi, j1)
         timecorrs[t - tstart + 1] = real(inner(psi, phi))
-        phi[ops[2]] = noprime(phi[ops[2]] * op1) # restore phi to the state
+        phi[j1] *= op1
+        noprime!(phi[j1]) # restore phi to the state
         
         if !isnothing(etol) && truncerr > etol
             obs.accept = false
