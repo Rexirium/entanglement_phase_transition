@@ -8,44 +8,67 @@ function expected(psi::MPS, opstr::String, loc::Int)
     return real(scalar(C))
 end
 
-function correlation(psi::MPS, ops1::String, ops2::String, i::Int, j::Int)
+function correlation(psi::MPS, ops1::String, ops2::String, loc1::Int, loc2::Int; ortho::Bool=false)
     """Compute the correlation function ⟨ ops1_i ops2_j ⟩ for MPS psi."""
-    left, right = minmax(i, j)
-    op1 = op(ops1, siteind(psi, left))
-    op2 = op(ops2, siteind(psi, right))
-    (left ≤ 0 || right > length(psi)) && error("The sites do not exist!")
-    orthogonalize!(psi, left) # proper canonize the MPS s.t left environment is identity
-    # Only contract tensors between left and right operators (inclusive)
-    C = psi[left] * op1
     
-    if left == right
-        Cdag = dag(psi[left] * op2)
+    op1 = op(ops1, siteind(psi, loc1))
+    op2 = op(ops2, siteind(psi, loc2))
+    (min(loc1, loc2) ≤ 0 || max(loc1, loc2) > length(psi)) && error("The sites do not exist!")
+    # orthogonalize the MPS if ortho is false: not orthogonalized
+    ortho == false && orthogonalize!(psi, loc1)
+    # Only contract tensors between left and right operators (inclusive)
+    C = psi[loc1] * op1
+    
+    if loc1 == loc2
+        Cdag = dag(psi[loc1] * op2)
         C *= Cdag
         return real(scalar(C))
+    elseif loc1 < loc2
+        noprime!(C)
+        ir = linkind(psi, loc1)
+        C *= dag(prime(psi[loc1], ir))
+
+        for n in (loc1 + 1) : (loc2 - 1)
+            C *= psi[n]
+            C *= dag(prime(psi[n], tags="Link"))
+        end
+
+        C *= noprime(psi[loc2] * op2)
+        il = linkind(psi, loc2 - 1)
+        C *= dag(prime(psi[loc2], il))
+
+        return real(scalar(C))
+    else
+        noprime!(C)
+        il = linkind(psi, loc1 - 1)
+        C *= dag(prime(psi[loc1], il))
+
+        for n in (loc1 - 1) : -1 : (loc2 + 1)
+            C *= psi[n]
+            C *= dag(prime(psi[n], tags="Link"))
+        end
+
+        C *= noprime(psi[loc2] * op2)
+        ir = linkind(psi, loc2)
+        C *= dag(prime(psi[loc2], ir))
+
+        return real(scalar(C))
     end
-
-    noprime!(C)
-    ir = linkind(psi, left)
-    C *= dag(prime(psi[left], ir))
-
-    for n in (left+1):(right-1)
-        C *= psi[n]
-        C *= dag(prime(psi[n], tags="Link"))
-    end
-
-    C *= noprime(psi[right] * op2)
-    il = linkind(psi, right-1)
-    C *= dag(prime(psi[right], il))
-
-    return real(scalar(C))
 end
 
-function correlation_site(psi::MPS, ops1::String, pos2::String)
+function correlation_site(psi::MPS, ops1::String, ops2::String)
     """
     Compute the correlation function ⟨ ops1_{L/2} ops2_{j} ⟩ for j = 1,2,...,L
     """
     lsize = length(psi)
-    return correlation
+    center = lsize ÷ 2
+    orthogonalize!(psi, center)
+
+    corrs = zeros(real(promote_itensor_eltype(psi)), lsize)
+    for j in 1:lsize
+        corrs[j] = correlation(psi, ops1, ops2, center, j; ortho=true)
+    end
+    return corrs
 end
 
 function correlation_dist(psi::MPS, ops1::String, ops2::String, dist::Int)
@@ -78,12 +101,4 @@ function correlation_dist(psi::MPS, ops1::String, ops2::String)
     end
     return corrs
 end
-#=
-let 
-    ss = siteinds("S=1/2", 10)
-    psi = randomMPS(ss; linkdims=1)
-    orthogonalize!(psi, 5)
-    @time println(correlation_dist(psi, "Sz", "Sz"))
-end
-=#
 
