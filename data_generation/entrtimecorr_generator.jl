@@ -53,7 +53,7 @@ const Ls = L1:dL:L2
 
         entropies[:, i] = obs.entropies
         timecorrs[:, i] = tcorr
-        spatcorrs[:, i] = correlation_vec(psi, "Z", "Z")
+        spatcorrs[:, i] = correlation_dist(psi, "Z", "Z")
     end
     entropy_mean = mean(entropies, dims=2)[:, 1]
     entropy_sems = stdm(entropies, entropy_mean; dims=2)[:, 1] / sqrt(nsamp)

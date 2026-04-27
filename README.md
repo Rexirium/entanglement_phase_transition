@@ -124,7 +124,7 @@ MI = mutual_information(psi, As, Bs, 1)
 corr_ij = correlation(psi, "Sz", "Sz", 2, 8)  # ⟨Sz_2 Sz_8⟩
 
 # Compute correlation vector at all distances (symmetric w.r.t center)
-corr_vec = correlation_vec(psi, "Sx", "Sx")  # Returns vector of length L
+corr_vec = correlation_dist(psi, "Sx", "Sx")  # Returns vector of length L
 ```
 
 ### Time Evolution with Non-Hermitian Monitor
@@ -213,7 +213,7 @@ timecorrs, truncerr = timecorrelation!(psi, ttotal, tstart, mnt, ops; cutoff=1e-
 ```julia
 # After evolution, analyze final state properties
 S_final = ent_entropy(psi, b, 1)
-corr_final = correlation_vec(psi, "Sz", "Sz")
+corr_final = correlation_dist(psi, "Sz", "Sz")
 neg_final = negativity(psi, b)
 
 println("Final Von Neumann entropy: $S_final")

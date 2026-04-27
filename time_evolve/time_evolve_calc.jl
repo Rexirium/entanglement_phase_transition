@@ -51,7 +51,7 @@ let
             timeevolve!(psi, T, mnt, obs; cutoff=1e-14)
 
             entr_distr[:, j] .= [ent_entropy(psi, x, 1) for x in 0:L]
-            corr_distr[:, j] .= correlation_vec(psi, "Sx", "Sx")
+            corr_distr[:, j] .= correlation_dist(psi, "Sx", "Sx")
 
             entr_evolv[:, j] .= obs.entrs
             corr_evolv[:, :, j] .= hcat((obs.corrs)...)
@@ -96,7 +96,7 @@ let
 
             entr_distr[:, j] .= [ent_entropy(psi, x, 1) for x in 0:L]
 
-            corr_distr[:, j] .= correlation_vec(psi, "Sz", "Sz")
+            corr_distr[:, j] .= correlation_dist(psi, "Sz", "Sz")
             entr_evolv[:, j] .= obs.entrs
             corr_evolv[:, :, j] .= hcat((obs.corrs)...)
 

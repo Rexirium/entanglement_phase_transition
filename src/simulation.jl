@@ -77,6 +77,6 @@ function mps_results!(res::EntrCorrResults, psi::MPS, i::Int)
     Measure the entanglement entropy and correlation function and store them in `res`.
     """
     res.entropies[i] = ent_entropy(psi, res.b, res.n)
-    res.corrs[:, i] .= correlation_vec(psi, res.op, res.op)
+    res.corrs[:, i] .= correlation_dist(psi, res.op, res.op)
 end
 

@@ -45,7 +45,7 @@ function calculation_wrapper(lsize::Int, n::Real; nsamp::Int=100)
         entropies[:, i] = obs.entropies
         expectvals[:, i] = obs.expvals
         timecorrs[:, i] = abs2.(tcorr)
-        spatcorrs[:, i] = abs2.(correlation_vec(psi, "Z", "Z"))
+        spatcorrs[:, i] = abs2.(correlation_dist(psi, "Z", "Z"))
     end
     entropy_mean = mean(entropies, dims=2)[:, 1]
     entropy_sems = stdm(entropies, entropy_mean; dims=2)[:, 1] / sqrt(nsamp)

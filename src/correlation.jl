@@ -2,7 +2,8 @@ function expected(psi::MPS, opstr::String, loc::Int)
     """Compute the expectation value ⟨ opstr_loc ⟩ for MPS psi."""
     opm = op(opstr, siteind(psi, loc))
     orthogonalize!(psi, loc) # proper canonize the MPS s.t left environment is identity
-    C = noprime(psi[loc] * opm)
+    C = psi[loc] * opm
+    noprime!(C)
     C *= dag(psi[loc])
     return real(scalar(C))
 end
@@ -16,24 +17,38 @@ function correlation(psi::MPS, ops1::String, ops2::String, i::Int, j::Int)
     orthogonalize!(psi, left) # proper canonize the MPS s.t left environment is identity
     # Only contract tensors between left and right operators (inclusive)
     C = psi[left] * op1
+    
     if left == right
         Cdag = dag(psi[left] * op2)
         C *= Cdag
         return real(scalar(C))
     end
+
+    noprime!(C)
     ir = linkind(psi, left)
-    C *= dag(prime(prime(psi[left], tags="Site"), ir))
+    C *= dag(prime(psi[left], ir))
+
     for n in (left+1):(right-1)
         C *= psi[n]
         C *= dag(prime(psi[n], tags="Link"))
     end
-    C *= psi[right] * op2
+
+    C *= noprime(psi[right] * op2)
     il = linkind(psi, right-1)
-    C *= dag(prime(prime(psi[right], tags="Site"), il))
+    C *= dag(prime(psi[right], il))
+
     return real(scalar(C))
 end
 
-function correlation(psi::MPS, ops1::String, ops2::String, dist::Int)
+function correlation_site(psi::MPS, ops1::String, pos2::String)
+    """
+    Compute the correlation function ⟨ ops1_{L/2} ops2_{j} ⟩ for j = 1,2,...,L
+    """
+    lsize = length(psi)
+    return correlation
+end
+
+function correlation_dist(psi::MPS, ops1::String, ops2::String, dist::Int)
     """
     Compute the correlation function ⟨ ops1_i ops2_{i+dist} ⟩ for 
     (i, i+dist) symmetric w.r.t the center of MPS .
@@ -46,7 +61,7 @@ function correlation(psi::MPS, ops1::String, ops2::String, dist::Int)
     return correlation(psi, ops1, ops2, left, right)
 end
 
-function correlation_vec(psi::MPS, ops1::String, ops2::String)
+function correlation_dist(psi::MPS, ops1::String, ops2::String)
     """
     Compute the correlation function ⟨ ops1_i ops2_{i+dist} ⟩ for 
     all distances dist = 0, 1, ..., lsize-1, where (i, i+dist) are symmetric
@@ -68,7 +83,7 @@ let
     ss = siteinds("S=1/2", 10)
     psi = randomMPS(ss; linkdims=1)
     orthogonalize!(psi, 5)
-    @time println(correlation_vec(psi, "Sz", "Sz"))
+    @time println(correlation_dist(psi, "Sz", "Sz"))
 end
 =#
 

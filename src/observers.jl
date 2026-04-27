@@ -68,7 +68,7 @@ end
 
 function mps_record!(obs::EntrCorrObserver, psi::MPS, t::Int, truncerr::Real)
     push!(obs.entrs, ent_entropy(psi, obs.b, obs.n))
-    push!(obs.corrs, correlation_vec(psi, obs.op, obs.op))
+    push!(obs.corrs, correlation_dist(psi, obs.op, obs.op))
 end
 
 function mps_record!(obs::EntropyProfile, psi::MPS, t::Int, truncerr::Real)
@@ -102,7 +102,7 @@ function mps_record!(obs::EntrCorrAverager, psi::MPS, t::Int, truncerr::Real)
     tstart = obs.tstart
     if t > tstart
         entr = ent_entropy(psi, obs.b, obs.n)
-        corr = correlation_vec(psi, obs.op, obs.op)
+        corr = correlation_dist(psi, obs.op, obs.op)
 
         delta_entr = entr - obs.entr_mean
         delta_elog = log(entr) - obs.entr_logm
