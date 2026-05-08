@@ -110,8 +110,8 @@ function mps_record!(obs::EntrCorrAverager, psi::MPS, t::Int, truncerr::Real)
 
         obs.entr_mean += delta_entr / (t - tstart)
         obs.entr_logm += delta_elog / (t - tstart)
-        obs.corr_mean += delta_corr / (t - tstart)
+        obs.corr_mean .+= delta_corr ./ (t - tstart)
         obs.entr_sstd += delta_entr * (entr - obs.entr_mean)
-        obs.corr_sstd += delta_corr .* (corr - obs.corr_mean)
+        obs.corr_sstd .+= delta_corr .* (corr .- obs.corr_mean)
     end
 end
