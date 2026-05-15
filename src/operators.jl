@@ -128,7 +128,11 @@ function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int
     linds = uniqueinds(psi[j1], psi[j2])
     psi[j1], S, psi[j2], spec = svd(A, linds; cutoff=cutoff, maxdim=maxdim)
     psi[j2] *= S
+
+    replacetags!(psi[j1], "Link,u" => "Link,l=$j1")
+    replacetags!(psi[j2], "Link,u" => "Link,l=$j1")
     set_ortho_lims!(psi, j2:j2)
+
     return spec.truncerr
 end
 #=
@@ -148,7 +152,13 @@ function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int
     linds23 = (commonind(psi[j1], B), s)
     psi[j2], S23, psi[j3], spec23 = svd(B, linds23; cutoff=cutoff, maxdim=maxdim)
     psi[j2] *= S23
+    
+    replacetags!(psi[j1], "Link,u" => "Link,l=$j1")
+    replacetags!(psi[j2], "Link,u" => "Link,l=$j1")
+    replacetags!(psi[j2], "Link,v" => "Link,l=$j2")
+    replacetags!(psi[j3], "Link,v" => "Link,l=$j2")
     set_ortho_lims!(psi, j2:j2)
+
     return spec12.truncerr + spec23.truncerr
 end
 =#
