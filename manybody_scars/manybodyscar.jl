@@ -1,6 +1,7 @@
-using MKL, LinearAlgebra
+using MKL
 using ITensors, ITensorMPS
 include("../src/entanglement.jl")
+include("../src/correlation.jl")
 using CairoMakie
 
 mutable struct MyObserver <: AbstractObserver
@@ -31,9 +32,14 @@ function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
     UB = Vector{ITensor}()
     UC = Vector{ITensor}()
 
-    pxpm = kron([0 0; 0 1], [0 1; 1 0], [0 0; 0 1])
+    X = [0 1; 1 0]
+    P = [0 0; 0 1]
+
+    pxpm = kron(P, X, P)
     pxpexpm1 = cis(-dt * pxpm)
     pxpexpm2 = cis(-dt/2 * pxpm)
+    xpexp = cis( -dt / 2 * kron(X, P))
+    pxexp = cis( -dt * kron(P, X))
 
     for j in 1:(lsize - 2)
         if mod1(j, 3) == 1
@@ -47,6 +53,8 @@ function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
             push!(UC, uj)
         end
     end
+    push!(UB, op(pxexp, ss[end - 1], ss[end]))
+    push!(UC, op(xpexp, ss[1], ss[2]))
     return UA, reverse(UB), UC
 end
 
@@ -90,7 +98,7 @@ let
     L, nsteps = 24, 200
     tf = 20.0
     ss = siteinds("S=1/2", L)
-    psi = make_initialstate(ss, 3, "Up")
+    psi = make_initialstate(ss, 2, "Up")
     obs = MyObserver()
     tebd_pxp!(psi, tf, nsteps, obs; maxdim=400)
 
