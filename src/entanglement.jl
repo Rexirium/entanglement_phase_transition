@@ -24,9 +24,8 @@ function schmidt_decomp(psi::MPS, b::Int)::NDTensors.Tensor
     orthogonalize!(psi, b)
     linds = uniqueinds(psi[b], psi[b+1])
     _ , S, _ = ITensors.svd(psi[b], linds)
-    schs = diag(S)
 
-    return schs
+    return diag(S)
 end
 
 function ent_entropy(psi::MPS, b::Int, n::Real=1)
@@ -105,8 +104,8 @@ function reduced_density_eigen(psi::MPS, x::Int)::NDTensors.Tensor
     rho = contract(Ap, psi[x])
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
-    ps = diag(D)
-    return ps
+
+    return diag(D)
 end
 
 function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.Tensor
@@ -133,8 +132,8 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.Tensor
     rho *= dag(prime(prime(psi[b], tags="Site"), il))
     # diagonalize the reduced density matrix
     D, _ = eigen(rho; ishermitian=true)
-    ps = diag(D)
-    return ps
+
+    return diag(D)
 end
 
 function zeroth_entropy(psi::MPS, b::Int)
