@@ -15,13 +15,13 @@ function ent_entropy(ps::NDTensors.Tensor{T}, n::Real=1)::Real where T<:Real
     end
 end
 
-function schmidt_decomp(psi::MPS, b::Int)::NDTensors.Tensor
+function schmidt_decomp(psi0::MPS, b::Int)::NDTensors.Tensor
     """
     Perform Schmidt decomposition of the MPS `psi` biparted after site `b`.
     Returns the Schmidt coefficients as a vector.
     """
     # SVD decomposition to obtain the Schmidt coefficients
-    orthogonalize!(psi, b)
+    psi = orthogonalize(psi0, b)
     linds = uniqueinds(psi[b], psi[b+1])
     _ , S, _ = ITensors.svd(psi[b], linds)
 
@@ -94,12 +94,12 @@ function concurrence(psi::MPS, xs::Vector{<:Int})
     return sqrt(2 * abs(1 - trace))
 end
 
-function reduced_density_eigen(psi::MPS, x::Int)::NDTensors.Tensor
+function reduced_density_eigen(psi0::MPS, x::Int)::NDTensors.Tensor
     """
     Calculate the reduced density matrix eigen values of a region of a single sites `x` from other sites.
     """
     # obtain the reduced density matrix 
-    orthogonalize!(psi, x)
+    psi = orthogonalize(psi0, x)
     Ap = prime(dag(psi[x]), tags="Site")
     rho = contract(Ap, psi[x])
     # diagonalize the reduced density matrix
@@ -108,14 +108,14 @@ function reduced_density_eigen(psi::MPS, x::Int)::NDTensors.Tensor
     return diag(D)
 end
 
-function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.Tensor
+function reduced_density_eigen(psi0::MPS, xs::Vector{<:Int})::NDTensors.Tensor
     """
     Calculate the reduced density matrix eigen values of multiple sites `xs` from other sites.
     """
     length(xs) == 1 && return reduced_density_eigen(psi, xs[1])
     a, b = xs[1], xs[end]
     # obtain the reduced density matrix
-    orthogonalize!(psi, a)
+    psi = orthogonalize(psi0, x)
     rho = psi[a]
     ir = linkind(psi, a)
     rho *= dag(prime(prime(psi[a], tags="Site"), ir))
@@ -136,12 +136,12 @@ function reduced_density_eigen(psi::MPS, xs::Vector{<:Int})::NDTensors.Tensor
     return diag(D)
 end
 
-function zeroth_entropy(psi::MPS, b::Int)
+function zeroth_entropy(psi0::MPS, b::Int)
     """
     Calculate the zeroth order Renyi entropy of the MPS `psi` biparted after site `b`.
     """
-    (b <= 0 || b >= length(psi)) && return 0.0
-    orthogonalize!(psi, b)
+    (b <= 0 || b >= length(psi0)) && return 0.0
+    psi = orthogonalize(psi0, x)
     truncate!(psi, b) 
     return log2(linkdim(psi, b))
 end

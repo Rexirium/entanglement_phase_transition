@@ -1,7 +1,7 @@
 function expected(psi::MPS, opstr::String, loc::Int)
     """Compute the expectation value ⟨ opstr_loc ⟩ for MPS psi."""
-    opm = op(opstr, siteind(psi, loc))
     orthogonalize!(psi, loc) # proper canonize the MPS s.t left environment is identity
+    opm = op(opstr, siteind(psi, loc))
     C = psi[loc] * opm
     noprime!(C)
     C *= dag(psi[loc])
@@ -11,11 +11,11 @@ end
 function correlation(psi::MPS, ops1::String, ops2::String, loc1::Int, loc2::Int; ortho::Bool=false)
     """Compute the correlation function ⟨ ops1_i ops2_j ⟩ for MPS psi."""
     
-    op1 = op(ops1, siteind(psi, loc1))
-    op2 = op(ops2, siteind(psi, loc2))
     (min(loc1, loc2) ≤ 0 || max(loc1, loc2) > length(psi)) && error("The sites do not exist!")
     # orthogonalize the MPS if ortho is false: not orthogonalized
     ortho == false && orthogonalize!(psi, loc1)
+    op1 = op(ops1, siteind(psi, loc1))
+    op2 = op(ops2, siteind(psi, loc2))
     # Only contract tensors between left and right operators (inclusive)
     C = psi[loc1] * op1
     
