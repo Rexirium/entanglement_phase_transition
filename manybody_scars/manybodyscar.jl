@@ -6,13 +6,16 @@ using CairoMakie
 
 mutable struct MyObserver <: AbstractObserver
     entropies::Vector{Float64}
+    correlations::Vector{Float64}
     maxbonds::Vector{Int}
 
-    MyObserver() = new(Float64[], Int[])
+    MyObserver() = new(Float64[], Float64[], Int[])
 end
 
 function mps_record!(obs::MyObserver, psi::MPS, t::Int)
-    push!(obs.entropies, ent_entropy(psi, length(psi) ÷ 2))
+    b = length(psi) ÷ 2
+    push!(obs.entropies, ent_entropy(psi, b))
+    push!(obs.correlations, correlation(psi, "Z", "Z", b, b + 1))
     push!(obs.maxbonds, maxlinkdim(psi))
 end
 
@@ -95,15 +98,17 @@ function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
 end
 
 let 
-    L, nsteps = 24, 200
-    tf = 20.0
+    L, nsteps = 24, 600
+    tf = 30.0
+    ts = range(0.0, tf, nsteps + 1)
+
     ss = siteinds("S=1/2", L)
     psi = make_initialstate(ss, 2, "Up")
     obs = MyObserver()
     tebd_pxp!(psi, tf, nsteps, obs; maxdim=400)
 
     fig = Figure()
-    ax = Axis(fig[1, 1], xlabel="Time step", ylabel="Entropy")
-    lines!(ax, 0:nsteps, obs.entropies)
+    ax = Axis(fig[1, 1], xlabel="Time step", ylabel="Correlation")
+    lines!(ax, ts, obs.correlations)
     fig
 end
