@@ -1,34 +1,33 @@
 using MKL
 using ITensors, ITensorMPS
-using Observers: observer
 include("../src/entanglement.jl")
 include("../src/correlation.jl")
 using CairoMakie
 
 mutable struct MyObserver <: AbstractObserver
+    initial::MPS
+    steps_per_snapshot::Int
     entropies::Vector{Float64}
     correlations::Vector{Float64}
+    overlaps::Vector{Float64}
     maxbonds::Vector{Int}
+    truncerrs::Vector{Float64}
 
-    MyObserver() = new(Float64[], Float64[], Int[])
+    MyObserver(initial::MPS) = new(initial, 1, Float64[], Float64[], Float64[], Int[], Float64[])
 end
 
-mutable struct DmObserver <: AbstractObserver
-    maxbonds::Vector{Int}
-
-    DmObserver() = new(Int[])
-end
 
 function mps_record!(obs::MyObserver, psi::MPS, t::Int)
+    if mod(t, obs.steps_per_snapshot) != 0
+        return
+    end
+    
     b = length(psi) ÷ 2
     orthogonalize!(psi, b)
     push!(obs.entropies, ent_entropy(psi, b))
     push!(obs.correlations, correlation(psi, "Z", "Z", b, b + 1; ortho=true))
-    push!(obs.maxbonds, maxlinkdim(psi))
     orthogonalize!(psi, 1)
-end
-
-function mps_record!(obs::DmObserver, psi::MPS, t::Int)
+    push!(obs.overlaps, abs2(inner(obs.initial, psi)))
     push!(obs.maxbonds, maxlinkdim(psi))
 end
 
@@ -87,24 +86,8 @@ function make_Hamiltonian(ss::Vector{<:Index})
     return MPO(os, ss)
 end
 
-function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int; maxdim::Int=400, cutoff::Real=1e-14)
-    ss = siteinds(psi)
-    dt = finaltime / nsteps
-    UA, UB, UC = make_unitaries(ss, dt)
-
-    for t in 1:nsteps
-        psi = apply(UA, psi; cutoff=cutoff, maxdim=maxdim)
-        psi = apply(UB, psi; cutoff=cutoff, maxdim=maxdim)
-        psi = apply(UC, psi; cutoff=cutoff, maxdim=maxdim)
-        psi = apply(UB, psi; cutoff=cutoff, maxdim=maxdim)
-        psi = apply(UA, psi; cutoff=cutoff, maxdim=maxdim)
-
-        normalize!(psi)
-    end
-    return psi
-end
-
-function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14)
+function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14)
+    psi = copy(psi0)
     ss = siteinds(psi)
     dt = finaltime / nsteps
     UA, UB, UC = make_unitaries(ss, dt)
@@ -122,55 +105,58 @@ function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     end
     return psi
 end
-#=
-function tdvp_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs; maxdim::Int=400, cutoff::Real=1e-14)
-    ss = siteinds(psi)
-    H = make_Hamiltonian(ss)
 
-    psi = tdvp(H, -im * finaltime, psi; nsteps=nsteps, maxdim=maxdim, cutoff=cutoff, (step_observer!)=obs, outputlevel=0)
-    return psi
+
+function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14)
+    ss = siteinds(psi)
+    dt = finaltime / nsteps
+    UA, UB, UC = make_unitaries(ss, dt)
+
+    mps_record!(obs, psi, 0)
+    for t in 1:nsteps
+        psi = apply(UA, psi; maxdim=maxdim, cutoff=cutoff)
+        psi = apply(UB, psi; maxdim=maxdim, cutoff=cutoff)
+        psi = apply(UC, psi; maxdim=maxdim, cutoff=cutoff)
+        psi = apply(UB, psi; maxdim=maxdim, cutoff=cutoff)
+        psi = apply(UA, psi; maxdim=maxdim, cutoff=cutoff)
+
+        mps_record!(obs, psi, t)
+        normalize!(psi)
+    end
 end
-=#
-function tdvp2_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14)
+
+function tdvp_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14, krylovdim::Int=16)
     ss = siteinds(psi)
     H = make_Hamiltonian(ss)
 
     dt = finaltime / nsteps
     mps_record!(obs, psi, 0)
     for t in 1:nsteps
-        psi = tdvp(H, -im * dt, psi; nsteps=1, maxdim=maxdim, cutoff=cutoff, outputlevel=0)
+        psi = tdvp(H, -im * dt, psi; nsteps=1, 
+            maxdim=maxdim, cutoff=cutoff, 
+            updater_kwargs=(; tol=1e-4, krylovdim=krylovdim), 
+            outputlevel=0)
         mps_record!(obs, psi, t)
     end
-    
-    return psi
 end
 
 let 
-    L, nsteps = 24, 20
+    L, nsteps =32 , 1000
     b = L ÷ 2
-    tf = 10.0
+    tf = 20.0
     ts = range(0.0, tf, nsteps + 1)
 
     ss = siteinds("S=1/2", L)
     psi = make_initialstate(ss, 2, "Up")
     H = make_Hamiltonian(ss)
 
-    get_entropy(; state) = ent_entropy(state, b)
-    get_maxbond(; state) = maxlinkdim(state)
-    get_correlation(; state) = begin
-        corr = correlation(state, "Z", "Z", b, b + 1)
-        orthogonalize!(state, 1)
-        corr
-    end
+    obs = MyObserver(copy(psi))
 
-    obs = observer("entropies"=>get_entropy, "correlations"=>get_correlation, "maxbonds"=>get_maxbond)
-    obs2 = MyObserver()
-
-    @time psi = tdvp2_pxp!(psi, tf, nsteps, obs2; maxdim=400, cutoff=1e-14)
+    @time tebd_pxp!(psi, tf, nsteps, obs; maxdim=128, cutoff=1e-12)
 
     fig = Figure()
     ax = Axis(fig[1, 1], xlabel="Time step", ylabel="Correlation")
-    lines!(ax, ts[2:end], obs2.correlations)
+    lines!(ax, ts, obs.overlaps)
     fig
     
 end
