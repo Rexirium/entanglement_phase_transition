@@ -28,7 +28,7 @@ function monitor!(psi::MPS, mnt::NHMonitor{Tp}) where Tp<:AbstractFloat
     for j in length(psi):-1:1
         if rand() < mnt.prob
             M = op("NH", siteind(psi, j); eta=mnt.eta)
-            apply1!(M, psi, j)
+            applyn!(M, psi, j)
             normalize!(psi)
         end
     end
@@ -54,8 +54,8 @@ function monitor!(psi::MPS, phi::MPS, mnt::NHMonitor{Tp}) where Tp<:AbstractFloa
     for j in length(psi):-1:1
         if rand() < mnt.prob
             M = op("NH", siteind(psi, j); eta=mnt.eta)
-            apply1!(M, psi, j)
-            apply1!(M, phi, j)
+            applyn!(M, psi, j)
+            applyn!(M, phi, j)
             normalize!(psi)
             normalize!(phi)
         end

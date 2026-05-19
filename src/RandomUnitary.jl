@@ -21,7 +21,7 @@ export ent_entropy, negativity, concurrence, zeroth_entropy, mutual_information
 export expected, correlation, correlation_site, correlation_dist
 export proj_measure!, weak_measure!, AbstractMonitor, NHMonitor, PMMonitor, monitor!
 export AbstractObserver, EntropyObserver, EntropyAverager, EntrCorrObserver, EntrCorrAverager, mps_record!
-export timeevolve!, timecorrelation!
+export applyn!, timeevolve!, timecorrelation!
 # export CalcResult, AbstractResult, EntropyResults, mps_results!, calculation_mean, calculation_mean_multi
 
 end # RandomUnitary

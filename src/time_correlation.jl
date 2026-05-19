@@ -32,10 +32,10 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
     end
 
     phi = copy(psi)
-    apply1!(op2, phi, j2)
+    applyn!(op2, phi, j2)
     # Compute the time correlation function ⟨ ops1_i(t) ops2_j(0) ⟩
     orthogonalize!(psi, j1)
-    apply1!(op1, phi, j1)
+    applyn!(op1, phi, j1)
     timecorrs[1] = real(inner(psi, phi))
     phi[j1] = noprime(phi[j1] * op1) # restore phi to the state
     
@@ -51,7 +51,7 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
         truncerr += monitor!(psi, phi, mnt)
         # Compute the time correlation function ⟨ ops1_i(t) ops2_j(0) ⟩
         orthogonalize!(psi, j1)
-        apply1!(op1, phi, j1)
+        applyn!(op1, phi, j1)
         timecorrs[t - tstart + 1] = real(inner(psi, phi))
         phi[j1] *= op1
         noprime!(phi[j1]) # restore phi to the state
@@ -100,10 +100,10 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
     end
 
     phi = copy(psi)
-    apply1!(op2, phi, j2)
+    applyn!(op2, phi, j2)
     # Compute the time correlation function ⟨ op1_i(t) op2_j(0) ⟩
     orthogonalize!(psi, j1)
-    apply1!(op1, phi, j1)
+    applyn!(op1, phi, j1)
     timecorrs[1] = real(inner(psi, phi))
     phi[j1] = noprime(phi[j1] * op1) # restore phi to the state
     
@@ -121,7 +121,7 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
         mps_record!(obs, psi, t, truncerr)
         # Compute the time correlation function ⟨ op1_i(t) op2_j(0) ⟩
         orthogonalize!(psi, j1)
-        apply1!(op1, phi, j1)
+        applyn!(op1, phi, j1)
         timecorrs[t - tstart + 1] = real(inner(psi, phi))
         phi[j1] *= op1
         noprime!(phi[j1]) # restore phi to the state

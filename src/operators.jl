@@ -107,22 +107,28 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{T, T}=(1.0, 1.0)) where T
     return x
 end
 
-function apply1!(G1::ITensor, psi::MPS, loc::Int)
+function applyn!(G::ITensor, psi::MPS; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi))
+    js = findsites(psi, G)
+    return applyn!(G, psi, js...; cutoff=cutoff, maxdim=maxdim)
+end
+
+function applyn!(G1::ITensor, psi::MPS, loc::Int; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi))
     """
     Apply the gate `G1` to the MPS `psi` at site `loc` inplace.
     """
     orthogonalize!(psi, loc)
     psi[loc] *= G1
     noprime!(psi[loc])
+    return 0.0
 end
 
-function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))
+function applyn!(G2::ITensor, psi::MPS, j1::Int, j2::Int; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi))
     """
     Apply two adjacent site gate `G2` to the MPS `psi` at sites `j1` and `j1+1` inplace.
     """
     (j1<=0 || j1>= length(psi)) && error("Wrong starting site for two-site gate application.")
     orthogonalize!(psi, j1)
-    j2 = j1 + 1
+
     A = (psi[j1] * psi[j2]) * G2
     noprime!(A)
     linds = uniqueinds(psi[j1], psi[j2])
@@ -135,30 +141,42 @@ function apply2!(G2::ITensor, psi::MPS, j1::Int; cutoff::Real=1e-14, maxdim::Int
 
     return spec.truncerr
 end
-#=
-function apply3!(G3::ITensor, psi::MPS, j2::Int; cutoff::Real=1e-14, maxdim::Int=2*maxlinkdim(psi))
+
+function applyn!(G3::ITensor, psi::MPS, j1::Int, j2::Int, j3::Int; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi))
     """
     Apply three adjacent site gate `G3` to the MPS `psi` at sites `j2-1`, `j2`, and `j2+1` inplace.
     """
     (j2 <= 1 || j2 >= length(psi)) && error("Wrong middle site for three-site gate application.")
-    orthogonalize!(psi, j2)
+    orthogonalize!(psi, j1)
     s = siteind(psi, j2)
-    j1, j3 = j2 - 1, j2 + 1
+    
     A = (psi[j1] * psi[j2] * psi[j3]) * G3
     noprime!(A)
-    linds = uniqueinds(psi[j1], psi[j2])
-    psi[j1], S12, B, spec12 = svd(A, linds; cutoff=cutoff, maxdim=maxdim)
+    linds12 = uniqueinds(psi[j1], psi[j2])
+    psi[j1], S12, B, spec12 = svd(A, linds12; cutoff=cutoff, maxdim=maxdim)
     B *= S12
+    replacetags!(psi[j1], "Link,u" => "Link,l=$j1")
+    replacetags!(B, "Link,u" => "Link,l=$j1")
+
     linds23 = (commonind(psi[j1], B), s)
     psi[j2], S23, psi[j3], spec23 = svd(B, linds23; cutoff=cutoff, maxdim=maxdim)
-    psi[j2] *= S23
+    psi[j3] *= S23
     
-    replacetags!(psi[j1], "Link,u" => "Link,l=$j1")
-    replacetags!(psi[j2], "Link,u" => "Link,l=$j1")
-    replacetags!(psi[j2], "Link,v" => "Link,l=$j2")
-    replacetags!(psi[j3], "Link,v" => "Link,l=$j2")
-    set_ortho_lims!(psi, j2:j2)
+    replacetags!(psi[j2], "Link,u" => "Link,l=$j2")
+    replacetags!(psi[j3], "Link,u" => "Link,l=$j2")
+    set_ortho_lims!(psi, j3:j3)
 
     return spec12.truncerr + spec23.truncerr
 end
-=#
+
+function applyn!(Gs::Vector{ITensor}, psi::MPS; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi))
+    """
+    Apply a vector of gates `Gs` to the MPS `psi` inplace.
+    """
+    truncerr = 0.0
+    for G in Gs
+        truncerr += applyn!(G, psi; cutoff=cutoff, maxdim=maxdim)
+    end
+    return truncerr
+end
+

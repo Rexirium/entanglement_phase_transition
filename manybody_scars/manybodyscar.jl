@@ -1,7 +1,9 @@
 using MKL
 using ITensors, ITensorMPS
-include("../src/entanglement.jl")
-include("../src/correlation.jl")
+if !isdefined(Main, :RandomUnitary)
+    include("../src/RandomUnitary.jl")
+    using .RandomUnitary: applyn!, ent_entropy, correlation
+end
 using CairoMakie
 
 mutable struct MyObserver <: AbstractObserver
@@ -13,7 +15,7 @@ mutable struct MyObserver <: AbstractObserver
     maxbonds::Vector{Int}
     truncerrs::Vector{Float64}
 
-    MyObserver(initial::MPS) = new(initial, 1, Float64[], Float64[], Float64[], Int[], Float64[])
+    MyObserver(initial::MPS, p::Int) = new(initial, p, Float64[], Float64[], Float64[], Int[], Float64[])
 end
 
 
@@ -21,7 +23,7 @@ function mps_record!(obs::MyObserver, psi::MPS, t::Int)
     if mod(t, obs.steps_per_snapshot) != 0
         return
     end
-    
+
     b = length(psi) ÷ 2
     orthogonalize!(psi, b)
     push!(obs.entropies, ent_entropy(psi, b))
@@ -70,7 +72,7 @@ function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
         end
     end
     push!(UB, op(pxexp, ss[end - 1], ss[end]))
-    return UA, reverse(UB), UC
+    return UA, UB, UC
 end
 
 function make_Hamiltonian(ss::Vector{<:Index})
@@ -92,18 +94,22 @@ function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     dt = finaltime / nsteps
     UA, UB, UC = make_unitaries(ss, dt)
 
+    truncerrs = Float64[0.0]
+    truncerr = 0.0
+
     mps_record!(obs, psi, 0)
     for t in 1:nsteps
-        psi = apply(UA, psi; maxdim=maxdim, cutoff=cutoff)
-        psi = apply(UB, psi; maxdim=maxdim, cutoff=cutoff)
-        psi = apply(UC, psi; maxdim=maxdim, cutoff=cutoff)
-        psi = apply(UB, psi; maxdim=maxdim, cutoff=cutoff)
-        psi = apply(UA, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UC, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
 
         mps_record!(obs, psi, t)
+        push!(truncerrs, truncerr)
         normalize!(psi)
     end
-    return psi
+    return psi, truncerrs
 end
 
 
@@ -112,17 +118,22 @@ function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     dt = finaltime / nsteps
     UA, UB, UC = make_unitaries(ss, dt)
 
+    truncerrs = Float64[0.0]
+    truncerr = 0.0
+
     mps_record!(obs, psi, 0)
     for t in 1:nsteps
-        psi = apply(UA, psi; maxdim=maxdim, cutoff=cutoff)
-        psi = apply(UB, psi; maxdim=maxdim, cutoff=cutoff)
-        psi = apply(UC, psi; maxdim=maxdim, cutoff=cutoff)
-        psi = apply(UB, psi; maxdim=maxdim, cutoff=cutoff)
-        psi = apply(UA, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UC, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
 
         mps_record!(obs, psi, t)
+        push!(truncerrs, truncerr)
         normalize!(psi)
     end
+    return truncerrs
 end
 
 function tdvp_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14, krylovdim::Int=16)
@@ -130,6 +141,7 @@ function tdvp_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     H = make_Hamiltonian(ss)
 
     dt = finaltime / nsteps
+
     mps_record!(obs, psi, 0)
     for t in 1:nsteps
         psi = tdvp(H, -im * dt, psi; nsteps=1, 
@@ -141,22 +153,34 @@ function tdvp_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
 end
 
 let 
-    L, nsteps =32 , 1000
+    L, nsteps =18 , 200
     b = L ÷ 2
+
     tf = 20.0
     ts = range(0.0, tf, nsteps + 1)
+    p = 1
 
     ss = siteinds("S=1/2", L)
     psi = make_initialstate(ss, 2, "Up")
     H = make_Hamiltonian(ss)
 
-    obs = MyObserver(copy(psi))
+    obs = MyObserver(copy(psi), p)
 
-    @time tebd_pxp!(psi, tf, nsteps, obs; maxdim=128, cutoff=1e-12)
+    @time errs = tebd_pxp!(psi, tf, nsteps, obs; maxdim=64, cutoff=1e-12)
 
-    fig = Figure()
-    ax = Axis(fig[1, 1], xlabel="Time step", ylabel="Correlation")
-    lines!(ax, ts, obs.overlaps)
+    fig = Figure(size=(800, 600))
+    ax1 = Axis(fig[1, 1], xlabel="t", ylabel="Entropy")
+    lines!(ax1, ts, obs.entropies)
+
+    ax2 = Axis(fig[1, 2], xlabel="t", ylabel="Correlation")
+    lines!(ax2, ts, obs.correlations)
+
+    ax3 = Axis(fig[2, 1], xlabel="t", ylabel="Overlap")
+    lines!(ax3, ts, obs.overlaps)
+
+    ax4 = Axis(fig[2, 2], xlabel="t", ylabel="Truncation Error")
+    lines!(ax4, ts, errs)
     fig
+    #save("pxp_tebd_results.png", fig)
     
 end
