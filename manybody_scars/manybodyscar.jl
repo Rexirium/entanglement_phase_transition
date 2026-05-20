@@ -49,8 +49,8 @@ function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
     UB = Vector{ITensor}()
     UC = Vector{ITensor}()
 
-    X = [0 1; 1 0]
-    P = [0 0; 0 1]
+    X = Int64[0 1; 1 0]
+    P = Int64[0 0; 0 1]
 
     pxpm = kron(P, X, P)
     pxpexpm1 = cis(-dt * pxpm)
@@ -93,6 +93,7 @@ function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     ss = siteinds(psi)
     dt = finaltime / nsteps
     UA, UB, UC = make_unitaries(ss, dt)
+    reverse!(UB)
 
     truncerrs = Float64[0.0]
     truncerr = 0.0
@@ -100,9 +101,9 @@ function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     mps_record!(obs, psi, 0)
     for t in 1:nsteps
         truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
-        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff, rev=true)
         truncerr += applyn!(UC, psi; maxdim=maxdim, cutoff=cutoff)
-        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff, rev=true)
         truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
 
         mps_record!(obs, psi, t)
@@ -112,11 +113,11 @@ function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     return psi, truncerrs
 end
 
-
 function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14)
     ss = siteinds(psi)
     dt = finaltime / nsteps
     UA, UB, UC = make_unitaries(ss, dt)
+    reverse!(UB)
 
     truncerrs = Float64[0.0]
     truncerr = 0.0
@@ -124,9 +125,9 @@ function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     mps_record!(obs, psi, 0)
     for t in 1:nsteps
         truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
-        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff, rev=true)
         truncerr += applyn!(UC, psi; maxdim=maxdim, cutoff=cutoff)
-        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff)
+        truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff, rev=true)
         truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
 
         mps_record!(obs, psi, t)
@@ -166,7 +167,7 @@ let
 
     obs = MyObserver(copy(psi), p)
 
-    @time errs = tebd_pxp!(psi, tf, nsteps, obs; maxdim=64, cutoff=1e-12)
+    @time errs = tebd_pxp!(psi, tf, nsteps, obs; maxdim=128, cutoff=1e-12)
 
     fig = Figure(size=(800, 600))
     ax1 = Axis(fig[1, 1], xlabel="t", ylabel="Entropy")
