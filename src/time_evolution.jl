@@ -13,7 +13,7 @@ function timeevolve!(psi::MPS, ttotal::Int, mnt::AbstractMonitor;
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
+            err = applyn!(U, psi, j, j+1; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
         # Apply monitor layer to disentangle the MPS
@@ -43,7 +43,7 @@ function timeevolve!(psi::MPS, ttotal::Int, mnt::AbstractMonitor, obs::AbstractO
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
+            err = applyn!(U, psi, j, j+1; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
         # Apply monitor layer to disentangle the MPS

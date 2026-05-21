@@ -19,7 +19,7 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
+            err = applyn!(U, psi, j, j+1; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
         # Apply monitor layer to disentangle the MPS
@@ -43,8 +43,8 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
-            apply2!(U, phi, j; cutoff=cutoff, maxdim=maxdim)
+            err = applyn!(U, psi, j, j+1; cutoff=cutoff, maxdim=maxdim)
+            applyn!(U, phi, j, j+1; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
         # Apply monitor layer to disentangle the MPS
@@ -85,7 +85,7 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
+            err = applyn!(U, psi, j, j+1; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
         # Apply monitor layer to disentangle the MPS
@@ -111,8 +111,8 @@ function timecorrelation!(psi::MPS, ttotal::Int, tstart::Int, mnt::AbstractMonit
         # Apply random unitary operators to pairs of sites
         for j in (iseven(t) + 1):2:lsize-1
             U = op("RdU", sites[j], sites[j+1]; eltype=T)
-            err = apply2!(U, psi, j; cutoff=cutoff, maxdim=maxdim)
-            apply2!(U, phi, j; cutoff=cutoff, maxdim=maxdim)
+            err = applyn!(U, psi, j, j+1; cutoff=cutoff, maxdim=maxdim)
+            applyn!(U, phi, j, j+1; cutoff=cutoff, maxdim=maxdim)
             truncerr += err
         end
         # Apply monitor layer to disentangle the MPS
