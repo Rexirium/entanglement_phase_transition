@@ -60,10 +60,10 @@ function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
 
     push!(UC, op(xpexp, ss[1], ss[2]))
     for j in 1:(lsize - 2)
-        if mod1(j, 3) == 1
+        if mod(j, 3) == 1
             uj = op(pxpexpm2, ss[j], ss[j + 1], ss[j + 2])
             push!(UA, uj)
-        elseif mod1(j, 3) == 2
+        elseif mod(j, 3) == 2
             uj = op(pxpexpm2, ss[j], ss[j + 1], ss[j + 2])
             push!(UB, uj)
         else
@@ -71,7 +71,15 @@ function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
             push!(UC, uj)
         end
     end
-    push!(UB, op(pxexp, ss[end - 1], ss[end]))
+
+    if mod(lsize, 3) == 1
+        push!(UC, op(pxexp, ss[end - 1], ss[end]))
+    elseif mod(lsize, 3) == 2
+        push!(UA, op(pxexp, ss[end - 1], ss[end]))
+    else
+        push!(UB, op(pxexp, ss[end - 1], ss[end]))
+    end
+
     return UA, UB, UC
 end
 
@@ -154,12 +162,12 @@ function tdvp_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
 end
 
 let 
-    L, nsteps =18 , 200
+    L, nsteps = 36 , 600
     b = L ÷ 2
 
-    tf = 20.0
-    ts = range(0.0, tf, nsteps + 1)
-    p = 1
+    tf = 30.0
+    p = 3
+    ts = range(0.0, tf, nsteps ÷ p + 1)
 
     ss = siteinds("S=1/2", L)
     psi = make_initialstate(ss, 2, "Up")
@@ -167,7 +175,7 @@ let
 
     obs = MyObserver(copy(psi), p)
 
-    @time errs = tebd_pxp!(psi, tf, nsteps, obs; maxdim=128, cutoff=1e-12)
+    @time errs = tebd_pxp!(psi, tf, nsteps, obs; maxdim=256, cutoff=1e-12)
 
     fig = Figure(size=(800, 600))
     ax1 = Axis(fig[1, 1], xlabel="t", ylabel="Entropy")
@@ -180,7 +188,7 @@ let
     lines!(ax3, ts, obs.overlaps)
 
     ax4 = Axis(fig[2, 2], xlabel="t", ylabel="Truncation Error")
-    lines!(ax4, ts, errs)
+    lines!(ax4, ts, errs[1 : p : end])
     fig
     #save("pxp_tebd_results.png", fig)
     
