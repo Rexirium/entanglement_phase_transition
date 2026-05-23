@@ -1,9 +1,10 @@
 using MKL
+MKL.set_num_threads(1)
 using ITensors, ITensorMPS
 if !isdefined(Main, :RandomUnitary)
     include("../src/RandomUnitary.jl")
+    using .RandomUnitary: applyn!, ent_entropy, correlation
 end
-using .RandomUnitary: applyn!, ent_entropy, correlation
 
 mutable struct MyObserver <: AbstractObserver
     steps_per_snapshot::Int
@@ -19,6 +20,7 @@ end
 
 function mps_record!(obs::MyObserver, psi::MPS, initial::MPS, t::Int, err::Float64)
     if mod(t, obs.steps_per_snapshot) != 0
+        orthogonalize!(psi, 1)
         return
     end
 
@@ -161,20 +163,5 @@ function tdvp_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     return 0.0
 end
 =#
-function main(lsize::Int, period::Int)
-    ss = siteinds("S=1/2", lsize)
-    psi = make_initialstate(ss, period, "Up")
-    
-    obs = MyObserver(3)
-    tebd_pxp!(psi, 30.0, 600, obs; maxdim=256, cutoff=1e-12)
-    return obs
-end
 
-let 
-    L = 18
-
-    @time obs = main(L, 4)
-
-    obs.entropies
-end
 
