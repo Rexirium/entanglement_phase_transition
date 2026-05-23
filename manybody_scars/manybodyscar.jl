@@ -1,5 +1,4 @@
 using MKL
-MKL.set_num_threads(1)
 using ITensors, ITensorMPS
 if !isdefined(Main, :RandomUnitary)
     include("../src/RandomUnitary.jl")

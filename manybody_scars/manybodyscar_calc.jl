@@ -6,6 +6,7 @@ if nworkers() == 0
 end
 
 @everywhere include("manybodyscar.jl")
+@everywhere MKL.set_num_threads(1)
 @everywhere function main(lsize::Int, period::Int, freq::Int)
     ss = siteinds("S=1/2", lsize)
     psi = make_initialstate(ss, period, "Up")
