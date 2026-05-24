@@ -103,7 +103,7 @@ function make_Hamiltonian(ss::Vector{<:Index})
     return MPO(os, ss)
 end
 
-function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14, threshold::Real=2e-6)
+function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-12, threshold::Real=1e-4)
     psi = copy(psi0)
     ss = siteinds(psi)
     dt = finaltime / nsteps
@@ -129,7 +129,7 @@ function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     return psi, truncerr
 end
 
-function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14, threshold::Real=2e-6)
+function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-12, threshold::Real=1e-4)
     initial = copy(psi)
     ss = siteinds(psi)
     dt = finaltime / nsteps
