@@ -13,6 +13,7 @@ end
     
     obs = MyObserver(freq)
     tebd_pxp!(psi, 30.0, 600, obs; maxdim=256, cutoff=1e-12, etol=1e-5)
+    println("period $p initial state time evolution finished!")
     return obs
 end
 

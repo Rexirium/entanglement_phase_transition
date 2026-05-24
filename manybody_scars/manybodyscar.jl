@@ -39,12 +39,39 @@ function make_initialstate(ss::Vector{<:Index}, period::Int, start::String)
     end
 
     if start == "Up"
-        return MPS(ss, n -> (mod1(n, period) == 1 ? "Up" : "Dn"))
+        return MPS(ss, n -> (mod(n, period) == 1 ? "Up" : "Dn"))
     elseif start == "Dn"
-        return MPS(ss, n -> (mod1(n, period) == 1 ? "Dn" : "Up"))
+        return MPS(ss, n -> (mod(n, period) == 0 ? "Up" : "Dn"))
     else
         error("Invalid initial state! Use 'Up' or 'Dn'.")
     end
+end
+
+function make_initialstate(ss::Vector{<:Index}, ls::Vector{<:Index}, rs::Vector{<:Index}, period::Int, start::String)
+    Γs = ITensor[]
+    Λs = ITensor[]
+    len_uc = length(ss)
+
+    start_up = (start == "Up")
+    for i in 1:len_uc
+        lidx = mod1(i+1, len_uc)
+        Γ = ITensor(ls[i], ss[i], rs[i])
+        Λ = ITensor(rs[i], ls[lidx])
+
+        if start_up
+            stateidx = mod(i, period) == 1 ? 1 : 2
+        else
+            stateidx = mod(i, period) == 0 ? 1 : 2
+        end
+        
+        Γ[ls[i]=>1, ss[i]=>stateidx, rs[i]=>1] = 1.0
+        Λ[rs[i]=>1, ls[lidx]=>1] = 1.0
+
+        push!(Γs, Γ)
+        push!(Λs, Λ)
+    end
+
+    return Γs, Λs
 end
 
 function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
