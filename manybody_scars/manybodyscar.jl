@@ -59,10 +59,10 @@ function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
     pxpm = kron(P, X, P)
     pxpexpm1 = cis(-dt * pxpm)
     pxpexpm2 = cis(-dt/2 * pxpm)
-    xpexp = cis( -dt / 2 * kron(X, P))
-    pxexp = cis( -dt * kron(P, X))
 
+    xpexp = cis( -dt * kron(X, P))
     push!(UC, op(xpexp, ss[1], ss[2]))
+
     for j in 1:(lsize - 2)
         if mod(j, 3) == 1
             uj = op(pxpexpm2, ss[j], ss[j + 1], ss[j + 2])
@@ -77,10 +77,13 @@ function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
     end
 
     if mod(lsize, 3) == 1
+        pxexp =  cis(-dt * kron(P, X))
         push!(UC, op(pxexp, ss[end - 1], ss[end]))
     elseif mod(lsize, 3) == 2
+        pxexp =  cis(-dt/2 * kron(P, X))
         push!(UA, op(pxexp, ss[end - 1], ss[end]))
     else
+        pxexp =  cis(-dt/2 * kron(P, X))
         push!(UB, op(pxexp, ss[end - 1], ss[end]))
     end
 
@@ -100,7 +103,7 @@ function make_Hamiltonian(ss::Vector{<:Index})
     return MPO(os, ss)
 end
 
-function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14)
+function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14, threshold::Real=2e-6)
     psi = copy(psi0)
     ss = siteinds(psi)
     dt = finaltime / nsteps
@@ -118,11 +121,15 @@ function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
 
         mps_record!(obs, psi, psi0, t, truncerr)
         normalize!(psi)
+
+        if truncerr > threshold
+            break
+        end
     end
     return psi, truncerr
 end
 
-function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14)
+function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14, threshold::Real=2e-6)
     initial = copy(psi)
     ss = siteinds(psi)
     dt = finaltime / nsteps
@@ -140,6 +147,10 @@ function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
 
         mps_record!(obs, psi, initial, t, truncerr)
         normalize!(psi)
+
+        if truncerr > threshold
+            break
+        end
     end
     return truncerr
 end

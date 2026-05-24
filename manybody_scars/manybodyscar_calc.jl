@@ -12,19 +12,21 @@ end
     psi = make_initialstate(ss, period, "Up")
     
     obs = MyObserver(freq)
-    tebd_pxp!(psi, 30.0, 600, obs; maxdim=400, cutoff=1e-14)
+    tebd_pxp!(psi, 30.0, 600, obs; maxdim=256, cutoff=1e-12)
     return obs
 end
 
 let 
-    L = 30
+    L = 24
     ps = 1 : 4
     q = 2
 
     results = pmap( p -> main(L, p, q), ps)
 
     h5open("manybody_scars/pxp_L$(L).h5", "w") do file
-        write(file, "params/nsteps", (600 ÷ q + 1))
+        grp = create_group(file, "params")
+        write(grp, "nsteps", (600 ÷ q + 1))
+        write(grp, "periods", collect(ps))
 
         for (i, res) in enumerate(results)
             grp = create_group(file, "Z_$(ps[i])")
@@ -33,6 +35,7 @@ let
             write(grp, "overlaps", res.overlaps)
             write(grp, "maxbonds", res.maxbonds)
             write(grp, "truncerrs", res.truncerrs)
+            write(grp, "nt", length(res.entropies))
             close(grp)
         end
     end

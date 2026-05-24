@@ -2,13 +2,13 @@ using HDF5
 using CairoMakie
 
 let 
-    L = 24
-    ps = 1 : 4
+    L = 18
     
     file = h5open("manybody_scars/pxp_L$(L).h5", "r")
 
-    nt = read(file, "params/nsteps")
-    ts = range(0.0, 30.0, nt)
+    nsteps = read(file, "params/nsteps")
+    ps = read(file, "params/periods")
+    ts = range(0.0, 30.0, nsteps)
 
     set_theme!(Axis=(
         xgridvisible=false, ygridvisible=false,
@@ -32,19 +32,21 @@ let
     for p in ps
         grp = file["Z_$p"]
         overlaps = read(grp, "overlaps")
+        nt = read(grp, "nt")
+        tsp = ts[1 : nt]
         
         if p == 1
-            lines!(ax1, ts, overlaps, label=L"| 0 \rangle")
+            lines!(ax1, tsp, overlaps, label=L"| 0 \rangle")
         elseif p == 2
-            lines!(ax1, ts, overlaps, label=L"| \mathbb{Z}_2 \rangle")
+            lines!(ax1, tsp, overlaps, label=L"| \mathbb{Z}_2 \rangle")
 
             maxbonds = read(grp, "maxbonds")
             truncerrs = read(grp, "truncerrs")
            
-            lines!(ax2, ts, maxbonds)
-            lines!(ax3, ts, truncerrs)
+            lines!(ax2, tsp, maxbonds)
+            lines!(ax3, tsp, truncerrs)
         else
-            lines!(ax1, ts, overlaps, label=L"| \mathbb{Z}_{%$p} \rangle")
+            lines!(ax1, tsp, overlaps, label=L"| \mathbb{Z}_{%$p} \rangle")
         end
     end
 

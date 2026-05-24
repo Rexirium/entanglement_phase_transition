@@ -3,14 +3,14 @@ using Loess
 using CairoMakie
 
 let 
-    L = 24
-    ps = 1 : 4
+    L = 18
     peaktimes = range(3π/8, 30.0, step=3π/4)
     
     file = h5open("manybody_scars/pxp_L$(L).h5", "r")
 
-    nt = read(file, "params/nsteps")
-    ts = range(0.0, 30.0, nt)
+    nsteps = read(file, "params/nsteps")
+    ps = read(file, "params/periods")
+    ts = range(0.0, 30.0, nsteps)
 
     set_theme!(Axis=(
         xgridvisible=false, ygridvisible=false,
@@ -33,22 +33,25 @@ let
     for p in ps
         grp = file["Z_$p"]
         entropies = read(grp, "entropies")
+        nt = read(grp, "nt")
+        tsp = ts[1 : nt]
         
         if p == 1
-            lines!(ax1, ts, entropies, label=L"| 0 \rangle")
+            lines!(ax1, tsp, entropies, label=L"| 0 \rangle")
         elseif p == 2
-            lines!(ax1, ts, entropies, label=L"| \mathbb{Z}_2 \rangle")
+            lines!(ax1, tsp, entropies, label=L"| \mathbb{Z}_2 \rangle")
 
-            model = loess(collect(ts), entropies, span=0.5)
-            entropies_smoothed = predict(model, ts)
-            lines!(ax2, ts, entropies .- entropies_smoothed)
+            model = loess(collect(tsp), entropies, span=0.5)
+            entropies_smoothed = predict(model, tsp)
+            lines!(ax2, tsp, entropies .- entropies_smoothed)
 
             correlations = read(grp, "correlations")
-            lines!(ax3, ts, correlations, label=L"\mathbb{Z}_2")
+            lines!(ax3, tsp, correlations, label=L"\mathbb{Z}_2")
         else
-            lines!(ax1, ts, entropies, label=L"| \mathbb{Z}_{%$p} \rangle")
+            lines!(ax1, tsp, entropies, label=L"| \mathbb{Z}_{%$p} \rangle")
         end
     end
+
     vlines!(ax2, peaktimes, linewidth=0.5, color=:black)
     vlines!(ax3, peaktimes, linewidth=0.5, color=:black)
 
