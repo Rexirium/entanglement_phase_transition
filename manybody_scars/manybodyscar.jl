@@ -103,7 +103,7 @@ function make_Hamiltonian(ss::Vector{<:Index})
     return MPO(os, ss)
 end
 
-function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-12, threshold::Real=1e-4)
+function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-12, etol=nothing)
     psi = copy(psi0)
     ss = siteinds(psi)
     dt = finaltime / nsteps
@@ -122,14 +122,16 @@ function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
         mps_record!(obs, psi, psi0, t, truncerr)
         normalize!(psi)
 
-        if truncerr > threshold
+        if !isnothing(etol) && truncerr > etol
+            println("Early stop at step $t (out of $nsteps) due to truncation error exceeding etol.")
+            println(": $truncerr > $etol")
             break
         end
     end
     return psi, truncerr
 end
 
-function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-12, threshold::Real=1e-4)
+function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-12, etol=nothing)
     initial = copy(psi)
     ss = siteinds(psi)
     dt = finaltime / nsteps
@@ -148,7 +150,9 @@ function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
         mps_record!(obs, psi, initial, t, truncerr)
         normalize!(psi)
 
-        if truncerr > threshold
+        if !isnothing(etol) && truncerr > etol
+            println("Early stop at step $t (out of $nsteps) due to truncation error exceeding etol.")
+            println(": $truncerr > $etol")
             break
         end
     end

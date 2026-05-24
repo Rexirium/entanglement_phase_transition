@@ -12,7 +12,7 @@ end
     psi = make_initialstate(ss, period, "Up")
     
     obs = MyObserver(freq)
-    tebd_pxp!(psi, 30.0, 600, obs; maxdim=256, cutoff=1e-12)
+    tebd_pxp!(psi, 30.0, 600, obs; maxdim=256, cutoff=1e-12, etol=1e-5)
     return obs
 end
 
