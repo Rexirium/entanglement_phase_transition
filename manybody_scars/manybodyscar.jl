@@ -132,9 +132,9 @@ function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
         truncerr += applyn!(UC, psi; maxdim=maxdim, cutoff=cutoff)
         truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff, rev=true)
         truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
+        normalize!(psi)
 
         mps_record!(obs, psi, psi0, t, truncerr)
-        normalize!(psi)
 
         if !isnothing(etol) && truncerr > etol
             println("Early stop at step $t (out of $nsteps) due to truncation error exceeding etol.")
@@ -160,9 +160,9 @@ function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
         truncerr += applyn!(UC, psi; maxdim=maxdim, cutoff=cutoff)
         truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff, rev=true)
         truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
+        normalize!(psi)
 
         mps_record!(obs, psi, initial, t, truncerr)
-        normalize!(psi)
 
         if !isnothing(etol) && truncerr > etol
             println("Early stop at step $t (out of $nsteps) due to truncation error exceeding etol.")
