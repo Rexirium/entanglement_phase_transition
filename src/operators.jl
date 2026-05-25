@@ -107,81 +107,83 @@ function weak_measure!(psi::MPS, loc::Int, para::Tuple{T, T}=(1.0, 1.0)) where T
     return x
 end
 
-function applyn!(G::ITensor, psi::MPS; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi), rev::Bool=false)
-    js = findsites(psi, G)
-    return applyn!(G, psi, js...; cutoff=cutoff, maxdim=maxdim, rev=rev)
+########################## Monitors #######################
+
+abstract type AbstractMonitor end
+
+struct NHMonitor{Tp <: AbstractFloat} <: AbstractMonitor
+    """
+    Store the parameters for the non-Hermitian disentangler. 
+    `prob` is the probability of applying the non-Hermitian operator, 
+    and `eta` is the parameter of the non-Hermitian operator.
+    """
+    prob::Tp
+    eta::Tp
 end
 
-function applyn!(G1::ITensor, psi::MPS, j::Int; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi), rev::Bool=false)
+struct PMMonitor{Tp <: AbstractFloat} <: AbstractMonitor
     """
-    Apply the gate `G1` to the MPS `psi` at site `j` inplace.
+    Store the parameters for the projective measurement disentangler.
     """
-    orthogonalize!(psi, j)
-    psi[j] *= G1
-    noprime!(psi[j])
-    return 0.0
+    probs::Vector{Tp}
+
+    PMMonitor{Tp}(lsize::Int, n::Real) where Tp<:AbstractFloat = new{Tp}(rand(Tp, lsize) .^ n)
+    PMMonitor(rxs::Vector{Tp}, n::Real) where Tp<:AbstractFloat = new{Tp}(rxs .^ n)
+    PMMonitor(prob::Tp, lsize::Int) where Tp<:AbstractFloat = new{Tp}(fill(prob, lsize))
 end
 
-function applyn!(G2::ITensor, psi::MPS, j1::Int, j2::Int; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi), rev::Bool=false)
+function monitor!(psi::MPS, mnt::NHMonitor{Tp}) where Tp<:AbstractFloat
     """
-    Apply two adjacent site gate `G2` to the MPS `psi` at sites `j1` and `j1+1` inplace.
+    Apply the non-Hermitian disentangler to the MPS `psi` inplace.
     """
-    (j1<=0 || j1>= length(psi)) && error("Wrong starting site for two-site gate application.")
-    ja, jb = rev ? (j2, j1) : (j1, j2)
-    orthogonalize!(psi, ja)
-
-    A = (psi[ja] * psi[jb]) * G2
-    noprime!(A)
-    indsab = uniqueinds(psi[ja], psi[jb])
-    psi[ja], S, psi[jb], spec = svd(A, indsab; cutoff=cutoff, maxdim=maxdim)
-    psi[jb] *= S
-
-    replacetags!(psi[ja], "Link,u" => "Link,l=$j1")
-    replacetags!(psi[jb], "Link,u" => "Link,l=$j1")
-    set_ortho_lims!(psi, jb:jb)
-
-    return spec.truncerr
-end
-
-function applyn!(G3::ITensor, psi::MPS, j1::Int, j2::Int, j3::Int; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi), rev::Bool=false)
-    """
-    Apply three adjacent site gate `G3` to the MPS `psi` at sites `j2-1`, `j2`, and `j2+1` inplace.
-    """
-    (j2 <= 1 || j2 >= length(psi)) && error("Wrong middle site for three-site gate application.")
-    ja, jb, jc = rev ? (j3, j2, j1) : (j1, j2, j3)
-    jab, jbc = rev ? (j2, j1) : (j1, j2)
-    orthogonalize!(psi, ja)
-    s = siteind(psi, jb)
-
-    A = (psi[ja] * psi[jb] * psi[jc]) * G3
-    noprime!(A)
-
-    indsab = uniqueinds(psi[ja], psi[jb])
-    psi[ja], Sab, B, specab = svd(A, indsab; cutoff=cutoff, maxdim=maxdim)
-    B *= Sab
-    
-    replacetags!(psi[ja], "Link,u" => "Link,l=$jab")
-    replacetags!(B, "Link,u" => "Link,l=$jab")
-
-    indsbc = (commonind(psi[ja], B), s)
-    psi[jb], Sbc, psi[jc], specbc = svd(B, indsbc; cutoff=cutoff, maxdim=maxdim)
-    psi[jc] *= Sbc
-    
-    replacetags!(psi[jb], "Link,u" => "Link,l=$jbc")
-    replacetags!(psi[jc], "Link,u" => "Link,l=$jbc")
-    set_ortho_lims!(psi, jc:jc)
-
-    return specab.truncerr + specbc.truncerr
-end
-
-function applyn!(Gs::Vector{ITensor}, psi::MPS; cutoff::Real=1e-14, maxdim::Int=4*maxlinkdim(psi), rev::Bool=false)
-    """
-    Apply a vector of gates `Gs` to the MPS `psi` inplace.
-    """
-    truncerr = 0.0
-    for G in Gs
-        truncerr += applyn!(G, psi; cutoff=cutoff, maxdim=maxdim, rev=rev)
+    for j in length(psi):-1:1
+        if rand() < mnt.prob
+            M = op("NH", siteind(psi, j); eta=mnt.eta)
+            applyn!(M, psi, j)
+            normalize!(psi)
+        end
     end
-    return truncerr
+    return zero(Tp)
 end
+
+function monitor!(psi::MPS, mnt::PMMonitor{Tp}) where Tp<:AbstractFloat
+    """
+    Apply the projective measurement disentangler to the MPS `psi` inplace.
+    """
+    for j in length(psi):-1:1
+        if rand() < mnt.probs[j]
+            proj_measure!(psi, j)
+        end
+    end
+    return zero(Tp)
+end
+
+function monitor!(psi::MPS, phi::MPS, mnt::NHMonitor{Tp}) where Tp<:AbstractFloat
+    """
+    Apply the non-Hermitian disentangler to the MPS `psi` inplace, and apply the same operation to `phi`.
+    """
+    for j in length(psi):-1:1
+        if rand() < mnt.prob
+            M = op("NH", siteind(psi, j); eta=mnt.eta)
+            applyn!(M, psi, j)
+            applyn!(M, phi, j)
+            normalize!(psi)
+            normalize!(phi)
+        end
+    end
+    return zero(Tp)
+end
+
+function monitor!(psi::MPS, phi::MPS, mnt::PMMonitor{Tp}) where Tp<:AbstractFloat
+    """
+    Apply the projective measurement disentangler to the MPS `psi` inplace, and apply the same operation to `phi`.
+    """
+    for j in length(psi):-1:1
+        if rand() < mnt.probs[j]
+            proj_measure!(psi, phi, j)
+        end
+    end
+    return zero(Tp)
+end
+
 
