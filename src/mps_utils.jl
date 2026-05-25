@@ -75,3 +75,34 @@ function applyn!(Gs::Vector{ITensor}, psi::MPS; cutoff::Real=1e-14, maxdim::Int=
     end
     return truncerr
 end
+
+struct InfMPS <: AbstractMPS
+    len_uc::Int
+    Gammas::Vector{ITensor}
+    Lambdas::Vector{ITensor}
+end
+
+function InfMPS(ss::Vector{<:Index}, state::Function)
+    len_uc = length(ss)
+
+    ls = [Index(1, "LLink,l=$n") for n in 1:len_uc]
+    rs = [Index(1, "RLink,r=$n") for n in 1:len_uc]
+
+    Γs = ITensor[]
+    Λs = ITensor[]
+    for n in 1 : len_uc
+        sn = state(n) == "Up" ? 1 : 2
+        nn = mod1(n+1, len_uc)
+
+        Γ = ITensor(ls[n], ss[n], rs[n])
+        Λ = ITensor(rs[n], ls[nn])
+
+        Γ[ls[n]=>1, ss[n]=>sn, rs[n]=>1] = 1.0
+        Λ[rs[n]=>1, ls[nn]=>1] = 1.0
+
+        push!(Γs, Γ)
+        push!(Λs, Λ)
+        
+    end
+    return InfMPS(len_uc, Γs, Λs)
+end

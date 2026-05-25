@@ -16,7 +16,8 @@ include("observers.jl")
 include("time_evolution.jl")
 # include("simulation.jl")
 
-export applyn!, ent_entropy, negativity, concurrence, zeroth_entropy, mutual_information
+export applyn!, InfMPS
+export ent_entropy, negativity, concurrence, zeroth_entropy, mutual_information
 export expected, correlation, correlation_site, correlation_dist
 export proj_measure!, weak_measure!, AbstractMonitor, NHMonitor, PMMonitor, monitor!
 export AbstractObserver, EntropyObserver, EntropyAverager, EntrCorrObserver, EntrCorrAverager, mps_record!
