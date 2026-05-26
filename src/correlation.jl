@@ -11,8 +11,17 @@ end
 function ITensorMPS.expect(psi::InfMPS, opstr::String, j::Int)
     j0 = mod1(j - 1, psi.len_uc)
     opm = op(opstr, siteind(psi, j))
-    C = prime(psi.Lambdas[j0], "RLink") * psi.Gammas[j] * prime(psi.Lambdas[j], "LLink")
-    C *= opm
+    A = prime(psi.Lambdas[j0], "r") * psi.Gammas[j] * prime(psi.Lambdas[j], "l")
+    C = noprime(A * opm, "Site")
+    return real(scalar(C * dag(A)))
+end
+
+function ITensorMPS.expect(psi::InfMPS, opstr::String)
+    exp_sum = 0.0
+    for n in 1 : psi.len_uc
+        exp_sum += expect(psi, opstr, n)
+    end
+    return exp_sum / psi.len_uc
 end
 
 function correlation(psi::MPS, ops1::String, ops2::String, j1::Int, j2::Int; ortho::Bool=true)
@@ -31,11 +40,10 @@ function correlation(psi::MPS, ops1::String, ops2::String, j1::Int, j2::Int; ort
 
     if ja == jb
         Cdag = dag(psi[ja] * opb)
-        C *= Cdag
-        return real(scalar(C))
+        return real(scalar(C * Cdag))
     end
     # Only contract tensors between left and right operators (inclusive)
-    noprime!(C)
+    noprime!(C, tags="Site")
     C *= dag(prime(psi[ja], tags="Link,l=$ja"))
 
     for n in (ja + 1) : (jb - 1)
@@ -47,6 +55,47 @@ function correlation(psi::MPS, ops1::String, ops2::String, j1::Int, j2::Int; ort
     C *= dag(prime(psi[jb], tags="Link,l=$(jb-1)"))
 
     return real(scalar(C))
+end
+
+function correlation(psi::InfMPS, ops1::String, ops2::String, j1::Int, j2::Int; ortho::Bool=true)
+    len = psi.len_uc
+
+    op1 = op(ops1, siteind(psi, j1))
+    op2 = op(ops2, siteind(psi, j2))
+
+    j0 = mod1(j1 - 1, len)
+    A1 = psi.Lambdas[j0] * psi.Gammas[j1] * psi.Lambdas[j1]
+    C = A1 * op1
+
+    if j1 == j2
+        Cdag = dag(A1 * op2)
+        return real(scalar(C * Cdag))
+    end
+
+    noprime!(C, tags="Site")
+    C *= dag(prime(A1, "l"))
+
+    for k in 1 : mod(j2 - j1, len) - 1
+        n = mod1(j1 + k, len)
+        An = psi.Gammas[n] * psi.Lambdas[n]
+        C *= An
+        C *= dag(prime(An, tags="Link"))
+    end
+
+    A2 = psi.Gammas[j2] * psi.Lambdas[j2]
+    C *= noprime(A2 * op2, tags="Site")
+    C *= dag(prime(A2, tags="l"))
+
+    return real(scalar(C))
+end
+
+function correlation(psi::InfMPS, ops1::String, ops2::String)
+    corr_sum = 0.0
+    len = psi.len_uc
+    for n in 1 : len
+        corr_sum += correlation(psi, ops1, ops2, n, mod1(n, len))
+    end
+    return corr_sum / len
 end
 
 function correlation_site(psi::MPS, ops1::String, ops2::String)

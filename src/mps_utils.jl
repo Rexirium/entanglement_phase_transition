@@ -9,8 +9,8 @@ end
 function InfMPS(ss::Vector{<:Index}, state::Function)
     len_uc = length(ss)
 
-    ls = [Index(1, "LLink,l=$n") for n in 1:len_uc]
-    rs = [Index(1, "RLink,r=$n") for n in 1:len_uc]
+    ls = [Index(1, "Link,l,l=$n") for n in 1:len_uc]
+    rs = [Index(1, "Link,r,r=$n") for n in 1:len_uc]
 
     Γs = ITensor[]
     Λs = ITensor[]
@@ -50,8 +50,7 @@ end
 function ITensorMPS.linkinds(psi::InfMPS)
     lkinds = Index[]
     for n in 1:(psi.len_uc)
-        push!(lkinds, first(inds(psi.Gammas[n], "LLink")))
-        push!(lkinds, first(inds(psi.Gammas[n], "RLink")))
+        append!(lkinds, inds(psi.Gammas[n], "Link"))
     end
     return lkinds
 end
@@ -64,7 +63,7 @@ end
 function leftlinkinds(psi::InfMPS)
     ls = Index[]
     for n in 1:(psi.len_uc)
-        push!(ls, first(inds(psi.Gammas[n], "LLink")))
+        push!(ls, first(inds(psi.Gammas[n], "l")))
     end
     return ls
 end
@@ -72,7 +71,7 @@ end
 function rightlinkinds(psi::InfMPS)
     rs = Index[]
     for n in 1:(psi.len_uc)
-        push!(rs, first(inds(psi.Gammas[n], "RLink")))
+        push!(rs, first(inds(psi.Gammas[n], "r")))
     end
     return rs
 end
@@ -199,10 +198,11 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int; cutoff::Real=1e-14,
     """
     j0 = mod1(j1 - 1, psi.len_uc)
 
-    Λ0 = prime(psi.Lambdas[j0], "RLink")
+    Λ0 = prime(psi.Lambdas[j0], "r")
     Λ1 = psi.Lambdas[j1]
-    Λ2 = prime(psi.Lambdas[j2], "LLink")
-    Γs = psi.Gammas[j1 : j2]
+    Λ2 = prime(psi.Lambdas[j2], "l")
+    
+    Γs = psi.Gammas[[j1, j2]]
     
     Θ = Λ0 * Γs[1] * Λ1 * Γs[2] * Λ2
     Θ *= G
@@ -216,12 +216,12 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int; cutoff::Real=1e-14,
     U *= invΛ0
     V *= invΛ2
 
-    replacetags!(S, "Link,u"=>"RLink,r=$j1")
-    replacetags!(S, "Link,v"=>"LLink,l=$j2")
+    replacetags!(S, "Link,u"=>"Link,r,r=$j1")
+    replacetags!(S, "Link,v"=>"Link,l,l=$j2")
     psi.Lambdas[j1] = S
 
-    psi.Gammas[j1] = replacetags(U, "Link,u"=>"RLink,r=$j1")
-    psi.Gammas[j2] = replacetags(V, "Link,v"=>"LLink,l=$j2")
+    psi.Gammas[j1] = replacetags(U, "Link,u"=>"Link,r,r=$j1")
+    psi.Gammas[j2] = replacetags(V, "Link,v"=>"Link,l,l=$j2")
 
     return spec.truncerr
 end
@@ -234,10 +234,10 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int, j3::Int; cutoff::Rea
 
     j0 = mod1(j1 - 1, psi.len_uc)
 
-    Λ0 = prime(psi.Lambdas[j0], "RLink")
-    Λ3 = prime(psi.Lambdas[j3], "LLink")
-    Λs = psi.Lambdas[j1 : j2]
-    Γs = psi.Gammas[j1 : j3]
+    Λ0 = prime(psi.Lambdas[j0], "r")
+    Λ3 = prime(psi.Lambdas[j3], "l")
+    Λs = psi.Lambdas[[j1, j2]]
+    Γs = psi.Gammas[[j1, j2, j3]]
 
     Θ = Λ0
     for j in 1 : 2
@@ -256,11 +256,11 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int, j3::Int; cutoff::Rea
     truncerr += spec.truncerr
     U *= invΛ0
 
-    replacetags!(S12, "Link,u"=>"RLink,r=$j1")
-    replacetags!(S12, "Link,v"=>"LLink,l=$j2")
-    replacetags!(B, "Link,v"=>"LLink,l=$j2")
+    replacetags!(S12, "Link,u"=>"Link,r,r=$j1")
+    replacetags!(S12, "Link,v"=>"Link,l,l=$j2")
+    replacetags!(B, "Link,v"=>"Link,l,l=$j2")
 
-    psi.Gammas[j1] = replacetags(U, "Link,u"=>"RLink,r=$j1")
+    psi.Gammas[j1] = replacetags(U, "Link,u"=>"Link,r,r=$j1")
     psi.Lambdas[j1] = S12
 
     inds23 = (commonind(S12, B), first(inds(Γs[2], "Site")))
@@ -269,12 +269,12 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int, j3::Int; cutoff::Rea
     truncerr += spec.truncerr
     V *= invΛ3
 
-    replacetags!(S23, "Link,u"=>"RLink,r=$j2")
-    replacetags!(S23, "Link,v"=>"LLink,l=$j3")
+    replacetags!(S23, "Link,u"=>"Link,r,r=$j2")
+    replacetags!(S23, "Link,v"=>"Link,l,l=$j3")
 
     psi.Lambdas[j2] = S23
-    psi.Gammas[j2] = replacetags(U, "Link,u"=>"RLink,r=$j2")
-    psi.Gammas[j3] = replacetags(V, "Link,v"=>"LLink,l=$j3")
+    psi.Gammas[j2] = replacetags(U, "Link,u"=>"Link,r,r=$j2")
+    psi.Gammas[j3] = replacetags(V, "Link,v"=>"Link,l,l=$j3")
 
     return truncerr
     
