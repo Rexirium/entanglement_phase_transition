@@ -129,7 +129,9 @@ function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     for t in 1:nsteps
         truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
         truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff, rev=true)
+        normalize!(psi)
         truncerr += applyn!(UC, psi; maxdim=maxdim, cutoff=cutoff)
+        normalize!(psi)
         truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff, rev=true)
         truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
         normalize!(psi)
@@ -157,7 +159,9 @@ function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     for t in 1:nsteps
         truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
         truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff, rev=true)
+        normalize!(psi)
         truncerr += applyn!(UC, psi; maxdim=maxdim, cutoff=cutoff)
+        normalize!(psi)
         truncerr += applyn!(UB, psi; maxdim=maxdim, cutoff=cutoff, rev=true)
         truncerr += applyn!(UA, psi; maxdim=maxdim, cutoff=cutoff)
         normalize!(psi)

@@ -35,6 +35,10 @@ function InfMPS(ss::Vector{<:Index}, state::String)
     return InfMPS(ss, statefunc)
 end
 
+function ITensorMPS.siteind(psi::InfMPS, j::Int)
+    return first(inds(psi.Gammas[j], "Site"))
+end
+
 function ITensorMPS.siteinds(psi::InfMPS)
     ss = Index[]
     for n in 1:(psi.len_uc)
@@ -73,7 +77,7 @@ function rightlinkinds(psi::InfMPS)
     return rs
 end
 
-function findsites(psi::InfMPS, o::ITensor)
+function ITensorMPS.findsites(psi::InfMPS, o::ITensor)
     ss = siteinds(psi)
     so = inds(o)
     return findall(ss, so)

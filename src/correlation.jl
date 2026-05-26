@@ -1,4 +1,4 @@
-function expected(psi::MPS, opstr::String, j::Int)
+function ITensorMPS.expect(psi::MPS, opstr::String, j::Int)
     """Compute the expectation value ⟨ opstr_loc ⟩ for MPS psi."""
     orthogonalize!(psi, j) # proper canonize the MPS s.t left environment is identity
     opm = op(opstr, siteind(psi, j))
@@ -8,52 +8,45 @@ function expected(psi::MPS, opstr::String, j::Int)
     return real(scalar(C))
 end
 
-function correlation(psi::MPS, ops1::String, ops2::String, j1::Int, j2::Int; ortho::Bool=false)
+function ITensorMPS.expect(psi::InfMPS, opstr::String, j::Int)
+    j0 = mod1(j - 1, psi.len_uc)
+    opm = op(opstr, siteind(psi, j))
+    C = prime(psi.Lambdas[j0], "RLink") * psi.Gammas[j] * prime(psi.Lambdas[j], "LLink")
+    C *= opm
+end
+
+function correlation(psi::MPS, ops1::String, ops2::String, j1::Int, j2::Int; ortho::Bool=true)
     """Compute the correlation function ⟨ ops1_i ops2_j ⟩ for MPS psi."""
-    
-    (min(j1, j2) < 1 || max(j1, j2) > length(psi)) && error("The sites do not exist!")
+
+    ja, jb = minmax(j1, j2)
+    (ja < 1 || jb > length(psi)) && error("The sites do not exist!")
     # orthogonalize the MPS if ortho is false: not orthogonalized
     ortho == false && orthogonalize!(psi, j1)
-    op1 = op(ops1, siteind(psi, j1))
-    op2 = op(ops2, siteind(psi, j2))
-    # Only contract tensors between left and right operators (inclusive)
-    C = psi[j1] * op1
-    
-    if j1 == j2
-        Cdag = dag(psi[j1] * op2)
+
+    opsa, opsb = j1 <= j2 ? (ops1, ops2) : (ops2, ops1)
+    opa = op(opsa, siteind(psi, ja))
+    opb = op(opsb, siteind(psi, jb))
+
+    C = psi[ja] * opa
+
+    if ja == jb
+        Cdag = dag(psi[ja] * opb)
         C *= Cdag
         return real(scalar(C))
-    elseif j1 < j2
-        noprime!(C)
-        ir = linkind(psi, j1)
-        C *= dag(prime(psi[j1], ir))
-
-        for n in (j1 + 1) : (j2 - 1)
-            C *= psi[n]
-            C *= dag(prime(psi[n], tags="Link"))
-        end
-
-        C *= noprime(psi[j2] * op2)
-        il = linkind(psi, j2 - 1)
-        C *= dag(prime(psi[j2], il))
-
-        return real(scalar(C))
-    else
-        noprime!(C)
-        il = linkind(psi, j1 - 1)
-        C *= dag(prime(psi[j1], il))
-
-        for n in (j1 - 1) : -1 : (j2 + 1)
-            C *= psi[n]
-            C *= dag(prime(psi[n], tags="Link"))
-        end
-
-        C *= noprime(psi[j2] * op2)
-        ir = linkind(psi, j2)
-        C *= dag(prime(psi[j2], ir))
-
-        return real(scalar(C))
     end
+    # Only contract tensors between left and right operators (inclusive)
+    noprime!(C)
+    C *= dag(prime(psi[ja], tags="Link,l=$ja"))
+
+    for n in (ja + 1) : (jb - 1)
+        C *= psi[n]
+        C *= dag(prime(psi[n], tags="Link"))
+    end
+
+    C *= noprime(psi[jb] * opb)
+    C *= dag(prime(psi[jb], tags="Link,l=$(jb-1)"))
+
+    return real(scalar(C))
 end
 
 function correlation_site(psi::MPS, ops1::String, ops2::String)
