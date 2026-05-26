@@ -38,6 +38,18 @@ function ent_entropy(psi::MPS, b::Int, n::Real=1)
     return ent_entropy(schs .* schs, n)
 end
 
+function ent_entropy(psi::InfMPS, n::Real=1)
+    """
+    Calculate the n-th order Renyi entropy of the InfMPS `psi` biparted after site `b`.
+    """
+    ee_sum = 0.0
+    for b in 1 : psi.len_uc
+        ps = diag(psi.Lambdas[b]) .^ 2
+        ee_sum += ent_entropy(ps, n)
+    end
+    return ee_sum / psi.len_uc
+end
+
 function ent_entropy(psi::MPS, xs::Vector{<:Int}, n::Real=1)
     """
     Calculate the n-th order Renyi entropy of a region of sites `xs` from other sites.

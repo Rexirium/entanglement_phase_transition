@@ -176,7 +176,7 @@ function inv_tensor(A::ITensor)
     mindim = min(dim(r), dim(l))
     for i in 1 : mindim
         val = A[r=>i, l=>i]
-        invval = val > 1e-300 ? 1.0 / val : 1e300
+        invval = val > 1e-14 ? 1.0 / val : 0.0
         invA[l=>i, r=>i] = invval
     end
     return invA
@@ -208,6 +208,7 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int; cutoff::Real=1e-14,
 
     inds12 = (ind(Λ0, 1), first(inds(Γs[1], "Site")))
     U, S, V, spec = svd(Θ, inds12; cutoff=cutoff, maxdim=maxdim)
+    S ./= sqrt(sum(spec.eigs))
     U *= invΛ0
     V *= invΛ2
 
@@ -247,6 +248,7 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int, j3::Int; cutoff::Rea
     truncerr = 0.0
     inds12 = (ind(Λ0, 1), first(inds(Γs[1], "Site")))
     U, S12, B, spec = svd(Θ, inds12; cutoff=cutoff, maxdim=maxdim)
+    S12 ./= sqrt(sum(spec.eigs))
     truncerr += spec.truncerr
     U *= invΛ0
 
@@ -259,6 +261,7 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int, j3::Int; cutoff::Rea
 
     inds23 = (commonind(S12, B), first(inds(Γs[2], "Site")))
     U, S23, V, spec = svd(B, inds23; cutoff=cutoff, maxdim=maxdim)
+    S23 ./= sqrt(sum(spec.eigs))
     truncerr += spec.truncerr
     V *= invΛ3
 
