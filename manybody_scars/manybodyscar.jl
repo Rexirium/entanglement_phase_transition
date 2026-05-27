@@ -33,6 +33,19 @@ function mps_record!(obs::MyObserver, psi::MPS, initial::MPS, t::Int, err::Float
     push!(obs.truncerrs, err)
 end
 
+function mps_record!(obs::MyObserver, psi::InfMPS, initial::InfMPS, t::Int, err::Float64)
+    if mod(t, obs.steps_per_snapshot) != 0
+        orthogonalize!(psi, 1)
+        return
+    end
+
+    push!(obs.entropies, ent_entropy(psi))
+    push!(obs.correlations, correlation(psi, "Z", "Z"; ortho=true))
+    push!(obs.overlaps, abs2(inner(initial, psi)))
+    push!(obs.maxbonds, maxlinkdim(psi))
+    push!(obs.truncerrs, err)
+end
+
 function make_initialstate(ss::Vector{<:Index}, period::Int, start::String)
     if period == 1
         return MPS(ss, n -> "Dn")
@@ -61,8 +74,9 @@ function make_initialinfstate(ss::Vector{<:Index}, period::Int, start::String)
     end
 end
 
-function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
-    lsize = length(ss)
+function make_unitaries(psi::MPS, dt::AbstractFloat)
+    lsize = length(psi)
+    ss = siteinds(psi)
     UA = Vector{ITensor}()
     UB = Vector{ITensor}()
     UC = Vector{ITensor}()
@@ -101,11 +115,13 @@ function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
         push!(UB, op(pxexp, ss[end - 1], ss[end]))
     end
 
-    return UA, UB, UC
+    return UA, reverse(UB), UC
 end
 
-function make_infunitaries(ss::Vector{<:Index}, dt::AbstractFloat)
-    len_uc = length(ss)
+function make_unitaries(psi::InfMPS, dt::AbstractFloat)
+    len_uc = psi.len_uc
+    ss = siteinds(psi)
+
     UA = Vector{ITensor}()
     UB = Vector{ITensor}()
     UC = Vector{ITensor}()
@@ -146,12 +162,10 @@ function make_Hamiltonian(ss::Vector{<:Index})
     return MPO(os, ss)
 end
 
-function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-12, etol=nothing)
+function tebd_pxp(psi0::Union{MPS, InfMPS}, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-12, etol=nothing)
     psi = copy(psi0)
-    ss = siteinds(psi)
     dt = finaltime / nsteps
-    UA, UB, UC = make_unitaries(ss, dt)
-    reverse!(UB)
+    UA, UB, UC = make_unitaries(psi, dt)
 
     truncerr = 0.0
     mps_record!(obs, psi, psi0, 0, truncerr)
@@ -176,12 +190,10 @@ function tebd_pxp(psi0::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     return psi, truncerr
 end
 
-function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-12, etol=nothing)
+function tebd_pxp!(psi::Union{MPS, InfMPS}, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-12, etol=nothing)
     initial = copy(psi)
-    ss = siteinds(psi)
     dt = finaltime / nsteps
-    UA, UB, UC = make_unitaries(ss, dt)
-    reverse!(UB)
+    UA, UB, UC = make_unitaries(psi, dt)
 
     truncerr = 0.0
     mps_record!(obs, psi, initial, 0, truncerr)
@@ -205,24 +217,6 @@ function tebd_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver
     end
     return truncerr
 end
-#=
-function tdvp_pxp!(psi::MPS, finaltime::Real, nsteps::Int, obs::AbstractObserver; maxdim::Int=400, cutoff::Real=1e-14, krylovdim::Int=16)
-    initial = copy(psi)
-    ss = siteinds(psi)
-    H = make_Hamiltonian(ss)
 
-    dt = finaltime / nsteps
-
-    mps_record!(obs, psi, initial, 0, 0.0)
-    for t in 1:nsteps
-        psi = tdvp(H, -im * dt, psi; nsteps=1, 
-            maxdim=maxdim, cutoff=cutoff, 
-            updater_kwargs=(; tol=1e-4, krylovdim=krylovdim), 
-            outputlevel=0)
-        mps_record!(obs, psi, initial, t, 0.0)
-    end
-    return 0.0
-end
-=#
 
 

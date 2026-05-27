@@ -84,12 +84,12 @@ function correlation(psi::InfMPS, ops1::String, ops2::String, j1::Int, j2::Int; 
 
     A2 = psi.Gammas[j2] * psi.Lambdas[j2]
     C *= noprime(A2 * op2, tags="Site")
-    C *= dag(prime(A2, tags="l"))
+    C *= dag(prime(A2, tags="l=$j2"))
 
     return real(scalar(C))
 end
 
-function correlation(psi::InfMPS, ops1::String, ops2::String)
+function correlation(psi::InfMPS, ops1::String, ops2::String; ortho::Bool=true)
     corr_sum = 0.0
     len = psi.len_uc
     @inbounds for n in 1 : len

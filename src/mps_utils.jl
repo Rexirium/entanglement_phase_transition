@@ -38,7 +38,10 @@ end
 InfMPS(ss::Vector{<:Index}, state::String) = InfMPS(Float64, ss, state)
 
 function ITensorMPS.copy(psi::InfMPS)
-    return InfMPS(psi.len_uc, psi.Gammas, psi.Lambdas)
+    return InfMPS(psi.len_uc, copy(psi.Gammas), copy(psi.Lambdas))
+end
+
+function ITensorMPS.normalize!(psi::InfMPS)
 end
 
 ITensorMPS.siteind(psi::InfMPS, j::Int) = first(inds(psi.Gammas[j], "Site"))
@@ -114,7 +117,7 @@ function ITensorMPS.inner(phi::InfMPS, psi::InfMPS)
     end
 
     mev, _, _ = eigsolve(AT, 1, :LM)
-    return abs(mev[1]) ^ (1/len)
+    return mev[1]
 end
 
 #================ Apply functions ===================#
@@ -220,7 +223,7 @@ function inv_tensor(A::ITensor)
     return invA
 end
 
-function applyn!(G::ITensor, psi::InfMPS, j::Int; cutoff::Real=1e-14, maxdim::Int=typemax(Int))
+function applyn!(G::ITensor, psi::InfMPS, j::Int; cutoff::Real=1e-14, maxdim::Int=typemax(Int), rev::Bool=false)
     psi.Gammas[j] *= G
     noprime!(psi.Gammas[j], "Site")
     return 0.0
