@@ -2,7 +2,7 @@ using MKL
 using ITensors, ITensorMPS
 if !isdefined(Main, :RandomUnitary)
     include("../src/RandomUnitary.jl")
-    using .RandomUnitary: applyn!, InfMPS,  ent_entropy, correlation
+    using .RandomUnitary: applyn!, InfMPS, ent_entropy, correlation
 end
 
 mutable struct MyObserver <: AbstractObserver
@@ -99,6 +99,35 @@ function make_unitaries(ss::Vector{<:Index}, dt::AbstractFloat)
     else
         pxexp =  cis(-dt/2 * kron(P, X))
         push!(UB, op(pxexp, ss[end - 1], ss[end]))
+    end
+
+    return UA, UB, UC
+end
+
+function make_infunitaries(ss::Vector{<:Index}, dt::AbstractFloat)
+    len_uc = length(ss)
+    UA = Vector{ITensor}()
+    UB = Vector{ITensor}()
+    UC = Vector{ITensor}()
+
+    X = Int64[0 1; 1 0]
+    P = Int64[0 0; 0 1]
+
+    pxpm = kron(P, X, P)
+    pxpexpm1 = cis(-dt * pxpm)
+    pxpexpm2 = cis(-dt/2 * pxpm)
+
+    for j in 1 : len_uc
+        nj = mod1(j + 1, len_uc)
+        nnj = mod1(j + 2, len_uc)
+
+        if mod(j, 3) == 1
+            push!(UA, op(pxpexpm2, ss[j], ss[nj], ss[nnj]))
+        elseif mod(j, 3) == 2
+            push!(UB, op(pxpexpm2, ss[j], ss[nj], ss[nnj]))
+        else
+            push!(UC, op(pxpexpm1, ss[j], ss[nj], ss[nnj]))
+        end
     end
 
     return UA, UB, UC

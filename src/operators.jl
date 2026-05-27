@@ -2,7 +2,8 @@ function ITensors.op(::OpName"RdU", ::SiteType"S=1/2", s::Index...; eltype::Data
     """
     Create a random unitary operator for the given site indices `s`.
     """
-    M = randn(eltype, 4, 4)
+    n = length(s)
+    M = randn(eltype, 1<<n, 1<<n)
     Q, _ = NDTensors.qr_positive(M)
     return op(Q, s...)
 end

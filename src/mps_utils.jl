@@ -6,7 +6,7 @@ struct InfMPS
     Lambdas::Vector{ITensor}
 end
 
-function InfMPS(ss::Vector{<:Index}, state::Function)
+function InfMPS(ELT::DataType, ss::Vector{<:Index}, state::Function)
     len_uc = length(ss)
 
     ls = [Index(1, "Link,l,l=$n") for n in 1:len_uc]
@@ -16,12 +16,12 @@ function InfMPS(ss::Vector{<:Index}, state::Function)
     Λs = ITensor[]
     for n in 1 : len_uc
         sn = state(n) == "Up" ? 1 : 2
-        nn = mod1(n+1, len_uc)
+        nn = mod1(n + 1, len_uc)
 
-        Γ = ITensor(ls[n], ss[n], rs[n])
+        Γ = ITensor(ELT, ls[n], ss[n], rs[n])
         Λ = ITensor(rs[n], ls[nn])
 
-        Γ[ls[n]=>1, ss[n]=>sn, rs[n]=>1] = 1.0
+        Γ[ls[n]=>1, ss[n]=>sn, rs[n]=>1] = convert(ELT, 1.0)
         Λ[rs[n]=>1, ls[nn]=>1] = 1.0
 
         push!(Γs, Γ)
@@ -29,15 +29,19 @@ function InfMPS(ss::Vector{<:Index}, state::Function)
     end
     return InfMPS(len_uc, Γs, Λs)
 end
+InfMPS(ss::Vector{<:Index}, state::Function) = InfMPS(Float64, ss, state)
 
-function InfMPS(ss::Vector{<:Index}, state::String)
+function InfMPS(ELT::DataType, ss::Vector{<:Index}, state::String)
     statefunc(n::Int) = state
-    return InfMPS(ss, statefunc)
+    return InfMPS(ELT, ss, statefunc)
+end
+InfMPS(ss::Vector{<:Index}, state::String) = InfMPS(Float64, ss, state)
+
+function ITensorMPS.copy(psi::InfMPS)
+    return InfMPS(psi.len_uc, psi.Gammas, psi.Lambdas)
 end
 
-function ITensorMPS.siteind(psi::InfMPS, j::Int)
-    return first(inds(psi.Gammas[j], "Site"))
-end
+ITensorMPS.siteind(psi::InfMPS, j::Int) = first(inds(psi.Gammas[j], "Site"))
 
 function ITensorMPS.siteinds(psi::InfMPS)
     ss = Index[]
@@ -46,6 +50,8 @@ function ITensorMPS.siteinds(psi::InfMPS)
     end
     return ss
 end
+
+ITensorMPS.linkind(psi::InfMPS, j::Int) = inds(psi.Gammas[j], "Link")
 
 function ITensorMPS.linkinds(psi::InfMPS)
     lkinds = Index[]
@@ -76,10 +82,39 @@ function rightlinkinds(psi::InfMPS)
     return rs
 end
 
+leftlinkind(psi::InfMPS, j::Int) = first(inds(psi.Gammas[j], "l"))
+rightlinkind(psi::InfMPS, j::Int) = first(inds(psi.Gammas[j], "r"))
+
 function ITensorMPS.findsites(psi::InfMPS, o::ITensor)
     ss = siteinds(psi)
-    so = inds(o)
-    return findall(ss, so)
+    so = inds(o, plev=0)
+    return [findfirst(ss, s) for s in so]
+end
+
+function ITensorMPS.inner(phi::InfMPS, psi::InfMPS)
+    phi.len_uc == psi.len_uc || error("incompactible unit cell length of two InfMPS to do inner product.")
+    len = psi.len_uc
+    TM = ITensor(1.0)
+    for n in 1 : len - 1
+        An = psi.Gammas[n] * psi.Lambdas[n]
+        Bn = dag(prime(phi.Gammas[n] * phi.Lambdas[n], "Link"))
+        TM *= An * Bn
+    end
+    Aend = psi.Gammas[end] * setprime(psi.Lambdas[end], 2, "l")
+    Bend = dag(prime(phi.Gammas[end] * setprime(phi.Lambdas[end], 2, "l"), "Link"))
+    TM *= Aend * Bend
+    
+    L = combiner(first(inds(TM, plev=0)), first(inds(TM, plev=1)))
+    R = combiner(first(inds(TM, plev=2)), first(inds(TM, plev=3)))
+    cl, cr = combinedind(L), combinedind(R)
+    AT = array(L * TM * R, cl, cr)
+
+    if size(AT, 1) == 1
+        return abs(AT[1])
+    end
+
+    mev, _, _ = eigsolve(AT, 1, :LM)
+    return abs(mev[1]) ^ (1/len)
 end
 
 #================ Apply functions ===================#
@@ -207,14 +242,12 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int; cutoff::Real=1e-14,
     Θ = Λ0 * Γs[1] * Λ1 * Γs[2] * Λ2
     Θ *= G
     noprime!(Θ, "Site")
-    invΛ0 = inv_tensor(Λ0)
-    invΛ2 = inv_tensor(Λ2)
 
     inds12 = (ind(Λ0, 1), first(inds(Γs[1], "Site")))
     U, S, V, spec = svd(Θ, inds12; cutoff=cutoff, maxdim=maxdim)
     S ./= sqrt(sum(spec.eigs))
-    U *= invΛ0
-    V *= invΛ2
+    U *= inv_tensor(Λ0)
+    V *= inv_tensor(Λ2)
 
     replacetags!(S, "Link,u"=>"Link,r,r=$j1")
     replacetags!(S, "Link,v"=>"Link,l,l=$j2")
@@ -239,22 +272,20 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int, j3::Int; cutoff::Rea
     Λs = psi.Lambdas[[j1, j2]]
     Γs = psi.Gammas[[j1, j2, j3]]
 
-    Θ = Λ0
+    Θ = copy(Λ0)
     for j in 1 : 2
         Θ *= Γs[j] * Λs[j]
     end
     Θ *= Γs[3] * Λ3
     Θ *= G
     noprime!(Θ, "Site")
-    invΛ0 = inv_tensor(Λ0)
-    invΛ3 = inv_tensor(Λ3)
 
     truncerr = 0.0
     inds12 = (ind(Λ0, 1), first(inds(Γs[1], "Site")))
     U, S12, B, spec = svd(Θ, inds12; cutoff=cutoff, maxdim=maxdim)
     S12 ./= sqrt(sum(spec.eigs))
     truncerr += spec.truncerr
-    U *= invΛ0
+    U *= inv_tensor(Λ0)
 
     replacetags!(S12, "Link,u"=>"Link,r,r=$j1")
     replacetags!(S12, "Link,v"=>"Link,l,l=$j2")
@@ -263,11 +294,13 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int, j3::Int; cutoff::Rea
     psi.Gammas[j1] = replacetags(U, "Link,u"=>"Link,r,r=$j1")
     psi.Lambdas[j1] = S12
 
+    B *= S12
     inds23 = (commonind(S12, B), first(inds(Γs[2], "Site")))
     U, S23, V, spec = svd(B, inds23; cutoff=cutoff, maxdim=maxdim)
     S23 ./= sqrt(sum(spec.eigs))
     truncerr += spec.truncerr
-    V *= invΛ3
+    U *= inv_tensor(S12)
+    V *= inv_tensor(Λ3)
 
     replacetags!(S23, "Link,u"=>"Link,r,r=$j2")
     replacetags!(S23, "Link,v"=>"Link,l,l=$j3")
@@ -277,5 +310,4 @@ function applyn!(G::ITensor, psi::InfMPS, j1::Int, j2::Int, j3::Int; cutoff::Rea
     psi.Gammas[j3] = replacetags(V, "Link,v"=>"Link,l,l=$j3")
 
     return truncerr
-    
 end

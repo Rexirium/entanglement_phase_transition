@@ -18,7 +18,7 @@ end
 
 function ITensorMPS.expect(psi::InfMPS, opstr::String)
     exp_sum = 0.0
-    for n in 1 : psi.len_uc
+    @inbounds for n in 1 : psi.len_uc
         exp_sum += expect(psi, opstr, n)
     end
     return exp_sum / psi.len_uc
@@ -92,8 +92,8 @@ end
 function correlation(psi::InfMPS, ops1::String, ops2::String)
     corr_sum = 0.0
     len = psi.len_uc
-    for n in 1 : len
-        corr_sum += correlation(psi, ops1, ops2, n, mod1(n, len))
+    @inbounds for n in 1 : len
+        corr_sum += correlation(psi, ops1, ops2, n, mod1(n+1, len))
     end
     return corr_sum / len
 end

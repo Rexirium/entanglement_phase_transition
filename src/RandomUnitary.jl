@@ -4,6 +4,7 @@ using ITensors, ITensorMPS
 using ITensors: svd
 using LinearAlgebra: diagm
 using Random: shuffle
+using KrylovKit: eigsolve
 
 # ITensors.BLAS.set_num_threads(1)
 # ITensors.Strided.set_num_threads(1)
