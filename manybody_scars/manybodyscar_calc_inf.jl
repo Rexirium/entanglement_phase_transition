@@ -11,24 +11,24 @@ end
     ITensors.BLAS.set_num_threads(1)
     ITensors.Strided.set_num_threads(1)
 end
-@everywhere function main(lsize::Int, period::Int, freq::Int)
-    ss = siteinds("S=1/2", lsize)
-    psi = make_initialstate(ss, period, "Up")
+@everywhere function main(period::Int, freq::Int)
+    len_uc = lcm(period, 3)
+    ss = siteinds("S=1/2", len_uc)
+    ipsi = make_initialinfstate(ss, period, "Up")
     
     obs = MyObserver(freq)
-    tebd_pxp!(psi, 30.0, 600, obs; maxdim=400, cutoff=1e-12, etol=1e-2)
+    tebd_pxp!(ipsi, 30.0, 600, obs; maxdim=400, cutoff=1e-12, etol=1e-2)
     println("period $period initial state time evolution finished!")
     return obs
 end
 
 let 
-    L = 30
     ps = 1 : 4
     q = 2
 
-    results = pmap( p -> main(L, p, q), ps)
+    results = pmap( p -> main(p, q), ps)
 
-    h5open("manybody_scars/pxp_L$(L).h5", "w") do file
+    h5open("manybody_scars/pxp_inf.h5", "w") do file
         grp = create_group(file, "params")
         write(grp, "nsteps", (600 ÷ q + 1))
         write(grp, "periods", collect(ps))
