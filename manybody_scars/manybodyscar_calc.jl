@@ -2,7 +2,7 @@ using Distributed
 using HDF5
 
 if nworkers() == 0
-    addprocs(4)
+    addprocs(6)
 end
 
 @everywhere include("manybodyscar.jl")
@@ -12,13 +12,13 @@ end
     psi = make_initialstate(ss, period, "Up")
     
     obs = MyObserver(freq)
-    tebd_pxp!(psi, 30.0, 600, obs; maxdim=128, cutoff=1e-12, etol=1e-5)
+    tebd_pxp!(psi, 30.0, 600, obs; maxdim=400, cutoff=1e-12, etol=1e-2)
     println("period $period initial state time evolution finished!")
     return obs
 end
 
 let 
-    L = 18
+    L = 30
     ps = 1 : 4
     q = 2
 
