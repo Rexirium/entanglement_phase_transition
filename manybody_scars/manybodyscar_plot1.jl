@@ -22,7 +22,7 @@ let
     mycolors = copy(Makie.wong_colors())
     mycolors[1], mycolors[2] = mycolors[2], mycolors[1]
 
-    fig = Figure(size=(600, 600))
+    fig = Figure(size=(800, 600))
 
     ax1 = Axis(fig[1, 1], ylabel=L"S(L/2)", palette=(color=mycolors,))
     ax2 = Axis(fig[2, 1], ylabel=L"\Delta S")
@@ -68,7 +68,7 @@ let
 
 
     close(file)
-    display(fig)
+    save("manybody_scars/pxp_L$L.png", fig)
 
     
 end
