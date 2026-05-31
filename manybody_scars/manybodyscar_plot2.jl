@@ -2,7 +2,7 @@ using HDF5
 using CairoMakie
 
 let 
-    L = 18
+    L = 30
     
     file = h5open("manybody_scars/pxp_L$(L).h5", "r")
 

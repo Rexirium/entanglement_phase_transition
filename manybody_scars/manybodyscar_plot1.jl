@@ -3,7 +3,7 @@ using Loess
 using CairoMakie
 
 let 
-    L = 18
+    L = 30
     peaktimes = range(3π/8, 30.0, step=3π/4)
     
     file = h5open("manybody_scars/pxp_L$(L).h5", "r")
