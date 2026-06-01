@@ -3,7 +3,7 @@ using Loess
 using CairoMakie
 
 let 
-    L = 30
+    L = 32
     peaktimes = range(3π/8, 30.0, step=3π/4)
     
     file = h5open("manybody_scars/pxp_L$(L).h5", "r")
@@ -37,18 +37,18 @@ let
         tsp = ts[1 : nt]
         
         if p == 1
-            lines!(ax1, tsp, entropies, label=L"| 0 \rangle")
+            lines!(ax1, tsp, entropies, label=L"| 0 \rangle", linewidth=2)
         elseif p == 2
-            lines!(ax1, tsp, entropies, label=L"| \mathbb{Z}_2 \rangle")
+            lines!(ax1, tsp, entropies, label=L"| \mathbb{Z}_2 \rangle", linewidth=2)
 
             model = loess(collect(tsp), entropies, span=0.5)
             entropies_smoothed = predict(model, tsp)
-            lines!(ax2, tsp, entropies .- entropies_smoothed)
+            lines!(ax2, tsp, entropies .- entropies_smoothed, linewidth=2)
 
             correlations = read(grp, "correlations")
-            lines!(ax3, tsp, correlations, label=L"\mathbb{Z}_2")
+            lines!(ax3, tsp, correlations, label=L"\mathbb{Z}_2", linewidth=2)
         else
-            lines!(ax1, tsp, entropies, label=L"| \mathbb{Z}_{%$p} \rangle")
+            lines!(ax1, tsp, entropies, label=L"| \mathbb{Z}_{%$p} \rangle", linewidth=2)
         end
     end
 
@@ -68,7 +68,7 @@ let
 
 
     close(file)
-    save("manybody_scars/pxp_L$L.png", fig)
+    save("manybody_scars/pxp_L$L.pdf", fig)
 
     
 end

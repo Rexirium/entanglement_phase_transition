@@ -2,7 +2,7 @@ using HDF5
 using CairoMakie
 
 let 
-    L = 30
+    L = 32
     
     file = h5open("manybody_scars/pxp_L$(L).h5", "r")
 
@@ -36,17 +36,17 @@ let
         tsp = ts[1 : nt]
         
         if p == 1
-            lines!(ax1, tsp, overlaps, label=L"| 0 \rangle")
+            lines!(ax1, tsp, overlaps, label=L"| 0 \rangle", linewidth=2)
         elseif p == 2
-            lines!(ax1, tsp, overlaps, label=L"| \mathbb{Z}_2 \rangle")
+            lines!(ax1, tsp, overlaps, label=L"| \mathbb{Z}_2 \rangle", linewidth=2)
 
             maxbonds = read(grp, "maxbonds")
             truncerrs = read(grp, "truncerrs")
            
-            lines!(ax2, tsp, maxbonds)
-            lines!(ax3, tsp, truncerrs)
+            lines!(ax2, tsp, maxbonds, linewidth=2)
+            lines!(ax3, tsp, truncerrs, linewidth=2)
         else
-            lines!(ax1, tsp, overlaps, label=L"| \mathbb{Z}_{%$p} \rangle")
+            lines!(ax1, tsp, overlaps, label=L"| \mathbb{Z}_{%$p} \rangle", linewidth=2)
         end
     end
 
@@ -64,5 +64,5 @@ let
 
     close(file)
     
-    save("manybody_scars/pxp_L$(L)_trunc.png", fig)
+    save("manybody_scars/pxp_L$(L)_trunc.pdf", fig)
 end
