@@ -3,7 +3,7 @@ using Loess
 using CairoMakie
 
 let 
-    L = 32
+    L = 36
     peaktimes = range(3π/8, 30.0, step=3π/4)
     
     file = h5open("manybody_scars/pxp_L$(L).h5", "r")
@@ -22,11 +22,11 @@ let
     mycolors = copy(Makie.wong_colors())
     mycolors[1], mycolors[2] = mycolors[2], mycolors[1]
 
-    fig = Figure(size=(800, 600))
+    fig = Figure(size=(600, 400))
 
     ax1 = Axis(fig[1, 1], ylabel=L"S(L/2)", palette=(color=mycolors,))
-    ax2 = Axis(fig[2, 1], ylabel=L"\Delta S")
-    ax3 = Axis(fig[3, 1], ylabel=L"\langle Z_m Z_{m+1} \rangle", xlabel=L"t")
+    ax2 = Axis(fig[2, 1], ylabel=L"\Delta S", limits=(nothing, (-0.065, 0.099)))
+    ax3 = Axis(fig[3, 1], ylabel=L"\langle Z_i Z_{i+1} \rangle", xlabel=L"t")
 
     linkxaxes!(ax1, ax2, ax3)
 
@@ -66,9 +66,19 @@ let
 
     rowgap!(fig.layout, 0)
 
+    for (label, layout) in zip(["a", "b", "c"], [fig[n, 1] for n in 1 : 3])
+        Label(layout[1, 1, Left()], label,
+            fontsize = 22,
+            font = :bold,
+            padding = (0, 30, 0, -10),
+            halign = :right, 
+            valign = :top)
+
+    end
+
 
     close(file)
-    save("manybody_scars/pxp_L$L.pdf", fig)
-
+    save("manybody_scars/pxp_L$L.png", fig)
+    fig
     
 end
