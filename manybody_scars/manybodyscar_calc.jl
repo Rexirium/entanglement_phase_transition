@@ -16,13 +16,13 @@ end
     psi = make_initialstate(ss, period, "Up")
     
     obs = MyObserver(freq)
-    tebd_pxp!(psi, 30.0, 600, obs; maxdim=432, cutoff=1e-12, etol=1e-2)
+    tebd_pxp!(psi, 30.0, 600, obs; maxdim=512, cutoff=1e-12, etol=1e-2)
     println("period $period initial state time evolution finished!")
     return obs
 end
 
 let 
-    L = 32
+    L = 36
     ps = 1 : 4
     q = 2
 
