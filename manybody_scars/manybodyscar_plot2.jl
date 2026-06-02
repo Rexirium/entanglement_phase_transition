@@ -2,7 +2,7 @@ using HDF5
 using CairoMakie
 
 let 
-    L = 32
+    L = 36
     
     file = h5open("manybody_scars/pxp_L$(L).h5", "r")
 
@@ -64,5 +64,5 @@ let
 
     close(file)
     
-    save("manybody_scars/pxp_L$(L)_trunc.pdf", fig)
+    save("manybody_scars/pxp_L$(L)_trunc.png", fig)
 end
