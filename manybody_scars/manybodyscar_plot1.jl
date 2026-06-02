@@ -15,8 +15,8 @@ let
     set_theme!(Axis=(
         xgridvisible=false, ygridvisible=false,
         xtickalign=1, ytickalign=1,
-        xlabelsize=18, ylabelsize=18,
-        xticklabelsize=16, yticklabelsize=16
+        xlabelsize=20, ylabelsize=20,
+        xticklabelsize=18, yticklabelsize=18
     ), theme_latexfonts())
 
     mycolors = copy(Makie.wong_colors())
